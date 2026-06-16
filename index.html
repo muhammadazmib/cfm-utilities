@@ -284,12 +284,17 @@ tr:hover td{background:#fafbfc}
   <div class="nav-sp"></div>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
   <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
+  <a href="petunjuk.html" target="_blank" class="btn btn-sm" style="flex-shrink:0;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;text-decoration:none" title="Fitur & Petunjuk Penggunaan"><i class="ti ti-help-circle"></i> Panduan</a>
 </nav>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner">
-  <i class="ti ti-wifi-off"></i> Mode Offline — menampilkan data terakhir yang tersimpan.
-  <button onclick="retryOnline()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer">Coba lagi</button>
+  <i class="ti ti-wifi-off"></i> Mode Offline — edit, tambah, hapus tetap bisa. Data akan sync saat online kembali.
+  <button onclick="retryOnline()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer">Sync Sekarang</button>
+</div>
+<!-- SYNC BADGE -->
+<div id="sync-badge" style="display:none;position:fixed;bottom:18px;right:18px;z-index:8888;background:#f59e0b;color:#fff;padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer" onclick="_flushDirty()" title="Klik untuk sync sekarang">
+  <i class="ti ti-cloud-upload" style="font-size:14px"></i> Ada perubahan belum tersync — klik untuk sync
 </div>
 
 <!-- AUTHOR NAME MODAL -->
@@ -655,8 +660,9 @@ const DEFAULT_TA=[
 
 async function persistCfm(){
   localStorage.setItem('cfm-v6',JSON.stringify(cfm));
-  try{await _supa.from('cfm_items').upsert({id:1,data:cfm,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');}
-  catch(e){showDbStatus('Gagal simpan',false);console.error('persistCfm:',e);}
+  if(!navigator.onLine){_markDirty('cfm');showDbStatus('Tersimpan lokal ✓ (offline)',false);_showSyncBadge();return;}
+  try{await _supa.from('cfm_items').upsert({id:1,data:cfm,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');_clearDirty('cfm');}
+  catch(e){_markDirty('cfm');showDbStatus('Tersimpan lokal (sync gagal)',false);console.error('persistCfm:',e);}
 }
 async function loadFromDB(){
   try{
@@ -692,6 +698,10 @@ async function loadFromDB(){
   const ld=document.getElementById('db-loading');if(ld)ld.style.display='none';
   setupRealtime();
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  // Tampilkan modal nama jika belum diset
+  setTimeout(()=>{if(!localStorage.getItem('cfm-author'))promptAuthor();},1200);
+  // Cek apakah ada data yang belum tersync
+  setTimeout(_showSyncBadge,1500);
 }
 
 function weekToFriday(weekNum, month0, year){
@@ -754,8 +764,9 @@ function migrateAreas(){
 }
 async function persistTa(){
   localStorage.setItem('ta-v2',JSON.stringify(ta));
-  try{await _supa.from('ta_items').upsert({id:1,data:ta,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');}
-  catch(e){showDbStatus('Gagal simpan',false);console.error('persistTa:',e);}
+  if(!navigator.onLine){_markDirty('ta');showDbStatus('Tersimpan lokal ✓ (offline)',false);_showSyncBadge();return;}
+  try{await _supa.from('ta_items').upsert({id:1,data:ta,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');_clearDirty('ta');}
+  catch(e){_markDirty('ta');showDbStatus('Tersimpan lokal (sync gagal)',false);console.error('persistTa:',e);}
 }
 function nCfmId(){return cfm.length?Math.max(...cfm.map(d=>d.id))+1:1}
 function nTaId(){return ta.length?Math.max(...ta.map(d=>d.id))+1:1}
@@ -1465,7 +1476,7 @@ function saveCfm(){
   if(!eq||!ar||!ma){alert('Equipment, Area, dan Masalah wajib diisi.');return}
   const ns=document.getElementById('cf-status').value;
   const docs=tmpDocs.filter(x=>x.type);const nt=(docs[0]||{type:'Notifikasi'}).type,nd=(docs[0]||{docno:''}).docno||'';
-  const item={id:editCfmId||nCfmId(),equipment:eq,area:ar,masalah:ma,tanggal:document.getElementById('cf-tgl').value,pic:tmpPics.join(', '),targets:JSON.parse(JSON.stringify(tmpTgts)),status:ns,type:nt,docno:nd,docs:docs,ket:ketsToStr(tmpKets),timeline:[]};
+  const item={id:editCfmId||nCfmId(),equipment:eq,area:ar,masalah:ma,tanggal:document.getElementById('cf-tgl').value,pic:tmpPics.join(', '),targets:JSON.parse(JSON.stringify(tmpTgts)),status:ns,type:nt,docno:nd,docs:docs,ket:ketsToStr(tmpKets),timeline:[],_updatedAt:new Date().toISOString()};
   const _cfmSnap=editCfmId?JSON.parse(JSON.stringify(cfm.find(x=>x.id===editCfmId)||{})):null;
   if(editCfmId){
     const old=cfm.find(x=>x.id===editCfmId);
@@ -1549,7 +1560,7 @@ function saveTa(){
   const tg=document.getElementById('ta-tag').value.trim(),dc=document.getElementById('ta-disc').value,is=document.getElementById('ta-issue').value.trim();
   if(!tg||!dc||!is){alert('Tag Number, Disiplin, dan Issue wajib diisi.');return}
   const ns=document.getElementById('ta-stat').value;
-  const item={id:editTaId||nTaId(),tagNumber:tg,disc:dc,issue:is,area:document.getElementById('ta-area').value,priority:document.getElementById('ta-prio').value,tanggal:document.getElementById('ta-tgl').value,status:ns,updateBy:document.getElementById('ta-uby').value.trim(),statusUpdate:document.getElementById('ta-supdate').value.trim(),timeline:[]};
+  const item={id:editTaId||nTaId(),tagNumber:tg,disc:dc,issue:is,area:document.getElementById('ta-area').value,priority:document.getElementById('ta-prio').value,tanggal:document.getElementById('ta-tgl').value,status:ns,updateBy:document.getElementById('ta-uby').value.trim(),statusUpdate:document.getElementById('ta-supdate').value.trim(),timeline:[],_updatedAt:new Date().toISOString()};
   const _taSnap=editTaId?JSON.parse(JSON.stringify(ta.find(x=>x.id===editTaId)||{})):null;
   if(editTaId){
     const old=ta.find(x=>x.id===editTaId);
@@ -2381,9 +2392,11 @@ function exportPDF(){
 .cmt-reply-btn:hover{background:var(--blue-lt)}
 .cmt-replies{margin-top:10px;padding-left:20px;border-left:2px solid var(--border)}
 .cmt-reply-form{margin-top:8px;padding:10px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
-.cmt-compose{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
-.cmt-compose textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical;min-height:60px;box-sizing:border-box;background:var(--bg-card)}
-.cmt-compose textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.cmt-compose{margin-top:16px;padding:14px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
+.cmt-compose-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cmt-compose textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical;min-height:72px;box-sizing:border-box;background:var(--bg-card);transition:border-color .15s,box-shadow .15s;line-height:1.5}
+.cmt-compose textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.cmt-compose textarea::placeholder{color:var(--muted);font-style:italic}
 .cmt-file-preview{margin-bottom:8px}
 .cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
 .cmt-file-chip img{width:36px;height:36px;object-fit:cover;border-radius:4px}
@@ -2478,25 +2491,120 @@ function renderTrendCharts(){
 // =====================================================================
 // OFFLINE MODE
 // =====================================================================
-let _isOffline = !navigator.onLine;
+// ── Offline queue helpers ─────────────────────────────────────────
+function _markDirty(type){
+  const q=JSON.parse(localStorage.getItem('sync-dirty')||'{}');
+  q[type]=true;q.ts=Date.now();
+  localStorage.setItem('sync-dirty',JSON.stringify(q));
+}
+function _clearDirty(type){
+  const q=JSON.parse(localStorage.getItem('sync-dirty')||'{}');
+  delete q[type];
+  localStorage.setItem('sync-dirty',JSON.stringify(q));
+}
+function _hasDirty(){
+  const q=JSON.parse(localStorage.getItem('sync-dirty')||'{}');
+  return !!(q.cfm||q.ta);
+}
+function _showSyncBadge(){
+  const el=document.getElementById('sync-badge');
+  if(!el)return;
+  if(_hasDirty()){
+    el.style.display='flex';
+    el.title='Ada perubahan offline yang belum tersync';
+  } else {
+    el.style.display='none';
+  }
+}
+// Merge dua array item berdasarkan _updatedAt per-item (bukan replace all)
+function _mergeItems(server, local){
+  const sMap={}, lMap={};
+  (server||[]).forEach(x=>sMap[x.id]=x);
+  (local||[]).forEach(x=>lMap[x.id]=x);
+  const allIds=new Set([...Object.keys(sMap),...Object.keys(lMap)]);
+  const result=[];
+  allIds.forEach(id=>{
+    const s=sMap[id], l=lMap[id];
+    if(!s){result.push(l);return;}   // item baru dari offline
+    if(!l){result.push(s);return;}   // item hanya ada di server (user lain)
+    // keduanya ada: pakai yang lebih baru berdasarkan _updatedAt
+    const st=s._updatedAt?new Date(s._updatedAt).getTime():0;
+    const lt=l._updatedAt?new Date(l._updatedAt).getTime():0;
+    result.push(lt>=st?l:s);
+  });
+  return result;
+}
+
+async function _flushDirty(){
+  const q=JSON.parse(localStorage.getItem('sync-dirty')||'{}');
+  let synced=0, conflicts=0;
+  if(q.cfm){
+    try{
+      // 1. Ambil data server terbaru dulu
+      const {data:row}=await _supa.from('cfm_items').select('data').eq('id',1).single();
+      const serverData=row?.data||[];
+      const localData=JSON.parse(localStorage.getItem('cfm-v6')||'[]');
+      // 2. Merge per-item — tidak ada yang tertimpa sembarangan
+      const merged=_mergeItems(serverData,localData);
+      // Hitung berapa item "dimenangkan" server (konflik)
+      merged.forEach(m=>{const l=localData.find(x=>x.id===m.id);if(l&&m!==l)conflicts++;});
+      // 3. Simpan merged ke server dan memory
+      cfm=merged;
+      localStorage.setItem('cfm-v6',JSON.stringify(cfm));
+      await _supa.from('cfm_items').upsert({id:1,data:cfm,updated_at:new Date().toISOString()});
+      _clearDirty('cfm');synced++;
+    }catch(e){console.error('flush cfm:',e);}
+  }
+  if(q.ta){
+    try{
+      const {data:row}=await _supa.from('ta_items').select('data').eq('id',1).single();
+      const serverData=row?.data||[];
+      const localData=JSON.parse(localStorage.getItem('ta-v2')||'[]');
+      const merged=_mergeItems(serverData,localData);
+      ta=merged;
+      localStorage.setItem('ta-v2',JSON.stringify(ta));
+      await _supa.from('ta_items').upsert({id:1,data:ta,updated_at:new Date().toISOString()});
+      _clearDirty('ta');synced++;
+    }catch(e){console.error('flush ta:',e);}
+  }
+  if(synced>0){
+    _showSyncBadge();
+    _reRender();
+    const msg=conflicts>0
+      ?`✓ Sync selesai — ${conflicts} item diperbarui dari server (lebih baru)`
+      :'✓ Semua perubahan offline berhasil disinkronkan';
+    toast(msg);
+  }
+}
+
+// ── Offline/Online detection ──────────────────────────────────────
+let _isOffline = false;
+let _offlineTimer = null;
 window.addEventListener('offline', () => {
-  _isOffline = true;
-  const b = document.getElementById('offline-banner');
-  if (b) b.style.display = 'flex';
-  showDbStatus('Offline — data lokal', false);
+  _offlineTimer = setTimeout(() => {
+    if (!navigator.onLine) {
+      _isOffline = true;
+      const b = document.getElementById('offline-banner');
+      if (b) b.style.display = 'flex';
+      showDbStatus('Offline — edit tetap bisa dilakukan', false);
+    }
+  }, 4000);
 });
 window.addEventListener('online', () => {
+  clearTimeout(_offlineTimer);
   _isOffline = false;
   const b = document.getElementById('offline-banner');
   if (b) b.style.display = 'none';
+  // Auto-sync perubahan yang tertunda
+  if(_hasDirty()) _flushDirty();
 });
 function retryOnline() {
   if (navigator.onLine) {
     document.getElementById('offline-banner').style.display = 'none';
-    loadFromDB();
-    toast('Menyinkronkan ulang data...');
+    if(_hasDirty()) _flushDirty();
+    else { loadFromDB(); toast('Menyinkronkan ulang data...'); }
   } else {
-    toast('Masih offline, coba lagi nanti');
+    toast('Masih offline — perubahan tersimpan lokal');
   }
 }
 
@@ -2531,25 +2639,29 @@ function closeAuthorModal() {
 // COMMENT SECTION HTML BUILDER
 // =====================================================================
 function cmtSection(itemId, type) {
-  const authorLabel = _authorName ? `<span style="font-size:11px;color:var(--muted)">Anda: <strong>${esc(_authorName)}</strong></span>` : '<span style="font-size:11px;color:var(--blue);cursor:pointer;text-decoration:underline" onclick="promptAuthor()">Set nama Anda</span>';
+  const authorLabel = _authorName
+    ? `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${esc(_authorName.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2))}</span><strong>${esc(_authorName)}</strong><span style="color:var(--blue);cursor:pointer;font-size:10px" onclick="promptAuthor()">(ganti)</span></span>`
+    : `<span style="font-size:11px;color:var(--blue);cursor:pointer;font-weight:600" onclick="promptAuthor()"><i class="ti ti-user-plus"></i> Set nama Anda</span>`;
   return `<div class="dcard">
     <div class="dcard-title" style="justify-content:space-between">
       <span><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</span>
       ${authorLabel}
     </div>
-    <div id="cmt-${type}-${itemId}" style="min-height:32px"><div style="color:var(--muted);font-size:12px">Memuat diskusi...</div></div>
+    <div id="cmt-${type}-${itemId}" style="min-height:40px"><div style="color:var(--muted);font-size:12px;font-style:italic">Memuat diskusi...</div></div>
     <div class="cmt-compose">
+      <div class="cmt-compose-label"><i class="ti ti-pencil" style="font-size:12px"></i> Tulis komentar</div>
       <div id="file-preview-${type}-${itemId}" class="cmt-file-preview"></div>
-      <textarea id="cmt-inp-${type}-${itemId}" placeholder="Tulis komentar atau update..." rows="2"></textarea>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-        <label class="btn btn-sm" style="cursor:pointer;gap:6px" title="Lampirkan foto / file (maks 10MB)">
+      <textarea id="cmt-inp-${type}-${itemId}" placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."></textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <label class="btn btn-sm" style="cursor:pointer;gap:5px;background:var(--bg-card)" title="Lampirkan foto / file (maks 10MB)">
           <i class="ti ti-paperclip"></i> Lampiran
           <input type="file" id="file-inp-${type}-${itemId}" style="display:none"
             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
             onchange="handleFileSelect(this,'${type}',${itemId})">
         </label>
+        <span style="font-size:10px;color:var(--muted)">Maks 10MB</span>
         <div style="flex:1"></div>
-        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm"
+        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="padding:7px 16px"
           onclick="addComment(${itemId},'${type}')"><i class="ti ti-send"></i> Kirim</button>
       </div>
     </div>
