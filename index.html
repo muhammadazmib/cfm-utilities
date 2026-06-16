@@ -265,13 +265,13 @@ tr:hover td{background:#fafbfc}
     <div class="nav-logo"><i class="ti ti-tool"></i></div>
     <div><div class="nav-name">Utilities Work Tracker</div><div class="nav-sub">Cross Functional Meeting</div></div>
   </div>
-  <button class="nav-btn" id="nav-dashboard" onclick="goTo('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+  <button class="nav-btn" style="flex-shrink:0" id="nav-dashboard" onclick="goTo('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
   <button class="nav-btn" id="nav-outstanding" onclick="goTo('outstanding')"><i class="ti ti-clipboard-list"></i> Outstanding CFM</button>
   <button class="nav-btn" id="nav-selesai" onclick="goTo('selesai')"><i class="ti ti-circle-check"></i> Pekerjaan Selesai</button>
   <button class="nav-btn" id="nav-ta" onclick="goTo('ta')"><i class="ti ti-building-factory-2"></i> Job List TA</button>
-  <div class="nav-sp"></div>
-  <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
   <button class="nav-btn" id="nav-log" onclick="goTo('log')"><i class="ti ti-history"></i> Log Perubahan</button>
+  <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
+  <div class="nav-sp"></div>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
   <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
 </nav>
@@ -869,7 +869,7 @@ function renderLog(){
       <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${r.type==='CFM'?'#dbeafe':'#dcfce7'};color:${r.type==='CFM'?'#1e40af':'#166534'}">${r.type||''}</span></td>
       <td><span style="font-size:11px;font-weight:700;color:${col}">${r.action||''}</span></td>
       <td style="font-size:12px;font-weight:600">${esc(r.item_name||'')}</td>
-      <td style="font-size:11px;color:var(--muted)">${esc(r.detail||'')}</td>
+      <td style="font-size:11px;color:var(--muted);line-height:1.7">${(r.detail||'').split(' | ').map(s=>`<span style="display:block">${esc(s)}</span>`).join('')}</td>
     </tr>`;
   }).join('');
 }
@@ -1403,6 +1403,7 @@ function saveCfm(){
   const ns=document.getElementById('cf-status').value;
   const docs=tmpDocs.filter(x=>x.type);const nt=(docs[0]||{type:'Notifikasi'}).type,nd=(docs[0]||{docno:''}).docno||'';
   const item={id:editCfmId||nCfmId(),equipment:eq,area:ar,masalah:ma,tanggal:document.getElementById('cf-tgl').value,pic:tmpPics.join(', '),targets:JSON.parse(JSON.stringify(tmpTgts)),status:ns,type:nt,docno:nd,docs:docs,ket:ketsToStr(tmpKets),timeline:[]};
+  const _cfmSnap=editCfmId?{...cfm.find(x=>x.id===editCfmId)}:null;
   if(editCfmId){
     const old=cfm.find(x=>x.id===editCfmId);
     item.timeline=old.timeline?[...old.timeline]:[];
@@ -1414,8 +1415,26 @@ function saveCfm(){
     cfm.push(item);
     toast('Item berhasil ditambahkan');
   }
-  const _cA=editCfmId?'Edit':'Tambah',_cN=document.getElementById('cf-eq').value.trim();
-  persistCfm();addLog('CFM',_cA,_cN,_cA==='Tambah'?'Item baru ditambahkan':'Data item diperbarui');
+  const _cA=editCfmId?'Edit':'Tambah',_cN=item.equipment;
+  let _cDetail='';
+  if(_cA==='Tambah'){
+    const _tgtLbl=item.targets&&item.targets.length?(item.targets[item.targets.length-1].date?fd(item.targets[item.targets.length-1].date):(item.targets[item.targets.length-1].label||'Belum ditentukan')):'Belum ditentukan';
+    _cDetail=`Area: ${item.area} | Masalah: ${item.masalah} | PIC: ${item.pic||'-'} | Status: ${item.status} | Target: ${_tgtLbl}`;
+  }else{
+    const _cOld=_cfmSnap||{};
+    const _chg=[];
+    if(_cOld.equipment!==item.equipment)_chg.push(`Equipment: "${_cOld.equipment}" → "${item.equipment}"`);
+    if(_cOld.area!==item.area)_chg.push(`Area: "${_cOld.area}" → "${item.area}"`);
+    if(_cOld.masalah!==item.masalah)_chg.push(`Masalah: "${_cOld.masalah}" → "${item.masalah}"`);
+    if(_cOld.pic!==item.pic)_chg.push(`PIC: "${_cOld.pic||'-'}" → "${item.pic||'-'}"`);
+    if(_cOld.status!==item.status)_chg.push(`Status: "${_cOld.status}" → "${item.status}"`);
+    const _cOldTgt=_cOld.targets&&_cOld.targets.length?(_cOld.targets[_cOld.targets.length-1].date?fd(_cOld.targets[_cOld.targets.length-1].date):(_cOld.targets[_cOld.targets.length-1].label||'-')):'-';
+    const _cNewTgt=item.targets&&item.targets.length?(item.targets[item.targets.length-1].date?fd(item.targets[item.targets.length-1].date):(item.targets[item.targets.length-1].label||'-')):'-';
+    if(_cOldTgt!==_cNewTgt)_chg.push(`Target: "${_cOldTgt}" → "${_cNewTgt}"`);
+    if(_cOld.ket!==item.ket)_chg.push('Keterangan diperbarui');
+    _cDetail=_chg.length?_chg.join(' | '):'Tidak ada perubahan terdeteksi';
+  }
+  persistCfm();addLog('CFM',_cA,_cN,_cDetail);
   closeCfmModal();
   if(vw==='outstanding')renderOut();
   if(vw==='selesai')renderSelesai();
@@ -1446,6 +1465,7 @@ function saveTa(){
   if(!tg||!dc||!is){alert('Tag Number, Disiplin, dan Issue wajib diisi.');return}
   const ns=document.getElementById('ta-stat').value;
   const item={id:editTaId||nTaId(),tagNumber:tg,disc:dc,issue:is,area:document.getElementById('ta-area').value,priority:document.getElementById('ta-prio').value,tanggal:document.getElementById('ta-tgl').value,status:ns,updateBy:document.getElementById('ta-uby').value.trim(),statusUpdate:document.getElementById('ta-supdate').value.trim(),timeline:[]};
+  const _taSnap=editTaId?{...ta.find(x=>x.id===editTaId)}:null;
   if(editTaId){
     const old=ta.find(x=>x.id===editTaId);
     item.timeline=old.timeline?[...old.timeline]:[];
@@ -1457,8 +1477,24 @@ function saveTa(){
     ta.push(item);
     toast('Job TA berhasil ditambahkan');
   }
-  const _tA=editTaId?'Edit':'Tambah',_tN=document.getElementById('ta-tag').value.trim();
-  persistTa();addLog('TA',_tA,_tN,_tA==='Tambah'?'Job baru ditambahkan':'Data job diperbarui');
+  const _tA=editTaId?'Edit':'Tambah',_tN=item.tagNumber;
+  let _tDetail='';
+  if(_tA==='Tambah'){
+    _tDetail=`Area: ${item.area} | Issue: ${item.issue} | Disiplin: ${item.disc} | Prioritas: ${item.priority} | Status: ${item.status}`;
+  }else{
+    const _tOld=_taSnap||{};
+    const _tchg=[];
+    if(_tOld.tagNumber!==item.tagNumber)_tchg.push(`Tag: "${_tOld.tagNumber}" → "${item.tagNumber}"`);
+    if(_tOld.area!==item.area)_tchg.push(`Area: "${_tOld.area}" → "${item.area}"`);
+    if(_tOld.issue!==item.issue)_tchg.push(`Issue: "${_tOld.issue}" → "${item.issue}"`);
+    if(_tOld.disc!==item.disc)_tchg.push(`Disiplin: "${_tOld.disc}" → "${item.disc}"`);
+    if(_tOld.priority!==item.priority)_tchg.push(`Prioritas: "${_tOld.priority}" → "${item.priority}"`);
+    if(_tOld.status!==item.status)_tchg.push(`Status: "${_tOld.status}" → "${item.status}"`);
+    if(_tOld.updateBy!==item.updateBy)_tchg.push(`Update By: "${_tOld.updateBy||'-'}" → "${item.updateBy||'-'}"`);
+    if(_tOld.statusUpdate!==item.statusUpdate)_tchg.push('Status Update diperbarui');
+    _tDetail=_tchg.length?_tchg.join(' | '):'Tidak ada perubahan terdeteksi';
+  }
+  persistTa();addLog('TA',_tA,_tN,_tDetail);
   closeTaModal();
   if(vw==='ta')renderTa();
   if(vw==='dashboard')renderDash();
@@ -1471,8 +1507,15 @@ function closeConfirm(){document.getElementById('confirmBg').classList.remove('o
 function confirmDel(){
   const _dI=delType==='cfm'?cfm.find(x=>x.id===delId):ta.find(x=>x.id===delId);
   const _dN=delType==='cfm'?(_dI?.equipment||''):(_dI?.tagNumber||'');
-  if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm();addLog('CFM','Hapus',_dN,'Item dihapus');}
-  else{ta=ta.filter(x=>x.id!==delId);persistTa();addLog('TA','Hapus',_dN,'Job dihapus');}
+  let _dDetail='';
+  if(delType==='cfm'&&_dI){
+    const _dTgt=_dI.targets&&_dI.targets.length?(_dI.targets[_dI.targets.length-1].date?fd(_dI.targets[_dI.targets.length-1].date):(_dI.targets[_dI.targets.length-1].label||'-')):'-';
+    _dDetail=`Area: ${_dI.area} | Masalah: ${_dI.masalah} | PIC: ${_dI.pic||'-'} | Status: ${_dI.status} | Target: ${_dTgt}`;
+  }else if(_dI){
+    _dDetail=`Area: ${_dI.area} | Issue: ${_dI.issue} | Disiplin: ${_dI.disc} | Prioritas: ${_dI.priority} | Status: ${_dI.status}`;
+  }
+  if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm();addLog('CFM','Hapus',_dN,_dDetail);}
+  else{ta=ta.filter(x=>x.id!==delId);persistTa();addLog('TA','Hapus',_dN,_dDetail);}
   closeConfirm();toast('Item berhasil dihapus');
   if(vw==='outstanding')renderOut();if(vw==='selesai')renderSelesai();if(vw==='ta')renderTa();if(vw==='dashboard')renderDash();
   if(detId===delId)closeDetail();
@@ -1641,8 +1684,11 @@ function saveTlNote(itemId,type,tlId){
   if(dtInp&&dtInp.value)t.ts=dtInp.value;
   if(txtInp)t.note=txtInp.value.trim();
   const _tlA=type==='cfm'?cfm:ta,_tlI=_tlA.find(x=>x.id===itemId),_tlN=type==='cfm'?(_tlI?.equipment||''):(_tlI?.tagNumber||'');
+  const _tlNote=txtInp?txtInp.value.trim():'';
+  const _tlDt=dtInp&&dtInp.value?fd(dtInp.value):'';
+  const _tlDetail=`Tanggal: ${_tlDt||'-'} | Catatan: "${_tlNote}"`;
   type==='cfm'?persistCfm():persistTa();
-  addLog(type.toUpperCase(),'Timeline',_tlN,'Catatan aktivitas diperbarui');
+  addLog(type.toUpperCase(),'Timeline',_tlN,_tlDetail);
   const el=document.getElementById(`tl-${type}-${itemId}`);
   if(el)el.innerHTML=renderTl(d.timeline,itemId,type);
   toast('Catatan diperbarui');
