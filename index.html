@@ -271,6 +271,7 @@ tr:hover td{background:#fafbfc}
   <button class="nav-btn" id="nav-ta" onclick="goTo('ta')"><i class="ti ti-building-factory-2"></i> Job List TA</button>
   <div class="nav-sp"></div>
   <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
+  <button class="nav-btn" id="nav-log" onclick="goTo('log')"><i class="ti ti-history"></i> Log Perubahan</button>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
   <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
 </nav>
@@ -422,6 +423,27 @@ tr:hover td{background:#fafbfc}
 </div>
 </div>
 
+<!-- VIEW: LOG PERUBAHAN -->
+<div id="view-log" class="vc" style="display:none">
+<div class="content">
+  <div class="sh">
+    <div class="sh-title"><i class="ti ti-history" style="color:var(--blue)"></i> Log Perubahan</div>
+    <button class="btn btn-sm" onclick="loadLog()"><i class="ti ti-refresh"></i> Refresh</button>
+  </div>
+  <div class="toolbar">
+    <div class="sw"><i class="ti ti-search"></i><input class="si" id="log-q" placeholder="Cari item..." oninput="renderLog()"></div>
+    <select class="fsel" id="log-type" onchange="renderLog()"><option value="">Semua Tipe</option><option value="CFM">CFM</option><option value="TA">TA</option></select>
+    <select class="fsel" id="log-action" onchange="renderLog()"><option value="">Semua Aksi</option><option value="Tambah">Tambah</option><option value="Edit">Edit</option><option value="Hapus">Hapus</option><option value="Timeline">Timeline</option></select>
+    <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca" onclick="clearLog()"><i class="ti ti-trash"></i> Hapus Log</button>
+  </div>
+  <div id="log-cnt" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+  <div class="tw"><table style="width:100%">
+    <thead><tr><th style="width:150px">Waktu</th><th style="width:60px">Tipe</th><th style="width:90px">Aksi</th><th>Item</th><th>Detail</th></tr></thead>
+    <tbody id="log-body"></tbody>
+  </table></div>
+</div>
+</div>
+
 <!-- VIEW: JOB LIST TA -->
 <div id="view-ta" class="vc" style="display:none">
 <div class="content">
@@ -538,10 +560,6 @@ tr:hover td{background:#fafbfc}
 <div id="h7-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#d97706;color:#fff;padding:10px 16px;align-items:center;gap:12px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.2)">
   <i class="ti ti-alert-triangle" style="font-size:18px;flex-shrink:0"></i>
   <span id="h7-msg" style="flex:1"></span>
-  <a id="h7-mailto" href="#" target="_blank"
-    style="background:#fff;color:#d97706;padding:5px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0">
-    <i class="ti ti-mail"></i> Kirim Email
-  </a>
   <button onclick="document.getElementById('h7-banner').style.display='none'"
     style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0">&#215;</button>
 </div>
@@ -788,7 +806,6 @@ function checkH7(){
   const body=encodeURIComponent(
     `Yth. Tim CFM Bagian Utilities,\n\nBerikut item yang mendekati batas target penyelesaian (H-7):\n\n${lines}\n\nMohon segera ditindaklanjuti.\n\nSalam,\nSistem CFM Utilities`
   );
-  document.getElementById('h7-mailto').href=`mailto:${EMAIL}?subject=${subj}&body=${body}`;
   banner.style.display='flex';
 }
 function toast(m){document.getElementById('toast-msg').textContent=m;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
@@ -804,7 +821,65 @@ function goTo(v){
   if(v==='selesai')renderSelesai();
   if(v==='ta')renderTa();
   if(v==='email')renderEmailPage();
+  if(v==='log'){loadLog();}
 }
+
+// ===== LOG PERUBAHAN =====
+let _logCache=[];
+
+async function addLog(type,action,itemName,detail){
+  try{await _supa.from('activity_log').insert({type,action,item_name:itemName,detail,ts:new Date().toISOString()});}
+  catch(e){console.warn('addLog:',e);}
+}
+
+async function loadLog(){
+  try{
+    const {data,error}=await _supa.from('activity_log').select('*').order('ts',{ascending:false}).limit(300);
+    if(error)throw error;
+    _logCache=data||[];renderLog();
+  }catch(e){
+    const tb=document.getElementById('log-body');
+    if(tb)tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:16px">Gagal: '+e.message+'</td></tr>';
+  }
+}
+
+function renderLog(){
+  const q=(document.getElementById('log-q')?.value||'').toLowerCase();
+  const tf=document.getElementById('log-type')?.value||'';
+  const af=document.getElementById('log-action')?.value||'';
+  const rows=_logCache.filter(r=>{
+    if(tf&&r.type!==tf)return false;
+    if(af&&r.action!==af)return false;
+    if(q&&!(r.item_name||'').toLowerCase().includes(q)&&!(r.detail||'').toLowerCase().includes(q))return false;
+    return true;
+  });
+  const cnt=document.getElementById('log-cnt');
+  if(cnt)cnt.textContent=rows.length+' entri';
+  const tbody=document.getElementById('log-body');
+  if(!tbody)return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);font-style:italic">Belum ada log perubahan</td></tr>';return;}
+  const AC={Tambah:'#16a34a',Edit:'#1e40af',Hapus:'#dc2626',Timeline:'#d97706'};
+  tbody.innerHTML=rows.map(r=>{
+    const dt=new Date(r.ts);
+    const tgl=dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+    const jam=dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const col=AC[r.action]||'#6b7280';
+    return`<tr>
+      <td style="font-size:12px;white-space:nowrap"><div style="font-weight:600">${tgl}</div><div style="color:var(--muted);font-size:11px">${jam}</div></td>
+      <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${r.type==='CFM'?'#dbeafe':'#dcfce7'};color:${r.type==='CFM'?'#1e40af':'#166534'}">${r.type||''}</span></td>
+      <td><span style="font-size:11px;font-weight:700;color:${col}">${r.action||''}</span></td>
+      <td style="font-size:12px;font-weight:600">${esc(r.item_name||'')}</td>
+      <td style="font-size:11px;color:var(--muted)">${esc(r.detail||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function clearLog(){
+  if(!confirm('Hapus semua log perubahan?'))return;
+  try{await _supa.from('activity_log').delete().gte('id',0);_logCache=[];renderLog();toast('Log berhasil dihapus');}
+  catch(e){toast('Gagal hapus log');}
+}
+
 
 function renderEmailPage(){
   const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
@@ -1339,7 +1414,9 @@ function saveCfm(){
     cfm.push(item);
     toast('Item berhasil ditambahkan');
   }
-  persistCfm();closeCfmModal();
+  const _cA=editCfmId?'Edit':'Tambah',_cN=document.getElementById('cf-eq').value.trim();
+  persistCfm();addLog('CFM',_cA,_cN,_cA==='Tambah'?'Item baru ditambahkan':'Data item diperbarui');
+  closeCfmModal();
   if(vw==='outstanding')renderOut();
   if(vw==='selesai')renderSelesai();
   if(vw==='dashboard')renderDash();
@@ -1380,7 +1457,9 @@ function saveTa(){
     ta.push(item);
     toast('Job TA berhasil ditambahkan');
   }
-  persistTa();closeTaModal();
+  const _tA=editTaId?'Edit':'Tambah',_tN=document.getElementById('ta-tag').value.trim();
+  persistTa();addLog('TA',_tA,_tN,_tA==='Tambah'?'Job baru ditambahkan':'Data job diperbarui');
+  closeTaModal();
   if(vw==='ta')renderTa();
   if(vw==='dashboard')renderDash();
   if(detId===item.id&&detType==='ta')openDetail(item.id,'ta');
@@ -1390,7 +1469,10 @@ function saveTa(){
 function openDel(id,type){delId=id;delType=type;document.getElementById('confirmBg').classList.add('open')}
 function closeConfirm(){document.getElementById('confirmBg').classList.remove('open');delId=null;delType=null}
 function confirmDel(){
-  if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm()}else{ta=ta.filter(x=>x.id!==delId);persistTa()}
+  const _dI=delType==='cfm'?cfm.find(x=>x.id===delId):ta.find(x=>x.id===delId);
+  const _dN=delType==='cfm'?(_dI?.equipment||''):(_dI?.tagNumber||'');
+  if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm();addLog('CFM','Hapus',_dN,'Item dihapus');}
+  else{ta=ta.filter(x=>x.id!==delId);persistTa();addLog('TA','Hapus',_dN,'Job dihapus');}
   closeConfirm();toast('Item berhasil dihapus');
   if(vw==='outstanding')renderOut();if(vw==='selesai')renderSelesai();if(vw==='ta')renderTa();if(vw==='dashboard')renderDash();
   if(detId===delId)closeDetail();
@@ -1558,7 +1640,9 @@ function saveTlNote(itemId,type,tlId){
   const txtInp=document.getElementById(`tl-edit-${type}-${tlId}`);
   if(dtInp&&dtInp.value)t.ts=dtInp.value;
   if(txtInp)t.note=txtInp.value.trim();
+  const _tlA=type==='cfm'?cfm:ta,_tlI=_tlA.find(x=>x.id===itemId),_tlN=type==='cfm'?(_tlI?.equipment||''):(_tlI?.tagNumber||'');
   type==='cfm'?persistCfm():persistTa();
+  addLog(type.toUpperCase(),'Timeline',_tlN,'Catatan aktivitas diperbarui');
   const el=document.getElementById(`tl-${type}-${itemId}`);
   if(el)el.innerHTML=renderTl(d.timeline,itemId,type);
   toast('Catatan diperbarui');
