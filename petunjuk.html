@@ -24,12 +24,13 @@
   }
 
   /* PRINT BAR */
-  .print-bar{position:sticky;top:0;z-index:999;background:#1e293b;color:#fff;padding:12px 32px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-  .print-bar span{font-size:13px;opacity:.75;flex:1}
-  .btn-print{background:var(--blue);color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.2s}
-  .btn-print:hover{background:#1d4ed8;transform:translateY(-1px)}
-  .btn-back{background:rgba(255,255,255,.12);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
-  .btn-back:hover{background:rgba(255,255,255,.2)}
+  .print-bar{position:sticky;top:0;z-index:999;background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);color:#fff;padding:0 32px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 20px rgba(0,0,0,.35);height:56px}
+  .print-bar-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .print-bar-title{flex:1}
+  .print-bar-title strong{font-size:13px;font-weight:700;display:block;letter-spacing:.1px}
+  .print-bar-title span{font-size:11px;opacity:.45;letter-spacing:.2px}
+  .btn-print{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;border:none;padding:9px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s;box-shadow:0 2px 10px rgba(37,99,235,.4);letter-spacing:.1px}
+  .btn-print:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(37,99,235,.5)}
 
   /* LAYOUT */
   .container{max-width:900px;margin:0 auto;padding:32px 20px 80px}
@@ -126,8 +127,11 @@
 
 <!-- PRINT BAR -->
 <div class="print-bar no-print">
-  <span>📄 Petunjuk Penggunaan — Utilities Work Tracker CFM</span>
-  <button class="btn-back" onclick="history.back()"><i class="ti ti-arrow-left"></i> Kembali ke Aplikasi</button>
+  <div class="print-bar-logo"><i class="ti ti-tool"></i></div>
+  <div class="print-bar-title">
+    <strong>Utilities Work Tracker</strong>
+    <span>PETUNJUK PENGGUNAAN — BAGIAN UTILITIES PERTAMINA</span>
+  </div>
   <button class="btn-print" onclick="window.print()"><i class="ti ti-file-type-pdf"></i> Simpan sebagai PDF / Cetak</button>
 </div>
 
@@ -139,7 +143,7 @@
     <h1>Utilities Work Tracker<br>Cross Functional Meeting</h1>
     <p>Panduan lengkap penggunaan aplikasi pelacak pekerjaan dan rapat lintas fungsi untuk Bagian Utilities Pertamina. Dibaca sebelum menggunakan aplikasi untuk pengalaman terbaik.</p>
     <div class="hero-meta">
-      <span><i class="ti ti-calendar"></i> Versi 2.0 — 2026</span>
+      <span><i class="ti ti-calendar"></i> Versi 2.1 — Juni 2026</span>
       <span><i class="ti ti-building-factory-2"></i> Bagian Utilities Pertamina</span>
       <span><i class="ti ti-users"></i> Semua Pengguna</span>
     </div>
@@ -231,23 +235,31 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <div class="step-title">Masukkan Nama Anda</div>
-          <div class="step-desc">Saat pertama kali membuka aplikasi, akan muncul jendela kecil yang meminta nama Anda. Masukkan nama lengkap (misal: <em>Budi Santoso</em>) lalu klik <strong>Simpan</strong>. Nama ini akan digunakan di komentar dan log aktivitas.</div>
-          <div class="step-tip"><i class="ti ti-info-circle"></i> Nama hanya perlu diisi sekali. Tersimpan di perangkat Anda.</div>
+          <div class="step-title">Isi Nama di Popup Modal</div>
+          <div class="step-desc">Saat pertama kali membuka aplikasi, sebuah <strong>popup modal akan muncul di tengah layar</strong> meminta nama Anda. Masukkan nama lengkap (misal: <em>Budi Santoso</em>) lalu klik <strong>Simpan &amp; Mulai</strong>. Nama digunakan di komentar diskusi dan log aktivitas.</div>
+          <div class="step-tip"><i class="ti ti-info-circle"></i> Nama hanya perlu diisi sekali dan tersimpan di perangkat Anda.</div>
+          <div style="margin-top:10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px">
+            <div style="font-weight:700;margin-bottom:6px;color:var(--text)">Fitur tambahan di popup nama:</div>
+            <ul style="padding-left:18px;color:var(--muted);line-height:1.9">
+              <li><strong>Quick picks</strong> — nama yang pernah digunakan tampil sebagai tombol pilihan cepat</li>
+              <li><strong>Ganti nama</strong> — kapan saja bisa ganti nama lewat link "Gunakan nama lain" di bagian diskusi</li>
+              <li><strong>Lewati</strong> — bisa dilewati, tapi nama wajib diisi sebelum bisa mengirim komentar</li>
+            </ul>
+          </div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
           <div class="step-title">Kenali Menu Navigasi</div>
-          <div class="step-desc">Di bagian atas terdapat menu: <strong>Dashboard</strong> · <strong>Outstanding CFM</strong> · <strong>Pekerjaan Selesai</strong> · <strong>Job List TA</strong> · <strong>Log Perubahan</strong> · <strong>Export</strong> · <strong>Kirim Email</strong></div>
+          <div class="step-desc">Di bagian atas terdapat menu: <strong>Dashboard</strong> · <strong>Outstanding CFM</strong> · <strong>Pekerjaan Selesai</strong> · <strong>Job List TA</strong> · <strong>Log Perubahan</strong> · <strong>Export</strong> · <strong>Kirim Email</strong> · <strong>Panduan</strong></div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
           <div class="step-title">Cek Status Koneksi</div>
-          <div class="step-desc">Perhatikan indikator di pojok kanan atas navbar. Titik <span style="color:var(--green)">●</span> hijau berarti terhubung realtime. Titik abu-abu berarti offline atau tidak tersinkron.</div>
+          <div class="step-desc">Perhatikan indikator <strong>Live</strong> di navbar. Titik <span style="color:var(--green)">●</span> hijau berarti terhubung realtime. Abu-abu berarti offline — data tetap bisa diedit dan akan sync otomatis saat kembali online.</div>
         </div>
       </div>
     </div>
@@ -378,48 +390,58 @@
 
   <!-- 6. DISKUSI -->
   <div id="diskusi" class="section-title page-break"><i class="ti ti-messages"></i> 6. Diskusi & Komentar</div>
-  <div class="card">
+  <div class="card" style="margin-bottom:14px">
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
           <div class="step-title">Buka Detail Item</div>
-          <div class="step-desc">Klik item CFM atau TA yang ingin didiskusikan.</div>
+          <div class="step-desc">Klik item CFM atau TA yang ingin didiskusikan, lalu scroll ke bawah ke bagian <strong>Diskusi</strong>.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <div class="step-title">Scroll ke bagian "Diskusi"</div>
-          <div class="step-desc">Di bagian bawah detail terdapat panel diskusi dengan riwayat komentar dari semua anggota tim.</div>
+          <div class="step-title">Pastikan Nama Sudah Diset</div>
+          <div class="step-desc">Kotak komentar menampilkan identitas Anda di bagian atas. Jika belum ada nama, akan muncul tombol biru <strong>"Set Nama Anda"</strong> — klik untuk membuka popup modal isian nama. <strong>Nama wajib diisi sebelum bisa mengirim komentar.</strong></div>
+          <div class="step-tip"><i class="ti ti-pencil"></i> Sudah punya nama tapi ingin ganti? Klik link "Gunakan nama lain" di kotak yang sama.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <div class="step-title">Tulis Komentar</div>
-          <div class="step-desc">Klik area teks <em>"Tulis komentar..."</em>, ketik pesan Anda, lalu klik <strong>Kirim</strong> atau tekan <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>
+          <div class="step-title">Tulis & Kirim Komentar</div>
+          <div class="step-desc">Klik area teks di bagian tengah kotak, ketik pesan, lalu klik <strong>Kirim</strong> atau tekan <kbd>Ctrl</kbd>+<kbd>Enter</kbd>. Jika nama belum diset saat klik Kirim, peringatan kuning akan muncul dan popup nama otomatis terbuka.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <div class="step-title">Balas Komentar</div>
-          <div class="step-desc">Klik tombol <strong>Balas</strong> di bawah komentar tertentu untuk membuat balasan bertingkat (thread).</div>
+          <div class="step-title">Balas Komentar (Thread)</div>
+          <div class="step-desc">Klik tombol <strong>Balas</strong> di bawah komentar tertentu untuk membuat balasan bertingkat. Balasan akan diindent ke dalam dan terhubung dengan komentar asal.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-body">
           <div class="step-title">Upload File / Foto</div>
-          <div class="step-desc">Klik ikon <i class="ti ti-paperclip"></i> di sebelah tombol kirim, pilih file (foto, PDF, Excel, Word). Maksimum ukuran: <strong>10 MB</strong>. File tersimpan di cloud dan dapat dibuka/didownload semua pengguna.</div>
+          <div class="step-desc">Klik tombol <strong>Lampiran</strong> <i class="ti ti-paperclip"></i> di baris bawah kotak komentar, pilih file (foto, PDF, Excel, Word, ZIP). Maksimum: <strong>10 MB per file</strong>. File tersimpan di cloud Supabase dan bisa dibuka semua pengguna.</div>
         </div>
       </div>
     </div>
     <div class="tip-box success">
       <i class="ti ti-check"></i>
-      <div class="tip-box-body"><strong>Nama Anda otomatis tampil</strong>Avatar berwarna dan nama Anda akan otomatis muncul di setiap komentar yang Anda kirim.</div>
+      <div class="tip-box-body"><strong>Avatar otomatis tampil</strong>Inisial nama dan warna avatar Anda otomatis muncul di setiap komentar yang dikirim, tanpa perlu login.</div>
     </div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px">Tampilan Kotak Komentar</div>
+    <table>
+      <tr><th>Area</th><th>Isi</th></tr>
+      <tr><td><strong>Baris Atas</strong></td><td>Avatar + nama aktif Anda, atau tombol "Set Nama Anda" jika belum diset</td></tr>
+      <tr><td><strong>Tengah</strong></td><td>Area teks untuk mengetik komentar</td></tr>
+      <tr><td><strong>Baris Bawah</strong></td><td>Tombol Lampiran · info ukuran maks · hint Ctrl+Enter · tombol Kirim</td></tr>
+    </table>
   </div>
 
   <!-- 7. EXPORT -->
@@ -453,47 +475,79 @@
   </div>
 
   <!-- 8. OFFLINE -->
-  <div id="offline" class="section-title page-break"><i class="ti ti-wifi-off"></i> 8. Mode Offline</div>
-  <div class="card">
+  <div id="offline" class="section-title page-break"><i class="ti ti-wifi-off"></i> 8. Mode Offline & Sinkronisasi</div>
+  <div class="card" style="margin-bottom:14px">
     <div class="tip-box success">
       <i class="ti ti-wifi-off"></i>
-      <div class="tip-box-body"><strong>Aplikasi tetap bisa digunakan tanpa internet</strong>Berkat teknologi Service Worker dan penyimpanan lokal, semua fitur utama tetap bekerja saat internet terputus.</div>
+      <div class="tip-box-body"><strong>Aplikasi tetap bisa digunakan tanpa internet</strong>Semua fitur utama tetap bekerja saat internet terputus. Perubahan disimpan lokal dan otomatis tersync saat online kembali.</div>
     </div>
-    <div style="margin-top:16px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px">Yang bisa dilakukan saat offline:</div>
-      <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2">
-        <li>✅ Melihat semua data yang sudah dimuat sebelumnya</li>
-        <li>✅ Menambah item CFM / TA baru</li>
-        <li>✅ Mengedit item yang sudah ada</li>
-        <li>✅ Menghapus item</li>
-        <li>✅ Membuka detail & riwayat</li>
-      </ul>
-      <div style="font-weight:700;font-size:13px;margin:14px 0 10px">Yang tidak bisa dilakukan saat offline:</div>
-      <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2">
-        <li>❌ Melihat komentar diskusi terbaru</li>
-        <li>❌ Mengirim komentar baru</li>
-        <li>❌ Upload file/foto</li>
-        <li>❌ Kirim email laporan</li>
-      </ul>
+    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--green)">✅ Bisa dilakukan saat offline:</div>
+        <ul style="font-size:12px;color:var(--muted);padding-left:18px;line-height:2">
+          <li>Melihat semua data yang sudah dimuat</li>
+          <li>Menambah item CFM / TA baru</li>
+          <li>Mengedit item yang sudah ada</li>
+          <li>Menghapus item</li>
+          <li>Membuka detail & riwayat</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--red)">❌ Tidak bisa saat offline:</div>
+        <ul style="font-size:12px;color:var(--muted);padding-left:18px;line-height:2">
+          <li>Melihat komentar diskusi terbaru</li>
+          <li>Mengirim komentar baru</li>
+          <li>Upload file / foto</li>
+          <li>Kirim email laporan</li>
+        </ul>
+      </div>
     </div>
-    <div style="font-weight:700;font-size:13px;margin:14px 0 10px">Cara kerja sinkronisasi:</div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:14px;display:flex;align-items:center;gap:6px"><i class="ti ti-refresh" style="color:var(--blue)"></i> Alur Sinkronisasi Otomatis</div>
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <div class="step-body"><div class="step-desc">Internet terputus → banner kuning muncul di atas layar: <em>"Mode Offline"</em></div></div>
+        <div class="step-body">
+          <div class="step-title">Internet terputus</div>
+          <div class="step-desc">Banner kuning muncul di atas layar: <em>"Mode Offline — edit, tambah, hapus tetap bisa."</em> Aplikasi beralih ke data lokal.</div>
+        </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <div class="step-body"><div class="step-desc">Anda tetap bisa edit/tambah/hapus → perubahan tersimpan di perangkat, badge <em>"Ada perubahan belum tersync"</em> muncul di pojok kanan bawah.</div></div>
+        <div class="step-body">
+          <div class="step-title">Edit seperti biasa</div>
+          <div class="step-desc">Semua perubahan tersimpan di perangkat. Badge berkedip <em>"Perubahan offline belum tersync"</em> muncul di pojok kanan bawah sebagai pengingat.</div>
+        </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <div class="step-body"><div class="step-desc">Internet kembali → aplikasi otomatis mendeteksi dan langsung sinkronkan semua perubahan ke server. Notifikasi <em>"✓ perubahan offline berhasil disync"</em> akan muncul.</div></div>
+        <div class="step-body">
+          <div class="step-title">Internet kembali → sync otomatis</div>
+          <div class="step-desc">Aplikasi langsung mendeteksi koneksi kembali dan memulai sinkronisasi. <strong>Popup laporan sync</strong> muncul di tengah layar menampilkan detail apa saja yang berhasil disinkronkan.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Sync manual</div>
+          <div class="step-desc">Klik badge berkedip di pojok kanan bawah kapan saja untuk memaksa sinkronisasi segera, tanpa menunggu koneksi terdeteksi otomatis.</div>
+        </div>
       </div>
     </div>
-    <div class="tip-box warn">
-      <i class="ti ti-alert-triangle"></i>
-      <div class="tip-box-body"><strong>Perhatian: Konflik data</strong>Jika dua pengguna mengedit item yang sama secara offline, perubahan yang sinkron terakhir yang akan tersimpan. Koordinasikan dengan tim untuk menghindari konflik.</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-description" style="color:var(--purple)"></i> Popup Laporan Sinkronisasi</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Setiap kali sync berjalan, popup muncul di <strong>tengah layar</strong> menampilkan hasil detail per item:</div>
+    <table>
+      <tr><th>Status Item</th><th>Warna</th><th>Artinya</th></tr>
+      <tr><td><span class="badge green">Baru</span></td><td>Hijau</td><td>Item baru yang dibuat saat offline berhasil dikirim ke server</td></tr>
+      <tr><td><span class="badge blue">Diperbarui</span></td><td>Biru</td><td>Item yang diedit saat offline berhasil disimpan ke server</td></tr>
+      <tr><td><span class="badge amber">Dari server</span></td><td>Kuning</td><td>Item diedit pengguna lain saat Anda offline — versi server yang lebih baru dipakai</td></tr>
+    </table>
+    <div class="tip-box info" style="margin-top:14px">
+      <i class="ti ti-shield-check"></i>
+      <div class="tip-box-body"><strong>Data aman dari tertimpa</strong>Sync menggunakan sistem <em>merge per-item</em> — setiap item dibandingkan berdasarkan waktu perubahan terakhir. Data dari pengguna lain tidak akan tertimpa oleh perubahan offline Anda, dan sebaliknya.</div>
     </div>
   </div>
 
@@ -606,23 +660,31 @@
 
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Bagaimana jika saya salah memasukkan nama?</div>
-    <div class="faq-a">Klik ikon ⚙️ Settings di pojok kanan atas navbar, lalu pilih opsi untuk mengubah nama. Atau klik avatar Anda di pojok layar.</div>
+    <div class="faq-a">Buka detail item mana saja, scroll ke bagian Diskusi, lalu klik link <strong>"Gunakan nama lain"</strong> di bawah nama Anda. Popup modal ganti nama akan muncul di tengah layar — nama yang pernah dipakai juga ditampilkan sebagai pilihan cepat.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Kenapa tombol Kirim di diskusi tidak berfungsi?</div>
+    <div class="faq-a">Nama Anda belum diset. Klik tombol biru <strong>"Set Nama Anda"</strong> di bagian atas kotak komentar, atau klik Kirim langsung — peringatan kuning akan muncul dan popup nama otomatis terbuka. Setelah nama disimpan, komentar langsung terkirim.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Apakah data aman jika browser ditutup?</div>
     <div class="faq-a">Ya. Data tersimpan di server Supabase (cloud) dan juga di penyimpanan lokal browser Anda. Menutup browser tidak menghapus data.</div>
   </div>
   <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Apakah data tertimpa saat sync setelah offline?</div>
+    <div class="faq-a">Tidak. Sistem menggunakan <strong>merge per-item</strong> — setiap item dibandingkan berdasarkan waktu perubahan terakhir. Item yang diedit pengguna lain saat Anda offline tetap aman. Popup laporan sync di tengah layar menampilkan detail item mana saja yang disinkronkan beserta statusnya.</div>
+  </div>
+  <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Berapa orang yang bisa menggunakan aplikasi ini bersamaan?</div>
-    <div class="faq-a">Tidak ada batasan jumlah pengguna. Semua orang bisa mengakses dan mengedit secara bersamaan. Perubahan terlihat realtime di semua layar.</div>
+    <div class="faq-a">Tidak ada batasan jumlah pengguna. Semua orang bisa mengakses dan mengedit secara bersamaan. Perubahan terlihat realtime di semua layar dalam hitungan detik.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Apakah ada fitur undo jika salah hapus?</div>
-    <div class="faq-a">Belum ada tombol undo. Namun semua perubahan tercatat di Log Perubahan. Hubungi admin untuk pemulihan data dari log jika diperlukan.</div>
+    <div class="faq-a">Belum ada tombol undo. Namun semua perubahan tercatat di <strong>Log Perubahan</strong> lengkap dengan data sebelum dan sesudah. Hubungi admin untuk pemulihan data jika diperlukan.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> File apa saja yang bisa diupload di diskusi?</div>
-    <div class="faq-a">Foto (JPG, PNG, GIF, WebP), PDF, Word (.doc, .docx), Excel (.xls, .xlsx), teks (.txt), dan ZIP. Ukuran maksimum 10 MB per file.</div>
+    <div class="faq-a">Foto (JPG, PNG, GIF, WebP), PDF, Word (.doc, .docx), Excel (.xls, .xlsx), teks (.txt), dan ZIP. Ukuran maksimum <strong>10 MB per file</strong>. File tersimpan di cloud dan bisa diakses semua pengguna.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Bagaimana cara mengirim laporan email ke atasan?</div>
@@ -630,15 +692,15 @@
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Kenapa muncul banner kuning "Mode Offline"?</div>
-    <div class="faq-a">Artinya koneksi internet terputus. Tidak perlu khawatir — aplikasi tetap bekerja dan semua perubahan Anda tersimpan lokal. Saat internet kembali, data otomatis tersinkron.</div>
+    <div class="faq-a">Artinya koneksi internet terputus. Tidak perlu khawatir — semua fitur utama tetap berjalan. Semua perubahan tersimpan lokal dan otomatis tersinkron lengkap dengan laporan detail saat internet kembali.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Mengapa data saya tidak langsung tampil di komputer lain?</div>
-    <div class="faq-a">Pastikan indikator realtime (titik di navbar) berwarna hijau. Jika abu-abu, refresh halaman. Realtime bekerja via koneksi WebSocket yang sesekali perlu direkoneksi.</div>
+    <div class="faq-a">Pastikan indikator <strong>Live</strong> di navbar berwarna hijau. Jika abu-abu, refresh halaman (F5). Realtime bekerja via koneksi WebSocket yang sesekali perlu direkoneksi ulang.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Siapa yang bisa melihat data dan komentar ini?</div>
-    <div class="faq-a">Siapapun yang memiliki akses ke link aplikasi. Tidak ada sistem login — akses dikontrol dengan cara membagikan atau tidak membagikan link ke pihak yang berwenang.</div>
+    <div class="faq-a">Siapapun yang memiliki akses ke link aplikasi. Tidak ada sistem login — akses dikontrol dengan membagikan atau tidak membagikan link kepada pihak yang berwenang.</div>
   </div>
 
   <!-- 12. TIPS -->
