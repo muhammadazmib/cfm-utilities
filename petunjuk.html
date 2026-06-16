@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Petunjuk Penggunaan — Utilities Work Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root{--blue:#2563eb;--green:#16a34a;--amber:#f59e0b;--red:#dc2626;--purple:#7c3aed;--cyan:#0891b2;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--bg:#f8fafc;--card:#fff;--r:10px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+
+  /* PRINT STYLES */
+  @media print{
+    .no-print{display:none!important}
+    body{background:#fff;font-size:12px}
+    .page-break{page-break-before:always}
+    .card{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid}
+    .hero{background:#2563eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .step-num{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .feat-icon{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    a{color:#2563eb}
+  }
+
+  /* PRINT BAR */
+  .print-bar{position:sticky;top:0;z-index:999;background:#1e293b;color:#fff;padding:12px 32px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+  .print-bar span{font-size:13px;opacity:.75;flex:1}
+  .btn-print{background:var(--blue);color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.2s}
+  .btn-print:hover{background:#1d4ed8;transform:translateY(-1px)}
+  .btn-back{background:rgba(255,255,255,.12);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-back:hover{background:rgba(255,255,255,.2)}
+
+  /* LAYOUT */
+  .container{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+
+  /* HERO */
+  .hero{background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 40%,#4f46e5 100%);color:#fff;border-radius:16px;padding:48px 40px;margin-bottom:36px;position:relative;overflow:hidden}
+  .hero::after{content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .hero::before{content:'';position:absolute;right:60px;bottom:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04)}
+  .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-bottom:16px}
+  .hero h1{font-size:28px;font-weight:800;margin-bottom:8px;line-height:1.2}
+  .hero p{opacity:.85;font-size:14px;max-width:520px;line-height:1.6}
+  .hero-meta{margin-top:24px;display:flex;gap:24px;font-size:12px;opacity:.7}
+  .hero-meta span{display:flex;align-items:center;gap:5px}
+
+  /* SECTION */
+  .section-title{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--blue);text-transform:uppercase;margin:40px 0 18px;display:flex;align-items:center;gap:8px}
+  .section-title::after{content:'';flex:1;height:2px;background:linear-gradient(to right,var(--border),transparent)}
+
+  /* CARD */
+  .card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);padding:24px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  .card-sm{padding:16px 20px;margin-bottom:10px}
+
+  /* FEATURE GRID */
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px}
+  .feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:.2s}
+  .feat-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  .feat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .feat-icon.blue{background:#dbeafe;color:#2563eb}
+  .feat-icon.green{background:#dcfce7;color:#16a34a}
+  .feat-icon.amber{background:#fef3c7;color:#f59e0b}
+  .feat-icon.purple{background:#ede9fe;color:#7c3aed}
+  .feat-icon.red{background:#fee2e2;color:#dc2626}
+  .feat-icon.cyan{background:#cffafe;color:#0891b2}
+  .feat-title{font-weight:700;font-size:13px;margin-bottom:3px}
+  .feat-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+  /* STEP */
+  .steps{counter-reset:step}
+  .step{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start}
+  .step-num{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-title{font-weight:700;font-size:13px;margin-bottom:4px}
+  .step-desc{font-size:12px;color:var(--muted);line-height:1.6}
+  .step-tip{display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#92400e;font-size:11px;padding:3px 9px;border-radius:20px;margin-top:6px;font-weight:600}
+
+  /* BADGE */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+  .badge.blue{background:#dbeafe;color:#1d4ed8}
+  .badge.green{background:#dcfce7;color:#15803d}
+  .badge.amber{background:#fef3c7;color:#b45309}
+  .badge.red{background:#fee2e2;color:#b91c1c}
+  .badge.purple{background:#ede9fe;color:#6d28d9}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#f1f5f9;padding:10px 14px;text-align:left;font-weight:700;color:var(--muted);border-bottom:2px solid var(--border)}
+  td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f8fafc}
+
+  /* TIPS BOX */
+  .tip-box{border-radius:var(--r);padding:14px 18px;margin:14px 0;display:flex;gap:12px;align-items:flex-start}
+  .tip-box.info{background:#eff6ff;border-left:4px solid var(--blue)}
+  .tip-box.warn{background:#fffbeb;border-left:4px solid var(--amber)}
+  .tip-box.success{background:#f0fdf4;border-left:4px solid var(--green)}
+  .tip-box i{font-size:18px;flex-shrink:0;margin-top:1px}
+  .tip-box.info i{color:var(--blue)}
+  .tip-box.warn i{color:var(--amber)}
+  .tip-box.success i{color:var(--green)}
+  .tip-box-body{font-size:12px;line-height:1.6}
+  .tip-box-body strong{display:block;font-size:13px;margin-bottom:3px}
+
+  /* FAQ */
+  .faq-item{border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+  .faq-q{padding:14px 18px;font-weight:700;font-size:13px;background:var(--card);display:flex;align-items:center;gap:10px}
+  .faq-q i{color:var(--blue)}
+  .faq-a{padding:12px 18px 14px 46px;font-size:12px;color:var(--muted);line-height:1.6;background:#f8fafc;border-top:1px solid var(--border)}
+
+  /* STATUS LEGEND */
+  .status-row{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+
+  /* FOOTER */
+  .footer{text-align:center;margin-top:60px;font-size:12px;color:var(--muted);padding:24px}
+  .footer a{color:var(--blue);text-decoration:none}
+
+  /* DIVIDER */
+  hr{border:none;border-top:1px solid var(--border);margin:32px 0}
+
+  /* SHORTCUT TABLE */
+  kbd{display:inline-block;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:1px 6px;font-family:monospace;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- PRINT BAR -->
+<div class="print-bar no-print">
+  <span>📄 Petunjuk Penggunaan — Utilities Work Tracker CFM</span>
+  <button class="btn-back" onclick="history.back()"><i class="ti ti-arrow-left"></i> Kembali ke Aplikasi</button>
+  <button class="btn-print" onclick="window.print()"><i class="ti ti-file-type-pdf"></i> Simpan sebagai PDF / Cetak</button>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge"><i class="ti ti-tool"></i> PETUNJUK PENGGUNAAN</div>
+    <h1>Utilities Work Tracker<br>Cross Functional Meeting</h1>
+    <p>Panduan lengkap penggunaan aplikasi pelacak pekerjaan dan rapat lintas fungsi untuk Bagian Utilities Pertamina. Dibaca sebelum menggunakan aplikasi untuk pengalaman terbaik.</p>
+    <div class="hero-meta">
+      <span><i class="ti ti-calendar"></i> Versi 2.0 — 2026</span>
+      <span><i class="ti ti-building-factory-2"></i> Bagian Utilities Pertamina</span>
+      <span><i class="ti ti-users"></i> Semua Pengguna</span>
+    </div>
+  </div>
+
+  <!-- DAFTAR ISI -->
+  <div class="section-title"><i class="ti ti-list"></i> Daftar Isi</div>
+  <div class="card card-sm">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px">
+      <a href="#fitur" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-star"></i> 1. Fitur Utama Aplikasi</a>
+      <a href="#mulai" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-rocket"></i> 2. Cara Memulai</a>
+      <a href="#cfm" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-clipboard-list"></i> 3. Mengelola CFM</a>
+      <a href="#ta" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-building-factory-2"></i> 4. Job List TA</a>
+      <a href="#dashboard" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-layout-dashboard"></i> 5. Dashboard & Statistik</a>
+      <a href="#diskusi" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-messages"></i> 6. Diskusi & Komentar</a>
+      <a href="#export" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-download"></i> 7. Export Data</a>
+      <a href="#offline" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-wifi-off"></i> 8. Mode Offline</a>
+      <a href="#pwa" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-device-mobile"></i> 9. Install di HP / PC</a>
+      <a href="#status" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-tag"></i> 10. Arti Status & Warna</a>
+      <a href="#faq" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-help-circle"></i> 11. Pertanyaan Umum (FAQ)</a>
+      <a href="#tips" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-bulb"></i> 12. Tips & Shortcut</a>
+    </div>
+  </div>
+
+  <!-- 1. FITUR UTAMA -->
+  <div id="fitur" class="section-title page-break"><i class="ti ti-star"></i> 1. Fitur Utama Aplikasi</div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon blue"><i class="ti ti-clipboard-list"></i></div>
+      <div><div class="feat-title">Outstanding CFM</div><div class="feat-desc">Lacak semua item pekerjaan dari rapat CFM yang masih berjalan, lengkap dengan PIC, status, dan target selesai.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon green"><i class="ti ti-circle-check"></i></div>
+      <div><div class="feat-title">Pekerjaan Selesai</div><div class="feat-desc">Arsip otomatis semua pekerjaan yang sudah selesai. Data tidak hilang, tetap bisa dicari dan dilihat kembali.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon purple"><i class="ti ti-building-factory-2"></i></div>
+      <div><div class="feat-title">Job List TA</div><div class="feat-desc">Kelola daftar pekerjaan Turnaround Activity (TA) secara terpisah dengan fitur dan tampilan yang sama.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon cyan"><i class="ti ti-layout-dashboard"></i></div>
+      <div><div class="feat-title">Dashboard Grafik</div><div class="feat-desc">Grafik tren pekerjaan per bulan, distribusi status, dan aging pekerjaan untuk analisis cepat.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon blue"><i class="ti ti-messages"></i></div>
+      <div><div class="feat-title">Diskusi & Komentar</div><div class="feat-desc">Setiap item punya ruang diskusi. Bisa balas komentar antar pengguna dan upload foto/dokumen.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon green"><i class="ti ti-bolt"></i></div>
+      <div><div class="feat-title">Realtime Sync</div><div class="feat-desc">Perubahan dari satu pengguna langsung terlihat di layar pengguna lain tanpa perlu refresh halaman.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon amber"><i class="ti ti-wifi-off"></i></div>
+      <div><div class="feat-title">Mode Offline</div><div class="feat-desc">Tetap bisa tambah, edit, hapus data meski internet mati. Data akan otomatis tersinkron saat online kembali.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon red"><i class="ti ti-file-export"></i></div>
+      <div><div class="feat-title">Export PDF & Excel</div><div class="feat-desc">Ekspor data CFM atau TA ke format Excel (.xlsx) atau cetak sebagai PDF untuk laporan dan dokumentasi.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon purple"><i class="ti ti-mail-forward"></i></div>
+      <div><div class="feat-title">Kirim Email Laporan</div><div class="feat-desc">Kirim rangkuman pekerjaan outstanding ke email atasan atau tim secara otomatis langsung dari aplikasi.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon cyan"><i class="ti ti-history"></i></div>
+      <div><div class="feat-title">Log Perubahan</div><div class="feat-desc">Rekaman lengkap semua perubahan data: siapa mengubah apa, kapan, sebelum dan sesudah perubahannya.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon green"><i class="ti ti-device-mobile"></i></div>
+      <div><div class="feat-title">PWA (Install di HP)</div><div class="feat-desc">Bisa diinstall di HP atau PC sebagai aplikasi mandiri, tampil seperti aplikasi native tanpa browser bar.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon amber"><i class="ti ti-users"></i></div>
+      <div><div class="feat-title">Multi-User</div><div class="feat-desc">Bisa digunakan banyak orang sekaligus. Setiap pengguna punya nama yang ditampilkan di komentar dan log.</div></div>
+    </div>
+  </div>
+
+  <!-- 2. CARA MEMULAI -->
+  <div id="mulai" class="section-title page-break"><i class="ti ti-rocket"></i> 2. Cara Memulai</div>
+  <div class="card">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Buka Aplikasi</div>
+          <div class="step-desc">Buka aplikasi melalui browser (Chrome atau Edge direkomendasikan). Akses via link yang dibagikan oleh admin, atau buka file <code>index.html</code> jika menggunakan versi lokal.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Masukkan Nama Anda</div>
+          <div class="step-desc">Saat pertama kali membuka aplikasi, akan muncul jendela kecil yang meminta nama Anda. Masukkan nama lengkap (misal: <em>Budi Santoso</em>) lalu klik <strong>Simpan</strong>. Nama ini akan digunakan di komentar dan log aktivitas.</div>
+          <div class="step-tip"><i class="ti ti-info-circle"></i> Nama hanya perlu diisi sekali. Tersimpan di perangkat Anda.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Kenali Menu Navigasi</div>
+          <div class="step-desc">Di bagian atas terdapat menu: <strong>Dashboard</strong> · <strong>Outstanding CFM</strong> · <strong>Pekerjaan Selesai</strong> · <strong>Job List TA</strong> · <strong>Log Perubahan</strong> · <strong>Export</strong> · <strong>Kirim Email</strong></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Cek Status Koneksi</div>
+          <div class="step-desc">Perhatikan indikator di pojok kanan atas navbar. Titik <span style="color:var(--green)">●</span> hijau berarti terhubung realtime. Titik abu-abu berarti offline atau tidak tersinkron.</div>
+        </div>
+      </div>
+    </div>
+    <div class="tip-box info">
+      <i class="ti ti-device-desktop"></i>
+      <div class="tip-box-body"><strong>Gunakan Browser Terbaru</strong>Aplikasi ini paling optimal di Google Chrome atau Microsoft Edge versi terbaru. Hindari Internet Explorer atau browser lama.</div>
+    </div>
+  </div>
+
+  <!-- 3. OUTSTANDING CFM -->
+  <div id="cfm" class="section-title page-break"><i class="ti ti-clipboard-list"></i> 3. Mengelola Outstanding CFM</div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-plus" style="color:var(--blue)"></i> Menambah Item Baru</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="step-title">Klik tombol "+ Tambah Item"</div><div class="step-desc">Ada di pojok kanan atas halaman Outstanding CFM.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="step-title">Isi formulir</div><div class="step-desc">Lengkapi: <strong>Nama Equipment</strong>, <strong>Area</strong> (pilih dari dropdown: 6 area Utilities), <strong>Masalah/Pekerjaan</strong>, <strong>PIC</strong>, <strong>Tanggal CFM</strong>, dan <strong>Target Selesai</strong>.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="step-title">Pilih Status</div><div class="step-desc">Pilih status awal pekerjaan (biasanya <span class="badge amber">Dalam Proses</span> untuk item baru).</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body"><div class="step-title">Klik "Simpan"</div><div class="step-desc">Item langsung tersimpan ke database dan terlihat oleh semua pengguna secara realtime.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-eye" style="color:var(--cyan)"></i> Melihat Detail Item</div>
+    <div class="step-desc" style="margin-bottom:10px">Klik pada baris item mana saja untuk membuka panel detail. Di dalam detail terdapat:</div>
+    <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:1.9">
+      <li>Semua informasi item (area, masalah, PIC, status, target)</li>
+      <li>Riwayat keterangan/update progres</li>
+      <li>Daftar dokumen terlampir</li>
+      <li>Riwayat target yang pernah diubah</li>
+      <li>Tombol Edit dan Hapus</li>
+      <li>Ruang Diskusi dengan komentar tim</li>
+    </ul>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-edit" style="color:var(--amber)"></i> Mengedit Item</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="step-desc">Klik item untuk buka detail, lalu klik tombol <strong>Edit</strong> (ikon pensil).</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="step-desc">Ubah field yang perlu. Untuk menambah update keterangan progres, klik <strong>"+ Tambah Keterangan"</strong> di bagian keterangan.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="step-desc">Untuk menandai pekerjaan selesai, ubah Status menjadi <span class="badge green">Selesai</span>. Item akan otomatis pindah ke tab "Pekerjaan Selesai".</div></div>
+      </div>
+    </div>
+    <div class="tip-box warn">
+      <i class="ti ti-alert-triangle"></i>
+      <div class="tip-box-body"><strong>Setiap perubahan dicatat</strong>Semua edit akan tercatat di Log Perubahan lengkap dengan nama editor, waktu, dan detail sebelum-sesudah.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-search" style="color:var(--purple)"></i> Pencarian & Filter</div>
+    <table>
+      <tr><th>Fitur</th><th>Cara Menggunakan</th></tr>
+      <tr><td><strong>Cari teks</strong></td><td>Ketik kata kunci di kotak pencarian (nama equipment, masalah, PIC)</td></tr>
+      <tr><td><strong>Filter Area</strong></td><td>Klik tombol area di atas tabel untuk tampilkan satu area saja</td></tr>
+      <tr><td><strong>Filter Status</strong></td><td>Klik badge status untuk filter berdasarkan status pekerjaan</td></tr>
+      <tr><td><strong>Urutkan</strong></td><td>Klik judul kolom (Equipment, Area, Status, dll) untuk mengurutkan</td></tr>
+    </table>
+  </div>
+
+  <!-- 4. JOB LIST TA -->
+  <div id="ta" class="section-title page-break"><i class="ti ti-building-factory-2"></i> 4. Job List TA (Turnaround Activity)</div>
+  <div class="card">
+    <div class="tip-box info">
+      <i class="ti ti-info-circle"></i>
+      <div class="tip-box-body"><strong>Job List TA memiliki fitur yang identik dengan CFM</strong>Semua langkah tambah, edit, hapus, detail, diskusi, dan export berlaku sama. Bedanya hanya di konteks data — TA khusus untuk pekerjaan Turnaround.</div>
+    </div>
+    <div style="margin-top:12px;font-weight:700;font-size:13px;margin-bottom:8px">Field khusus TA:</div>
+    <table>
+      <tr><th>Field</th><th>Keterangan</th></tr>
+      <tr><td><strong>Nomor WO</strong></td><td>Nomor Work Order dari sistem CMMS/SAP</td></tr>
+      <tr><td><strong>Kategori</strong></td><td>Jenis pekerjaan TA (Mechanical, Electrical, Instrument, Civil, dll)</td></tr>
+      <tr><td><strong>Prioritas</strong></td><td>Tingkat urgensi: Critical, High, Medium, Low</td></tr>
+      <tr><td><strong>Progress (%)</strong></td><td>Persentase penyelesaian pekerjaan (0–100%)</td></tr>
+    </table>
+  </div>
+
+  <!-- 5. DASHBOARD -->
+  <div id="dashboard" class="section-title page-break"><i class="ti ti-layout-dashboard"></i> 5. Dashboard & Statistik</div>
+  <div class="card">
+    <div class="feat-grid" style="margin-bottom:0">
+      <div class="feat-card" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="feat-icon blue"><i class="ti ti-chart-bar"></i></div>
+          <div class="feat-title">Tren Pekerjaan</div>
+        </div>
+        <div class="feat-desc">Grafik batang jumlah item baru vs selesai per bulan. Berguna untuk melihat tren produktivitas tim.</div>
+      </div>
+      <div class="feat-card" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="feat-icon purple"><i class="ti ti-chart-donut"></i></div>
+          <div class="feat-title">Distribusi Status</div>
+        </div>
+        <div class="feat-desc">Grafik donat proporsi status pekerjaan saat ini: outstanding, proses, selesai, dan lainnya.</div>
+      </div>
+      <div class="feat-card" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="feat-icon red"><i class="ti ti-clock"></i></div>
+          <div class="feat-title">Aging Pekerjaan</div>
+        </div>
+        <div class="feat-desc">Grafik distribusi umur pekerjaan (berapa lama sudah berjalan). Bantu identifikasi item yang terlalu lama tidak selesai.</div>
+      </div>
+      <div class="feat-card" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="feat-icon green"><i class="ti ti-numbers"></i></div>
+          <div class="feat-title">Kartu Ringkasan</div>
+        </div>
+        <div class="feat-desc">Angka cepat: total outstanding, selesai bulan ini, melewati target, dan rata-rata umur pekerjaan.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. DISKUSI -->
+  <div id="diskusi" class="section-title page-break"><i class="ti ti-messages"></i> 6. Diskusi & Komentar</div>
+  <div class="card">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Buka Detail Item</div>
+          <div class="step-desc">Klik item CFM atau TA yang ingin didiskusikan.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Scroll ke bagian "Diskusi"</div>
+          <div class="step-desc">Di bagian bawah detail terdapat panel diskusi dengan riwayat komentar dari semua anggota tim.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Tulis Komentar</div>
+          <div class="step-desc">Klik area teks <em>"Tulis komentar..."</em>, ketik pesan Anda, lalu klik <strong>Kirim</strong> atau tekan <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Balas Komentar</div>
+          <div class="step-desc">Klik tombol <strong>Balas</strong> di bawah komentar tertentu untuk membuat balasan bertingkat (thread).</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Upload File / Foto</div>
+          <div class="step-desc">Klik ikon <i class="ti ti-paperclip"></i> di sebelah tombol kirim, pilih file (foto, PDF, Excel, Word). Maksimum ukuran: <strong>10 MB</strong>. File tersimpan di cloud dan dapat dibuka/didownload semua pengguna.</div>
+        </div>
+      </div>
+    </div>
+    <div class="tip-box success">
+      <i class="ti ti-check"></i>
+      <div class="tip-box-body"><strong>Nama Anda otomatis tampil</strong>Avatar berwarna dan nama Anda akan otomatis muncul di setiap komentar yang Anda kirim.</div>
+    </div>
+  </div>
+
+  <!-- 7. EXPORT -->
+  <div id="export" class="section-title page-break"><i class="ti ti-download"></i> 7. Export Data</div>
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:14px">Ada 3 cara mengekspor data:</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num" style="background:var(--green)">E</div>
+        <div class="step-body">
+          <div class="step-title">Export Excel (.xlsx)</div>
+          <div class="step-desc">Klik menu <strong>Export</strong> di navbar → pilih <strong>Export Excel</strong>. Akan mengunduh file Excel dengan data CFM atau TA lengkap, siap untuk dianalisis atau dilaporkan.</div>
+          <div class="step-tip"><i class="ti ti-info-circle"></i> Format tabel rapi, kolom sesuai dengan tampilan di aplikasi</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--red)">P</div>
+        <div class="step-body">
+          <div class="step-title">Export PDF (Cetak)</div>
+          <div class="step-desc">Klik menu <strong>Export</strong> → <strong>Export PDF</strong>. Browser akan membuka dialog cetak — pilih <em>"Save as PDF"</em> pada printer untuk menyimpan sebagai file PDF.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--muted)">C</div>
+        <div class="step-body">
+          <div class="step-title">Export CSV</div>
+          <div class="step-desc">Klik tombol <strong>Export CSV</strong> di pojok kanan atas navbar. Format CSV kompatibel dengan semua aplikasi spreadsheet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. OFFLINE -->
+  <div id="offline" class="section-title page-break"><i class="ti ti-wifi-off"></i> 8. Mode Offline</div>
+  <div class="card">
+    <div class="tip-box success">
+      <i class="ti ti-wifi-off"></i>
+      <div class="tip-box-body"><strong>Aplikasi tetap bisa digunakan tanpa internet</strong>Berkat teknologi Service Worker dan penyimpanan lokal, semua fitur utama tetap bekerja saat internet terputus.</div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px">Yang bisa dilakukan saat offline:</div>
+      <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2">
+        <li>✅ Melihat semua data yang sudah dimuat sebelumnya</li>
+        <li>✅ Menambah item CFM / TA baru</li>
+        <li>✅ Mengedit item yang sudah ada</li>
+        <li>✅ Menghapus item</li>
+        <li>✅ Membuka detail & riwayat</li>
+      </ul>
+      <div style="font-weight:700;font-size:13px;margin:14px 0 10px">Yang tidak bisa dilakukan saat offline:</div>
+      <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2">
+        <li>❌ Melihat komentar diskusi terbaru</li>
+        <li>❌ Mengirim komentar baru</li>
+        <li>❌ Upload file/foto</li>
+        <li>❌ Kirim email laporan</li>
+      </ul>
+    </div>
+    <div style="font-weight:700;font-size:13px;margin:14px 0 10px">Cara kerja sinkronisasi:</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="step-desc">Internet terputus → banner kuning muncul di atas layar: <em>"Mode Offline"</em></div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="step-desc">Anda tetap bisa edit/tambah/hapus → perubahan tersimpan di perangkat, badge <em>"Ada perubahan belum tersync"</em> muncul di pojok kanan bawah.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="step-desc">Internet kembali → aplikasi otomatis mendeteksi dan langsung sinkronkan semua perubahan ke server. Notifikasi <em>"✓ perubahan offline berhasil disync"</em> akan muncul.</div></div>
+      </div>
+    </div>
+    <div class="tip-box warn">
+      <i class="ti ti-alert-triangle"></i>
+      <div class="tip-box-body"><strong>Perhatian: Konflik data</strong>Jika dua pengguna mengedit item yang sama secara offline, perubahan yang sinkron terakhir yang akan tersimpan. Koordinasikan dengan tim untuk menghindari konflik.</div>
+    </div>
+  </div>
+
+  <!-- 9. PWA -->
+  <div id="pwa" class="section-title page-break"><i class="ti ti-device-mobile"></i> 9. Install di HP / PC (PWA)</div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-brand-android" style="color:var(--green)"></i> Android (Chrome)</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body"><div class="step-desc">Buka aplikasi di Chrome</div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body"><div class="step-desc">Ketuk menu ⋮ (tiga titik) di kanan atas</div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body"><div class="step-desc">Pilih <strong>"Tambahkan ke Layar Utama"</strong></div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body"><div class="step-desc">Ketuk <strong>Tambahkan</strong></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-brand-windows" style="color:var(--blue)"></i> Windows (Edge/Chrome)</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body"><div class="step-desc">Buka aplikasi di browser</div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body"><div class="step-desc">Klik ikon <strong>Install</strong> di address bar (ikon + atau komputer)</div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body"><div class="step-desc">Klik <strong>Install</strong> pada dialog yang muncul</div></div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body"><div class="step-desc">Aplikasi terbuka di jendela sendiri tanpa bar browser</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tip-box info" style="margin-top:14px">
+      <i class="ti ti-info-circle"></i>
+      <div class="tip-box-body"><strong>Setelah install</strong>Aplikasi akan muncul di daftar aplikasi HP/PC Anda dan bisa dibuka seperti aplikasi biasa. Tetap perlu internet untuk sync data ke server.</div>
+    </div>
+  </div>
+
+  <!-- 10. STATUS -->
+  <div id="status" class="section-title page-break"><i class="ti ti-tag"></i> 10. Arti Status & Warna</div>
+  <div class="card">
+    <table>
+      <tr>
+        <th>Status</th>
+        <th>Warna</th>
+        <th>Arti</th>
+        <th>Tindakan Selanjutnya</th>
+      </tr>
+      <tr>
+        <td><span class="badge amber">Dalam Proses</span></td>
+        <td>Kuning/Amber</td>
+        <td>Pekerjaan sedang berjalan, ada tim yang mengerjakan</td>
+        <td>Update keterangan progres secara berkala</td>
+      </tr>
+      <tr>
+        <td><span class="badge blue">Menunggu Material</span></td>
+        <td>Biru</td>
+        <td>Pekerjaan terhenti karena menunggu material/spare part</td>
+        <td>Koordinasi dengan bagian pengadaan</td>
+      </tr>
+      <tr>
+        <td><span class="badge purple">Menunggu Shutdown</span></td>
+        <td>Ungu</td>
+        <td>Pekerjaan menunggu jadwal shutdown equipment</td>
+        <td>Masukkan ke perencanaan shutdown berikutnya</td>
+      </tr>
+      <tr>
+        <td><span class="badge red">Terhambat</span></td>
+        <td>Merah</td>
+        <td>Ada hambatan serius yang membutuhkan eskalasi</td>
+        <td>Eskalasi ke atasan, tambahkan keterangan hambatan</td>
+      </tr>
+      <tr>
+        <td><span class="badge green">Selesai</span></td>
+        <td>Hijau</td>
+        <td>Pekerjaan telah diselesaikan</td>
+        <td>Item otomatis pindah ke tab "Pekerjaan Selesai"</td>
+      </tr>
+    </table>
+    <hr style="margin:20px 0">
+    <div style="font-weight:700;font-size:13px;margin-bottom:10px">Indikator Keterlambatan:</div>
+    <table>
+      <tr><th>Indikator</th><th>Arti</th></tr>
+      <tr><td><span class="badge red"><i class="ti ti-alert-circle"></i> Terlambat</span></td><td>Tanggal target sudah lewat, pekerjaan belum selesai</td></tr>
+      <tr><td><span class="badge amber"><i class="ti ti-clock"></i> Hampir Target</span></td><td>Sisa waktu kurang dari 7 hari</td></tr>
+      <tr><td>Latar merah di baris</td><td>Item sangat terlambat (>30 hari setelah target)</td></tr>
+    </table>
+  </div>
+
+  <!-- 11. FAQ -->
+  <div id="faq" class="section-title page-break"><i class="ti ti-help-circle"></i> 11. Pertanyaan Umum (FAQ)</div>
+
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Bagaimana jika saya salah memasukkan nama?</div>
+    <div class="faq-a">Klik ikon ⚙️ Settings di pojok kanan atas navbar, lalu pilih opsi untuk mengubah nama. Atau klik avatar Anda di pojok layar.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Apakah data aman jika browser ditutup?</div>
+    <div class="faq-a">Ya. Data tersimpan di server Supabase (cloud) dan juga di penyimpanan lokal browser Anda. Menutup browser tidak menghapus data.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Berapa orang yang bisa menggunakan aplikasi ini bersamaan?</div>
+    <div class="faq-a">Tidak ada batasan jumlah pengguna. Semua orang bisa mengakses dan mengedit secara bersamaan. Perubahan terlihat realtime di semua layar.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Apakah ada fitur undo jika salah hapus?</div>
+    <div class="faq-a">Belum ada tombol undo. Namun semua perubahan tercatat di Log Perubahan. Hubungi admin untuk pemulihan data dari log jika diperlukan.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> File apa saja yang bisa diupload di diskusi?</div>
+    <div class="faq-a">Foto (JPG, PNG, GIF, WebP), PDF, Word (.doc, .docx), Excel (.xls, .xlsx), teks (.txt), dan ZIP. Ukuran maksimum 10 MB per file.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Bagaimana cara mengirim laporan email ke atasan?</div>
+    <div class="faq-a">Klik menu <strong>Kirim Email</strong> di navbar. Masukkan alamat email tujuan, preview isi laporan, lalu klik Kirim. Laporan berisi ringkasan semua item outstanding dalam format HTML yang rapi.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Kenapa muncul banner kuning "Mode Offline"?</div>
+    <div class="faq-a">Artinya koneksi internet terputus. Tidak perlu khawatir — aplikasi tetap bekerja dan semua perubahan Anda tersimpan lokal. Saat internet kembali, data otomatis tersinkron.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Mengapa data saya tidak langsung tampil di komputer lain?</div>
+    <div class="faq-a">Pastikan indikator realtime (titik di navbar) berwarna hijau. Jika abu-abu, refresh halaman. Realtime bekerja via koneksi WebSocket yang sesekali perlu direkoneksi.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q"><i class="ti ti-question-mark"></i> Siapa yang bisa melihat data dan komentar ini?</div>
+    <div class="faq-a">Siapapun yang memiliki akses ke link aplikasi. Tidak ada sistem login — akses dikontrol dengan cara membagikan atau tidak membagikan link ke pihak yang berwenang.</div>
+  </div>
+
+  <!-- 12. TIPS -->
+  <div id="tips" class="section-title page-break"><i class="ti ti-bulb"></i> 12. Tips & Shortcut Keyboard</div>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px">Shortcut Keyboard Berguna</div>
+    <table>
+      <tr><th>Shortcut</th><th>Fungsi</th></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>Kirim komentar diskusi</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Simpan nama (di modal nama) / Konfirmasi input</td></tr>
+      <tr><td><kbd>Escape</kbd></td><td>Tutup modal/dialog yang terbuka</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>P</kbd></td><td>Print / simpan halaman sebagai PDF</td></tr>
+      <tr><td><kbd>F5</kbd></td><td>Refresh dan muat ulang data terbaru dari server</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px">Tips Penggunaan Terbaik</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num" style="background:var(--amber)"><i class="ti ti-bulb" style="font-size:14px"></i></div>
+        <div class="step-body">
+          <div class="step-title">Update progres secara rutin</div>
+          <div class="step-desc">Tambahkan keterangan progres minimal seminggu sekali agar rapat CFM berikutnya lebih efektif dan semua anggota tim update.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--amber)"><i class="ti ti-bulb" style="font-size:14px"></i></div>
+        <div class="step-body">
+          <div class="step-title">Gunakan filter area untuk presentasi</div>
+          <div class="step-desc">Saat rapat CFM per area, gunakan filter area untuk tampilkan hanya data area tersebut agar presentasi lebih fokus.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--amber)"><i class="ti ti-bulb" style="font-size:14px"></i></div>
+        <div class="step-body">
+          <div class="step-title">Upload foto di diskusi untuk bukti</div>
+          <div class="step-desc">Saat pekerjaan selesai, upload foto kondisi sebelum dan sesudah di diskusi sebagai dokumentasi pekerjaan.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--amber)"><i class="ti ti-bulb" style="font-size:14px"></i></div>
+        <div class="step-body">
+          <div class="step-title">Cek Log Perubahan sebelum rapat</div>
+          <div class="step-desc">Log Perubahan menampilkan semua update terbaru dari semua item. Berguna untuk tahu apa saja yang berubah sejak rapat terakhir.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--amber)"><i class="ti ti-bulb" style="font-size:14px"></i></div>
+        <div class="step-body">
+          <div class="step-title">Install sebagai PWA untuk akses cepat</div>
+          <div class="step-desc">Install aplikasi di HP Anda agar bisa dibuka kapan saja tanpa harus buka browser dan ketik URL terlebih dahulu.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div style="font-size:20px;margin-bottom:8px">⚙️</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">Utilities Work Tracker — CFM & TA</div>
+    <div style="margin-bottom:8px">Bagian Utilities · Pertamina · Versi 2.0 · 2026</div>
+    <div>Untuk bantuan teknis, hubungi administrator sistem.</div>
+    <div style="margin-top:16px;font-size:11px;opacity:.6">Dokumen ini dapat dicetak sebagai PDF menggunakan tombol <strong>"Simpan sebagai PDF"</strong> di atas halaman ini.</div>
+  </div>
+
+</div>
+
+<script>
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const el = document.querySelector(a.getAttribute('href'));
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
