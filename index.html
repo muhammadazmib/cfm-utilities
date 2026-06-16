@@ -286,6 +286,27 @@ tr:hover td{background:#fafbfc}
   <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
 </nav>
 
+<!-- OFFLINE BANNER -->
+<div id="offline-banner">
+  <i class="ti ti-wifi-off"></i> Mode Offline — menampilkan data terakhir yang tersimpan.
+  <button onclick="retryOnline()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer">Coba lagi</button>
+</div>
+
+<!-- AUTHOR NAME MODAL -->
+<div id="author-modal">
+  <div class="am-box">
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px"><i class="ti ti-user-circle" style="color:var(--blue)"></i> Siapa nama Anda?</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Nama ini akan ditampilkan di komentar diskusi.</div>
+    <input id="author-inp" type="text" placeholder="Nama lengkap Anda..." maxlength="40"
+      style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;box-sizing:border-box;font-family:inherit;background:var(--bg-card);margin-bottom:12px"
+      onkeydown="if(event.key==='Enter')saveAuthorName()">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeAuthorModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveAuthorName()"><i class="ti ti-check"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- VIEW: DASHBOARD -->
 <div id="view-dashboard" class="vc">
 <div class="content">
@@ -633,6 +654,7 @@ const DEFAULT_TA=[
   ];
 
 async function persistCfm(){
+  localStorage.setItem('cfm-v6',JSON.stringify(cfm));
   try{await _supa.from('cfm_items').upsert({id:1,data:cfm,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');}
   catch(e){showDbStatus('Gagal simpan',false);console.error('persistCfm:',e);}
 }
@@ -648,6 +670,8 @@ async function loadFromDB(){
     ta=r2.data?.data||[];
     if(!cfm.length){cfm=DEFAULT_CFM;await persistCfm();}
     if(!ta.length){ta=DEFAULT_TA;await persistTa();}
+    localStorage.setItem('cfm-v6',JSON.stringify(cfm));
+    localStorage.setItem('ta-v2',JSON.stringify(ta));
   }catch(e){
     console.error('DB load error:',e);
     document.getElementById('db-load-err').textContent='Gagal konek database: '+(e.message||JSON.stringify(e));
@@ -729,6 +753,7 @@ function migrateAreas(){
   if(changed)persistCfm();
 }
 async function persistTa(){
+  localStorage.setItem('ta-v2',JSON.stringify(ta));
   try{await _supa.from('ta_items').upsert({id:1,data:ta,updated_at:new Date().toISOString()});showDbStatus('Tersimpan ✓');}
   catch(e){showDbStatus('Gagal simpan',false);console.error('persistTa:',e);}
 }
@@ -1604,6 +1629,7 @@ function openDetail(id,type){
   document.getElementById('det-acts').innerHTML=`<button class="btn btn-sm" onclick="${type==='cfm'?`openCfmModal(${id})`:`openTaModal(${id})`}"><i class="ti ti-edit"></i> Edit</button><button class="btn btn-sm btn-danger" onclick="openDel(${id},'${type}')"><i class="ti ti-trash"></i> Hapus</button>`;
   document.getElementById('det-body').innerHTML=type==='cfm'?cfmDetail(d):taDetail(d);
   document.getElementById('detOv').classList.add('open');
+  loadComments(id, type);
 }
 function closeDetail(){document.getElementById('detOv').classList.remove('open');detId=null;detType=null}
 
@@ -1656,7 +1682,8 @@ function cfmDetail(d){
         <button class="btn btn-primary btn-sm" style="align-self:flex-end;white-space:nowrap" onclick="addNote(${d.id},'cfm')"><i class="ti ti-send"></i> Tambah</button>
       </div>
     </div>
-  </div>`;
+  </div>
+  ${cmtSection(d.id,'cfm')}`;
 }
 
 function taDetail(d){
@@ -1693,7 +1720,8 @@ function taDetail(d){
         <button class="btn btn-primary btn-sm" style="align-self:flex-end;white-space:nowrap" onclick="addNote(${d.id},'ta')"><i class="ti ti-send"></i> Tambah</button>
       </div>
     </div>
-  </div>`;
+  </div>
+  ${cmtSection(d.id,'ta')}`;
 }
 
 function renderTlItem(t,id,type,ri,len){
@@ -2335,7 +2363,34 @@ function exportPDF(){
     tr:nth-child(even){background:#f8fafc}
     .stat{display:inline-block;padding:4px 10px;border-radius:6px;margin:2px;font-weight:700;font-size:10px}
     @media print{body{margin:10px}@page{size:A4 landscape;margin:10mm}}
-  </style></head><body>
+  
+/* ---- OFFLINE BANNER ---- */
+#offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:9px 20px;font-size:12px;font-weight:700;align-items:center;gap:10px;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+/* ---- COMMENT THREAD ---- */
+.cmt-item{display:flex;gap:10px;margin-bottom:14px}
+.cmt-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.cmt-bubble{flex:1;min-width:0}
+.cmt-header{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.cmt-author{font-size:12px;font-weight:700}
+.cmt-time{font-size:10px;color:var(--muted)}
+.cmt-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.cmt-attach-img{max-width:220px;max-height:160px;border-radius:8px;margin-top:8px;cursor:pointer;border:1px solid var(--border);display:block}
+.cmt-attach-file{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;background:var(--bg-sec);border:1px solid var(--border);border-radius:8px;font-size:11px;text-decoration:none;color:var(--text)}
+.cmt-actions{display:flex;align-items:center;gap:4px;margin-top:6px}
+.cmt-reply-btn{background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:2px 6px;border-radius:4px;font-weight:600}
+.cmt-reply-btn:hover{background:var(--blue-lt)}
+.cmt-replies{margin-top:10px;padding-left:20px;border-left:2px solid var(--border)}
+.cmt-reply-form{margin-top:8px;padding:10px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
+.cmt-compose{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.cmt-compose textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical;min-height:60px;box-sizing:border-box;background:var(--bg-card)}
+.cmt-compose textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.cmt-file-preview{margin-bottom:8px}
+.cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
+.cmt-file-chip img{width:36px;height:36px;object-fit:cover;border-radius:4px}
+/* ---- AUTHOR MODAL ---- */
+#author-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4000;align-items:center;justify-content:center}
+#author-modal .am-box{background:var(--bg-card);border-radius:var(--rl);padding:24px;width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+</style></head><body>
   <h1>Laporan CFM Utilities — Bagian Pertamina Utilities</h1>
   <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total Outstanding: ${act.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
   <div>
@@ -2417,6 +2472,300 @@ function renderTrendCharts(){
       borderWidth:2,borderColor:'var(--bg-card)'}]
   },options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}});
+}
+
+
+// =====================================================================
+// OFFLINE MODE
+// =====================================================================
+let _isOffline = !navigator.onLine;
+window.addEventListener('offline', () => {
+  _isOffline = true;
+  const b = document.getElementById('offline-banner');
+  if (b) b.style.display = 'flex';
+  showDbStatus('Offline — data lokal', false);
+});
+window.addEventListener('online', () => {
+  _isOffline = false;
+  const b = document.getElementById('offline-banner');
+  if (b) b.style.display = 'none';
+});
+function retryOnline() {
+  if (navigator.onLine) {
+    document.getElementById('offline-banner').style.display = 'none';
+    loadFromDB();
+    toast('Menyinkronkan ulang data...');
+  } else {
+    toast('Masih offline, coba lagi nanti');
+  }
+}
+
+// =====================================================================
+// AUTHOR NAME
+// =====================================================================
+let _authorName = localStorage.getItem('cfm-author') || '';
+let _authorCb = null;
+
+function promptAuthor(cb) {
+  _authorCb = cb || null;
+  const inp = document.getElementById('author-inp');
+  if (inp) inp.value = _authorName || '';
+  document.getElementById('author-modal').style.display = 'flex';
+  setTimeout(() => inp && inp.focus(), 100);
+}
+function saveAuthorName() {
+  const inp = document.getElementById('author-inp');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) { inp && inp.focus(); return; }
+  _authorName = name;
+  localStorage.setItem('cfm-author', _authorName);
+  closeAuthorModal();
+  if (_authorCb) { const cb = _authorCb; _authorCb = null; cb(); }
+}
+function closeAuthorModal() {
+  document.getElementById('author-modal').style.display = 'none';
+  _authorCb = null;
+}
+
+// =====================================================================
+// COMMENT SECTION HTML BUILDER
+// =====================================================================
+function cmtSection(itemId, type) {
+  const authorLabel = _authorName ? `<span style="font-size:11px;color:var(--muted)">Anda: <strong>${esc(_authorName)}</strong></span>` : '<span style="font-size:11px;color:var(--blue);cursor:pointer;text-decoration:underline" onclick="promptAuthor()">Set nama Anda</span>';
+  return `<div class="dcard">
+    <div class="dcard-title" style="justify-content:space-between">
+      <span><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</span>
+      ${authorLabel}
+    </div>
+    <div id="cmt-${type}-${itemId}" style="min-height:32px"><div style="color:var(--muted);font-size:12px">Memuat diskusi...</div></div>
+    <div class="cmt-compose">
+      <div id="file-preview-${type}-${itemId}" class="cmt-file-preview"></div>
+      <textarea id="cmt-inp-${type}-${itemId}" placeholder="Tulis komentar atau update..." rows="2"></textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <label class="btn btn-sm" style="cursor:pointer;gap:6px" title="Lampirkan foto / file (maks 10MB)">
+          <i class="ti ti-paperclip"></i> Lampiran
+          <input type="file" id="file-inp-${type}-${itemId}" style="display:none"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+            onchange="handleFileSelect(this,'${type}',${itemId})">
+        </label>
+        <div style="flex:1"></div>
+        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm"
+          onclick="addComment(${itemId},'${type}')"><i class="ti ti-send"></i> Kirim</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// =====================================================================
+// LOAD & RENDER COMMENTS
+// =====================================================================
+const _cmtCache = {};
+
+async function loadComments(itemId, type) {
+  const key = `${type}-${itemId}`;
+  const el = document.getElementById(`cmt-${type}-${itemId}`);
+  if (!el) return;
+  try {
+    const { data, error } = await _supa.from('comments')
+      .select('*').eq('item_type', type).eq('item_id', itemId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    _cmtCache[key] = data || [];
+    renderComments(itemId, type);
+  } catch (e) {
+    if (el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Gagal memuat diskusi.</div>';
+  }
+}
+
+function renderComments(itemId, type) {
+  const key = `${type}-${itemId}`;
+  const comments = _cmtCache[key] || [];
+  const el = document.getElementById(`cmt-${type}-${itemId}`);
+  if (!el) return;
+  const tops = comments.filter(c => !c.parent_id);
+  const getReplies = pid => comments.filter(c => c.parent_id === pid);
+  if (!tops.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;font-style:italic">Belum ada diskusi. Tulis komentar pertama di bawah.</div>';
+    return;
+  }
+  el.innerHTML = tops.map(c => renderOneCmt(c, getReplies(c.id), itemId, type)).join('');
+}
+
+function renderOneCmt(c, replies, itemId, type, isReply) {
+  const initials = (c.author || '?').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+  const dt = new Date(c.created_at);
+  const timeStr = dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const isOwn = c.author === _authorName;
+  const colors = ['#2563eb','#16a34a','#9333ea','#dc2626','#d97706','#0891b2'];
+  const avatarBg = colors[(c.author || '').charCodeAt(0) % colors.length];
+
+  let attachHtml = '';
+  if (c.attachment_url) {
+    if (c.attachment_type === 'image') {
+      attachHtml = `<a href="${c.attachment_url}" target="_blank"><img src="${c.attachment_url}" class="cmt-attach-img" loading="lazy"></a>`;
+    } else {
+      attachHtml = `<a href="${c.attachment_url}" target="_blank" class="cmt-attach-file"><i class="ti ti-file-download" style="color:var(--blue)"></i> ${esc(c.attachment_name || 'Unduh File')}</a>`;
+    }
+  }
+
+  const repliesHtml = replies && replies.length
+    ? `<div class="cmt-replies">${replies.map(r => renderOneCmt(r, [], itemId, type, true)).join('')}</div>` : '';
+
+  return `<div class="cmt-item" id="cmt-${c.id}">
+    <div class="cmt-avatar" style="background:${avatarBg}">${initials}</div>
+    <div class="cmt-bubble">
+      <div class="cmt-header">
+        <span class="cmt-author">${esc(c.author)}</span>
+        <span class="cmt-time">${timeStr}</span>
+        <div style="flex:1"></div>
+        ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-corner-down-right"></i> Balas</button>` : ''}
+        ${isOwn ? `<button class="btn btn-sm btn-icon btn-del" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus"><i class="ti ti-trash"></i></button>` : ''}
+      </div>
+      ${c.content ? `<div class="cmt-text">${esc(c.content)}</div>` : ''}
+      ${attachHtml}
+      ${repliesHtml}
+      <div id="reply-form-${c.id}"></div>
+    </div>
+  </div>`;
+}
+
+// =====================================================================
+// REPLY
+// =====================================================================
+function showReplyForm(parentId, itemId, type, parentAuthor) {
+  document.querySelectorAll('[id^="reply-form-"]').forEach(el => { el.innerHTML = ''; });
+  const el = document.getElementById(`reply-form-${parentId}`);
+  if (!el) return;
+  el.innerHTML = `<div class="cmt-reply-form">
+    <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:6px">
+      <i class="ti ti-corner-down-right"></i> Balas ke <strong>${esc(parentAuthor)}</strong>
+    </div>
+    <textarea id="reply-txt-${parentId}" rows="2" placeholder="Tulis balasan..."
+      style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;background:var(--bg-card)"></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="cancelReply(${parentId})">Batal</button>
+      <button class="btn btn-sm btn-primary" onclick="submitReply(${parentId},${itemId},'${type}')">
+        <i class="ti ti-send"></i> Kirim
+      </button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById(`reply-txt-${parentId}`)?.focus(), 50);
+}
+
+function cancelReply(parentId) {
+  const el = document.getElementById(`reply-form-${parentId}`);
+  if (el) el.innerHTML = '';
+}
+
+async function submitReply(parentId, itemId, type) {
+  if (!_authorName) { promptAuthor(() => submitReply(parentId, itemId, type)); return; }
+  const inp = document.getElementById(`reply-txt-${parentId}`);
+  const content = inp?.value.trim();
+  if (!content) { inp?.focus(); return; }
+  try {
+    const { error } = await _supa.from('comments').insert({
+      item_type: type, item_id: itemId, parent_id: parentId,
+      author: _authorName, content,
+      created_at: new Date().toISOString()
+    });
+    if (error) throw error;
+    cancelReply(parentId);
+    await loadComments(itemId, type);
+    toast('Balasan terkirim');
+  } catch (e) { toast('Gagal kirim balasan: ' + e.message); }
+}
+
+async function deleteCmt(cmtId, itemId, type) {
+  if (!confirm('Hapus komentar ini?')) return;
+  try {
+    const { error } = await _supa.from('comments').delete().eq('id', cmtId);
+    if (error) throw error;
+    await loadComments(itemId, type);
+    toast('Komentar dihapus');
+  } catch (e) { toast('Gagal hapus: ' + e.message); }
+}
+
+// =====================================================================
+// FILE UPLOAD
+// =====================================================================
+let _pendingFile = null, _pendingFileName = null, _pendingFileType = null;
+
+function handleFileSelect(input, type, itemId) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { toast('File terlalu besar (maks 10MB)'); input.value = ''; return; }
+  _pendingFile = file;
+  _pendingFileName = file.name;
+  _pendingFileType = file.type.startsWith('image/') ? 'image' : 'file';
+  const preview = document.getElementById(`file-preview-${type}-${itemId}`);
+  if (!preview) return;
+  if (_pendingFileType === 'image') {
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<div class="cmt-file-chip"><img src="${url}"><span>${esc(file.name)}</span>
+      <button class="btn btn-sm btn-icon btn-del" onclick="clearPendingFile('${type}',${itemId})"><i class="ti ti-x"></i></button></div>`;
+  } else {
+    preview.innerHTML = `<div class="cmt-file-chip"><i class="ti ti-file" style="color:var(--blue);font-size:16px"></i><span>${esc(file.name)}</span>
+      <button class="btn btn-sm btn-icon btn-del" onclick="clearPendingFile('${type}',${itemId})"><i class="ti ti-x"></i></button></div>`;
+  }
+}
+
+function clearPendingFile(type, itemId) {
+  _pendingFile = null; _pendingFileName = null; _pendingFileType = null;
+  const p = document.getElementById(`file-preview-${type}-${itemId}`);
+  if (p) p.innerHTML = '';
+  const i = document.getElementById(`file-inp-${type}-${itemId}`);
+  if (i) i.value = '';
+}
+
+// =====================================================================
+// ADD COMMENT (top-level)
+// =====================================================================
+async function addComment(itemId, type) {
+  if (!_authorName) { promptAuthor(() => addComment(itemId, type)); return; }
+  const inp = document.getElementById(`cmt-inp-${type}-${itemId}`);
+  const content = inp?.value.trim();
+  if (!content && !_pendingFile) { toast('Tulis komentar atau pilih file dulu'); inp?.focus(); return; }
+
+  const btn = document.getElementById(`cmt-send-${type}-${itemId}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Mengirim...'; }
+
+  try {
+    let attachUrl = null, attachName = null, attachType = null;
+    if (_pendingFile) {
+      const ext = _pendingFileName.split('.').pop().toLowerCase();
+      const path = `${type}/${itemId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await _supa.storage.from('cfm-attachments').upload(path, _pendingFile, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: urlData } = _supa.storage.from('cfm-attachments').getPublicUrl(path);
+      attachUrl = urlData.publicUrl;
+      attachName = _pendingFileName;
+      attachType = _pendingFileType;
+    }
+
+    const { error } = await _supa.from('comments').insert({
+      item_type: type, item_id: itemId, parent_id: null,
+      author: _authorName, content: content || '',
+      attachment_url: attachUrl, attachment_name: attachName, attachment_type: attachType,
+      created_at: new Date().toISOString()
+    });
+    if (error) throw error;
+
+    if (inp) inp.value = '';
+    clearPendingFile(type, itemId);
+    await loadComments(itemId, type);
+
+    const itemName = type === 'cfm'
+      ? (cfm.find(x => x.id === itemId)?.equipment || '')
+      : (ta.find(x => x.id === itemId)?.tagNumber || '');
+    const detail = `${_authorName}: ${(content || '').substring(0, 60)}${attachName ? ' [📎 ' + attachName + ']' : ''}`;
+    addLog(type.toUpperCase(), 'Diskusi', itemName, detail);
+    toast('Komentar terkirim');
+  } catch (e) {
+    toast('Gagal: ' + (e.message || 'Cek koneksi'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Kirim'; }
+  }
 }
 
 </script>
