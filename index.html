@@ -206,9 +206,12 @@ tr:hover td{background:#fafbfc}
 .ci i{font-size:20px;color:var(--red)}
 
 /* TOAST */
-#toast{position:fixed;bottom:22px;right:22px;z-index:999;background:#1a1a1a;color:#fff;padding:11px 15px;border-radius:var(--r);font-size:13px;display:flex;align-items:center;gap:7px;transform:translateY(70px);opacity:0;transition:all .25s;pointer-events:none}
-#toast.show{transform:translateY(0);opacity:1}
-#toast i{color:#4ade80}
+#toast{position:fixed;top:50%;left:50%;z-index:9999;background:#1e293b;color:#fff;padding:13px 22px;border-radius:14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;transform:translate(-50%,-50%) scale(.85);opacity:0;transition:all .22s cubic-bezier(.34,1.56,.64,1);pointer-events:none;box-shadow:0 8px 40px rgba(0,0,0,.35);white-space:nowrap}
+#toast.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+#toast i{color:#4ade80;font-size:18px}
+/* Sync detail modal */
+#sync-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#sync-modal .sm-box{background:var(--bg-card);border-radius:16px;padding:28px;width:440px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:slideup .25s ease}
 
 /* TA PROGRESS */
 .ta-pb{display:flex;align-items:center;gap:7px}
@@ -293,22 +296,49 @@ tr:hover td{background:#fafbfc}
   <button onclick="retryOnline()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer">Sync Sekarang</button>
 </div>
 <!-- SYNC BADGE -->
-<div id="sync-badge" style="display:none;position:fixed;bottom:18px;right:18px;z-index:8888;background:#f59e0b;color:#fff;padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer" onclick="_flushDirty()" title="Klik untuk sync sekarang">
-  <i class="ti ti-cloud-upload" style="font-size:14px"></i> Ada perubahan belum tersync — klik untuk sync
+<div id="sync-badge" onclick="_flushDirty()" title="Klik untuk sync sekarang"
+  style="display:none;position:fixed;bottom:22px;right:22px;z-index:8888;cursor:pointer">
+  <div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:10px 16px;border-radius:24px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(245,158,11,.45);animation:pulse-badge 2s infinite">
+    <i class="ti ti-cloud-upload" style="font-size:16px"></i>
+    <span>Perubahan offline belum tersync — klik untuk sync</span>
+  </div>
 </div>
 
 <!-- AUTHOR NAME MODAL -->
 <div id="author-modal">
   <div class="am-box">
-    <div style="font-size:15px;font-weight:700;margin-bottom:6px"><i class="ti ti-user-circle" style="color:var(--blue)"></i> Siapa nama Anda?</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Nama ini akan ditampilkan di komentar diskusi.</div>
-    <input id="author-inp" type="text" placeholder="Nama lengkap Anda..." maxlength="40"
-      style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;box-sizing:border-box;font-family:inherit;background:var(--bg-card);margin-bottom:12px"
-      onkeydown="if(event.key==='Enter')saveAuthorName()">
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="closeAuthorModal()">Batal</button>
-      <button class="btn btn-primary" onclick="saveAuthorName()"><i class="ti ti-check"></i> Simpan</button>
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#4f46e5);display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:#fff;margin-bottom:14px;box-shadow:0 4px 16px rgba(37,99,235,.35)">
+        <i class="ti ti-user-circle"></i>
+      </div>
+      <div id="am-title" style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px">Siapa nama Anda?</div>
+      <div id="am-sub" style="font-size:12px;color:var(--muted);line-height:1.5">Nama Anda akan tampil di komentar diskusi dan log aktivitas.<br>Hanya perlu diisi sekali di perangkat ini.</div>
     </div>
+    <!-- Nama tersimpan (mode ganti) -->
+    <div id="am-current" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;display:none;align-items:center;gap:8px">
+      <span id="am-avatar" style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0"></span>
+      <span>Nama aktif: <strong id="am-current-name"></strong></span>
+    </div>
+    <!-- Input -->
+    <input id="author-inp" type="text" placeholder="Tulis nama lengkap Anda..." maxlength="40"
+      style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:var(--r);font-size:14px;box-sizing:border-box;font-family:inherit;background:var(--bg-card);margin-bottom:6px;transition:.2s;outline:none"
+      onfocus="this.style.borderColor='#2563eb'"
+      onblur="this.style.borderColor='var(--border)'"
+      onkeydown="if(event.key==='Enter')saveAuthorName()">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px;padding-left:2px">Contoh: Budi Santoso, Ani Rahayu, Tim Utilities</div>
+    <!-- Quick picks -->
+    <div id="am-quick" style="display:none;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Nama yang pernah digunakan:</div>
+      <div id="am-quick-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <!-- Buttons -->
+    <button class="btn btn-primary" onclick="saveAuthorName()" style="width:100%;padding:11px;font-size:14px;font-weight:700;margin-bottom:8px;border-radius:var(--r)">
+      <i class="ti ti-check"></i> Simpan & Mulai
+    </button>
+    <button id="am-skip-btn" class="btn" onclick="closeAuthorModal()" style="width:100%;font-size:12px;color:var(--muted)">
+      Lewati untuk sekarang
+    </button>
   </div>
 </div>
 
@@ -624,6 +654,23 @@ tr:hover td{background:#fafbfc}
     style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0">&#215;</button>
 </div>
 <div id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg"></span></div>
+
+<!-- SYNC DETAIL MODAL -->
+<div id="sync-modal">
+  <div class="sm-box">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div id="sync-modal-icon" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0"></div>
+      <div>
+        <div id="sync-modal-title" style="font-size:16px;font-weight:800;color:var(--text)"></div>
+        <div id="sync-modal-sub" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+      </div>
+    </div>
+    <div id="sync-modal-body" style="margin-bottom:20px;max-height:320px;overflow-y:auto"></div>
+    <button onclick="document.getElementById('sync-modal').style.display='none'" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;font-weight:700;border-radius:var(--r)">
+      <i class="ti ti-check"></i> Tutup
+    </button>
+  </div>
+</div>
 
 <div class="footer">CFM Utilities Tracker &nbsp;|&nbsp; Bagian Utilities &nbsp;|&nbsp; Data tersimpan di browser (localStorage)</div>
 
@@ -2401,8 +2448,11 @@ function exportPDF(){
 .cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
 .cmt-file-chip img{width:36px;height:36px;object-fit:cover;border-radius:4px}
 /* ---- AUTHOR MODAL ---- */
-#author-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4000;align-items:center;justify-content:center}
-#author-modal .am-box{background:var(--bg-card);border-radius:var(--rl);padding:24px;width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#author-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadein .2s ease}
+#author-modal .am-box{background:var(--bg-card);border-radius:16px;padding:28px 28px 22px;width:380px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:slideup .25s ease}
+@keyframes slideup{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse-badge{0%,100%{box-shadow:0 4px 16px rgba(245,158,11,.45)}50%{box-shadow:0 4px 24px rgba(245,158,11,.75),0 0 0 6px rgba(245,158,11,.12)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style></head><body>
   <h1>Laporan CFM Utilities — Bagian Pertamina Utilities</h1>
   <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total Outstanding: ${act.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
@@ -2537,44 +2587,133 @@ function _mergeItems(server, local){
 
 async function _flushDirty(){
   const q=JSON.parse(localStorage.getItem('sync-dirty')||'{}');
-  let synced=0, conflicts=0;
+  if(!q.cfm && !q.ta) return;
+
+  // Tampilkan modal "sedang menyinkronkan"
+  _showSyncModal('loading','Menyinkronkan Data...','Mengambil data terbaru dari server...',[]);
+
+  const syncLog=[]; // {label, items:[{name,status}]}
+  let totalSynced=0, totalConflict=0, hasError=false;
+
   if(q.cfm){
     try{
-      // 1. Ambil data server terbaru dulu
       const {data:row}=await _supa.from('cfm_items').select('data').eq('id',1).single();
       const serverData=row?.data||[];
       const localData=JSON.parse(localStorage.getItem('cfm-v6')||'[]');
-      // 2. Merge per-item — tidak ada yang tertimpa sembarangan
       const merged=_mergeItems(serverData,localData);
-      // Hitung berapa item "dimenangkan" server (konflik)
-      merged.forEach(m=>{const l=localData.find(x=>x.id===m.id);if(l&&m!==l)conflicts++;});
-      // 3. Simpan merged ke server dan memory
+      // Catat detail per item yang berubah
+      const items=[];
+      localData.forEach(l=>{
+        const s=serverData.find(x=>x.id===l.id);
+        if(!s){items.push({name:l.equipment||l.id,status:'baru'});}
+        else{
+          const lt=l._updatedAt?new Date(l._updatedAt).getTime():0;
+          const st=s._updatedAt?new Date(s._updatedAt).getTime():0;
+          if(lt>st) items.push({name:l.equipment||l.id,status:'diperbarui'});
+          else if(st>lt){items.push({name:l.equipment||l.id,status:'konflik'});totalConflict++;}
+        }
+      });
       cfm=merged;
       localStorage.setItem('cfm-v6',JSON.stringify(cfm));
       await _supa.from('cfm_items').upsert({id:1,data:cfm,updated_at:new Date().toISOString()});
-      _clearDirty('cfm');synced++;
-    }catch(e){console.error('flush cfm:',e);}
+      _clearDirty('cfm');
+      totalSynced++;
+      syncLog.push({label:'Outstanding CFM',count:items.length,items});
+    }catch(e){console.error('flush cfm:',e);hasError=true;syncLog.push({label:'Outstanding CFM',error:e.message});}
   }
+
   if(q.ta){
     try{
       const {data:row}=await _supa.from('ta_items').select('data').eq('id',1).single();
       const serverData=row?.data||[];
       const localData=JSON.parse(localStorage.getItem('ta-v2')||'[]');
       const merged=_mergeItems(serverData,localData);
+      const items=[];
+      localData.forEach(l=>{
+        const s=serverData.find(x=>x.id===l.id);
+        if(!s){items.push({name:l.tagNumber||l.id,status:'baru'});}
+        else{
+          const lt=l._updatedAt?new Date(l._updatedAt).getTime():0;
+          const st=s._updatedAt?new Date(s._updatedAt).getTime():0;
+          if(lt>st) items.push({name:l.tagNumber||l.id,status:'diperbarui'});
+          else if(st>lt){items.push({name:l.tagNumber||l.id,status:'konflik'});totalConflict++;}
+        }
+      });
       ta=merged;
       localStorage.setItem('ta-v2',JSON.stringify(ta));
       await _supa.from('ta_items').upsert({id:1,data:ta,updated_at:new Date().toISOString()});
-      _clearDirty('ta');synced++;
-    }catch(e){console.error('flush ta:',e);}
+      _clearDirty('ta');
+      totalSynced++;
+      syncLog.push({label:'Job List TA',count:items.length,items});
+    }catch(e){console.error('flush ta:',e);hasError=true;syncLog.push({label:'Job List TA',error:e.message});}
   }
-  if(synced>0){
-    _showSyncBadge();
-    _reRender();
-    const msg=conflicts>0
-      ?`✓ Sync selesai — ${conflicts} item diperbarui dari server (lebih baru)`
-      :'✓ Semua perubahan offline berhasil disinkronkan';
-    toast(msg);
+
+  _showSyncBadge();
+  if(totalSynced>0) _reRender();
+
+  // Tampilkan hasil di modal
+  const status = hasError ? 'error' : totalConflict > 0 ? 'conflict' : 'success';
+  _showSyncModal(status,
+    hasError ? 'Sync Sebagian Gagal' : totalConflict > 0 ? 'Sync Selesai (ada konflik)' : 'Sync Berhasil',
+    hasError ? 'Beberapa data gagal tersinkronkan. Cek koneksi internet Anda.'
+             : totalConflict > 0 ? `${totalConflict} item diperbarui oleh server karena data server lebih baru.`
+             : 'Semua perubahan offline berhasil dikirim ke server.',
+    syncLog
+  );
+}
+
+function _showSyncModal(status, title, subtitle, logs){
+  const modal=document.getElementById('sync-modal');
+  const iconEl=document.getElementById('sync-modal-icon');
+  const titleEl=document.getElementById('sync-modal-title');
+  const subEl=document.getElementById('sync-modal-sub');
+  const bodyEl=document.getElementById('sync-modal-body');
+  if(!modal) return;
+
+  const cfg={
+    loading:{bg:'#dbeafe',color:'#2563eb',icon:'ti-loader-2',spin:true},
+    success:{bg:'#dcfce7',color:'#16a34a',icon:'ti-circle-check'},
+    conflict:{bg:'#fef3c7',color:'#d97706',icon:'ti-alert-triangle'},
+    error:{bg:'#fee2e2',color:'#dc2626',icon:'ti-circle-x'},
+  }[status]||cfg.success;
+
+  iconEl.style.background=cfg.bg;
+  iconEl.style.color=cfg.color;
+  iconEl.innerHTML=`<i class="ti ${cfg.icon}"${cfg.spin?' style="animation:spin 1s linear infinite"':''}></i>`;
+  titleEl.textContent=title;
+  subEl.textContent=subtitle;
+
+  const statusCfg={
+    baru:{bg:'#dcfce7',color:'#15803d',label:'Baru'},
+    diperbarui:{bg:'#dbeafe',color:'#1d4ed8',label:'Diperbarui'},
+    konflik:{bg:'#fef3c7',color:'#b45309',label:'Dari server'},
+  };
+
+  if(status==='loading'){
+    bodyEl.innerHTML=`<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px"><i class="ti ti-loader-2" style="font-size:28px;animation:spin 1s linear infinite;display:block;margin-bottom:10px"></i>Harap tunggu...</div>`;
+  } else if(logs.length===0){
+    bodyEl.innerHTML=`<div style="text-align:center;padding:10px 0;color:var(--muted);font-size:13px">Tidak ada perubahan yang perlu disinkronkan.</div>`;
+  } else {
+    bodyEl.innerHTML=logs.map(g=>{
+      if(g.error) return `<div style="background:#fee2e2;border-radius:10px;padding:12px 14px;margin-bottom:10px"><div style="font-weight:700;font-size:12px;color:#dc2626;margin-bottom:4px"><i class="ti ti-circle-x"></i> ${esc(g.label)}</div><div style="font-size:11px;color:#b91c1c">${esc(g.error)}</div></div>`;
+      const rows=g.items.length===0
+        ? `<div style="font-size:12px;color:var(--muted);padding:4px 0">Tidak ada perubahan item.</div>`
+        : g.items.map(it=>{
+            const sc=statusCfg[it.status]||{bg:'#f1f5f9',color:'#64748b',label:it.status};
+            return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+              <i class="ti ti-file-description" style="color:var(--muted);font-size:14px;flex-shrink:0"></i>
+              <span style="flex:1;font-size:12px;font-weight:600;color:var(--text)">${esc(it.name)}</span>
+              <span style="background:${sc.bg};color:${sc.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${sc.label}</span>
+            </div>`;
+          }).join('');
+      return `<div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-database"></i> ${esc(g.label)} <span style="font-weight:400">(${g.items.length} item)</span></div>
+        ${rows}
+      </div>`;
+    }).join('');
   }
+
+  modal.style.display='flex';
 }
 
 // ── Offline/Online detection ──────────────────────────────────────
@@ -2616,19 +2755,61 @@ let _authorCb = null;
 
 function promptAuthor(cb) {
   _authorCb = cb || null;
+  const isChange = !!_authorName;
+  // Update judul modal sesuai konteks
+  const title = document.getElementById('am-title');
+  const sub = document.getElementById('am-sub');
+  const skipBtn = document.getElementById('am-skip-btn');
+  if(title) title.textContent = isChange ? 'Ganti Nama Anda' : 'Siapa nama Anda?';
+  if(sub) sub.innerHTML = isChange
+    ? 'Masukkan nama baru yang ingin Anda gunakan.'
+    : 'Nama Anda akan tampil di komentar diskusi dan log aktivitas.<br>Hanya perlu diisi sekali di perangkat ini.';
+  if(skipBtn) skipBtn.style.display = isChange ? 'block' : 'block';
+  // Tampilkan nama aktif jika mode ganti
+  const curBox = document.getElementById('am-current');
+  const curName = document.getElementById('am-current-name');
+  const curAv = document.getElementById('am-avatar');
+  if(curBox && isChange){
+    curBox.style.display='flex';
+    if(curName) curName.textContent = _authorName;
+    if(curAv) curAv.textContent = _authorName.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);
+  } else if(curBox){
+    curBox.style.display='none';
+  }
+  // Quick picks dari riwayat nama
+  const history = JSON.parse(localStorage.getItem('cfm-author-history')||'[]');
+  const quickBox = document.getElementById('am-quick');
+  const quickList = document.getElementById('am-quick-list');
+  if(quickBox && quickList && history.length > 0){
+    quickBox.style.display='block';
+    quickList.innerHTML = history.map(n=>
+      `<button onclick="pickAuthorName(${JSON.stringify(n)})" style="background:#f1f5f9;border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);transition:.15s" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#f1f5f9'">${esc(n)}</button>`
+    ).join('');
+  } else if(quickBox){
+    quickBox.style.display='none';
+  }
   const inp = document.getElementById('author-inp');
-  if (inp) inp.value = _authorName || '';
+  if(inp) inp.value = '';
   document.getElementById('author-modal').style.display = 'flex';
-  setTimeout(() => inp && inp.focus(), 100);
+  setTimeout(() => inp && inp.focus(), 150);
+}
+function pickAuthorName(name){
+  const inp = document.getElementById('author-inp');
+  if(inp){ inp.value = name; inp.focus(); }
 }
 function saveAuthorName() {
   const inp = document.getElementById('author-inp');
   const name = inp ? inp.value.trim() : '';
-  if (!name) { inp && inp.focus(); return; }
+  if(!name){ if(inp){inp.style.borderColor='#dc2626';setTimeout(()=>inp.style.borderColor='var(--border)',1200);inp.focus();} return; }
   _authorName = name;
   localStorage.setItem('cfm-author', _authorName);
+  // Simpan ke riwayat (max 5 nama unik)
+  let history = JSON.parse(localStorage.getItem('cfm-author-history')||'[]');
+  history = [name, ...history.filter(n=>n!==name)].slice(0,5);
+  localStorage.setItem('cfm-author-history', JSON.stringify(history));
   closeAuthorModal();
-  if (_authorCb) { const cb = _authorCb; _authorCb = null; cb(); }
+  toast('Nama tersimpan: '+name);
+  if(_authorCb){ const cb=_authorCb; _authorCb=null; cb(); }
 }
 function closeAuthorModal() {
   document.getElementById('author-modal').style.display = 'none';
@@ -2639,29 +2820,49 @@ function closeAuthorModal() {
 // COMMENT SECTION HTML BUILDER
 // =====================================================================
 function cmtSection(itemId, type) {
-  const authorLabel = _authorName
-    ? `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${esc(_authorName.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2))}</span><strong>${esc(_authorName)}</strong><span style="color:var(--blue);cursor:pointer;font-size:10px" onclick="promptAuthor()">(ganti)</span></span>`
-    : `<span style="font-size:11px;color:var(--blue);cursor:pointer;font-weight:600" onclick="promptAuthor()"><i class="ti ti-user-plus"></i> Set nama Anda</span>`;
+  const initials = _authorName ? _authorName.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2) : '?';
+  const avatarBg = _authorName ? 'var(--blue)' : '#94a3b8';
+  const authorRow = _authorName
+    ? `<div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${esc(initials)}</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${esc(_authorName)}</div>
+          <button onclick="promptAuthor()" style="background:none;border:none;padding:0;font-size:11px;color:var(--blue);cursor:pointer;font-family:inherit"><i class="ti ti-pencil" style="font-size:10px"></i> Gunakan nama lain</button>
+        </div>
+      </div>`
+    : `<div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"><i class="ti ti-user"></i></div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">Nama Anda belum diset</div>
+          <button onclick="promptAuthor()" style="background:var(--blue);color:#fff;border:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user-plus"></i> Set Nama Anda</button>
+        </div>
+      </div>`;
   return `<div class="dcard">
-    <div class="dcard-title" style="justify-content:space-between">
-      <span><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</span>
-      ${authorLabel}
-    </div>
-    <div id="cmt-${type}-${itemId}" style="min-height:40px"><div style="color:var(--muted);font-size:12px;font-style:italic">Memuat diskusi...</div></div>
-    <div class="cmt-compose">
-      <div class="cmt-compose-label"><i class="ti ti-pencil" style="font-size:12px"></i> Tulis komentar</div>
-      <div id="file-preview-${type}-${itemId}" class="cmt-file-preview"></div>
-      <textarea id="cmt-inp-${type}-${itemId}" placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."></textarea>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-        <label class="btn btn-sm" style="cursor:pointer;gap:5px;background:var(--bg-card)" title="Lampirkan foto / file (maks 10MB)">
-          <i class="ti ti-paperclip"></i> Lampiran
+    <div class="dcard-title"><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</div>
+    <div id="cmt-${type}-${itemId}" style="min-height:40px;margin-bottom:16px"><div style="color:var(--muted);font-size:12px;font-style:italic">Memuat diskusi...</div></div>
+    <!-- Compose Box -->
+    <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-card);transition:.2s" onfocusin="this.style.borderColor='#2563eb'" onfocusout="this.style.borderColor='var(--border)'">
+      <!-- Author row -->
+      <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border);background:var(--bg)">${authorRow}</div>
+      <!-- File preview -->
+      <div id="file-preview-${type}-${itemId}" class="cmt-file-preview" style="padding:0 14px"></div>
+      <!-- Textarea -->
+      <textarea id="cmt-inp-${type}-${itemId}"
+        placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
+        style="width:100%;min-height:80px;padding:12px 14px;border:none;outline:none;font-family:inherit;font-size:13px;line-height:1.6;resize:vertical;background:var(--bg-card);color:var(--text);box-sizing:border-box"
+        onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
+      <!-- Action row -->
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
+        <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted);padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);transition:.15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='var(--bg-card)'" title="Lampirkan foto / file (maks 10MB)">
+          <i class="ti ti-paperclip" style="font-size:14px"></i> Lampiran
           <input type="file" id="file-inp-${type}-${itemId}" style="display:none"
             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
             onchange="handleFileSelect(this,'${type}',${itemId})">
         </label>
         <span style="font-size:10px;color:var(--muted)">Maks 10MB</span>
         <div style="flex:1"></div>
-        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="padding:7px 16px"
+        <span style="font-size:10px;color:var(--muted)"><kbd style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:3px;padding:1px 5px;font-size:10px">Ctrl+Enter</kbd> untuk kirim</span>
+        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="padding:7px 18px;font-weight:700"
           onclick="addComment(${itemId},'${type}')"><i class="ti ti-send"></i> Kirim</button>
       </div>
     </div>
