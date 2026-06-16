@@ -869,7 +869,7 @@ function renderLog(){
       <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${r.type==='CFM'?'#dbeafe':'#dcfce7'};color:${r.type==='CFM'?'#1e40af':'#166534'}">${r.type||''}</span></td>
       <td><span style="font-size:11px;font-weight:700;color:${col}">${r.action||''}</span></td>
       <td style="font-size:12px;font-weight:600">${esc(r.item_name||'')}</td>
-      <td style="font-size:11px;color:var(--muted);line-height:1.7">${(r.detail||'').split(' | ').map(s=>`<span style="display:block">${esc(s)}</span>`).join('')}</td>
+      <td style="font-size:11px;line-height:1.8">${(r.detail||'').split('\n').map(s=>{const ind=s.startsWith('  ');return`<span style="display:block;${ind?'padding-left:10px;color:var(--muted)':'font-weight:600;color:var(--text)'}">${esc(s.trim())}</span>`}).join('')}</td>
     </tr>`;
   }).join('');
 }
@@ -1403,7 +1403,7 @@ function saveCfm(){
   const ns=document.getElementById('cf-status').value;
   const docs=tmpDocs.filter(x=>x.type);const nt=(docs[0]||{type:'Notifikasi'}).type,nd=(docs[0]||{docno:''}).docno||'';
   const item={id:editCfmId||nCfmId(),equipment:eq,area:ar,masalah:ma,tanggal:document.getElementById('cf-tgl').value,pic:tmpPics.join(', '),targets:JSON.parse(JSON.stringify(tmpTgts)),status:ns,type:nt,docno:nd,docs:docs,ket:ketsToStr(tmpKets),timeline:[]};
-  const _cfmSnap=editCfmId?{...cfm.find(x=>x.id===editCfmId)}:null;
+  const _cfmSnap=editCfmId?JSON.parse(JSON.stringify(cfm.find(x=>x.id===editCfmId)||{})):null;
   if(editCfmId){
     const old=cfm.find(x=>x.id===editCfmId);
     item.timeline=old.timeline?[...old.timeline]:[];
@@ -1418,21 +1418,26 @@ function saveCfm(){
   const _cA=editCfmId?'Edit':'Tambah',_cN=item.equipment;
   let _cDetail='';
   if(_cA==='Tambah'){
-    const _tgtLbl=item.targets&&item.targets.length?(item.targets[item.targets.length-1].date?fd(item.targets[item.targets.length-1].date):(item.targets[item.targets.length-1].label||'Belum ditentukan')):'Belum ditentukan';
-    _cDetail=`Area: ${item.area} | Masalah: ${item.masalah} | PIC: ${item.pic||'-'} | Status: ${item.status} | Target: ${_tgtLbl}`;
+    const _tDates=(item.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'Belum ditentukan';
+    _cDetail=['Area: '+item.area,'Masalah: '+item.masalah,'PIC: '+(item.pic||'-'),'Status: '+item.status,'Target: '+_tDates].join('\n');
   }else{
     const _cOld=_cfmSnap||{};
     const _chg=[];
-    if(_cOld.equipment!==item.equipment)_chg.push(`Equipment: "${_cOld.equipment}" → "${item.equipment}"`);
-    if(_cOld.area!==item.area)_chg.push(`Area: "${_cOld.area}" → "${item.area}"`);
-    if(_cOld.masalah!==item.masalah)_chg.push(`Masalah: "${_cOld.masalah}" → "${item.masalah}"`);
-    if(_cOld.pic!==item.pic)_chg.push(`PIC: "${_cOld.pic||'-'}" → "${item.pic||'-'}"`);
-    if(_cOld.status!==item.status)_chg.push(`Status: "${_cOld.status}" → "${item.status}"`);
-    const _cOldTgt=_cOld.targets&&_cOld.targets.length?(_cOld.targets[_cOld.targets.length-1].date?fd(_cOld.targets[_cOld.targets.length-1].date):(_cOld.targets[_cOld.targets.length-1].label||'-')):'-';
-    const _cNewTgt=item.targets&&item.targets.length?(item.targets[item.targets.length-1].date?fd(item.targets[item.targets.length-1].date):(item.targets[item.targets.length-1].label||'-')):'-';
-    if(_cOldTgt!==_cNewTgt)_chg.push(`Target: "${_cOldTgt}" → "${_cNewTgt}"`);
-    if(_cOld.ket!==item.ket)_chg.push('Keterangan diperbarui');
-    _cDetail=_chg.length?_chg.join(' | '):'Tidak ada perubahan terdeteksi';
+    const _cfDiff=(lbl,a,b)=>{if((a||'')!==(b||''))_chg.push(lbl+'\n  Sebelum: '+(a||'-')+'\n  Sesudah: '+(b||'-'));};
+    _cfDiff('Equipment',_cOld.equipment,item.equipment);
+    _cfDiff('Area',_cOld.area,item.area);
+    _cfDiff('Masalah',_cOld.masalah,item.masalah);
+    _cfDiff('PIC',_cOld.pic,item.pic);
+    _cfDiff('Status',_cOld.status,item.status);
+    const _oldDates=((_cOld.targets)||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
+    const _newDates=(item.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
+    if(_oldDates!==_newDates)_chg.push('Target\n  Sebelum: '+_oldDates+'\n  Sesudah: '+_newDates);
+    if((_cOld.ket||'')!==(item.ket||'')){
+      const _ko=(_cOld.ket||'-').substring(0,100)+((_cOld.ket||'').length>100?'...':'');
+      const _kn=(item.ket||'-').substring(0,100)+((item.ket||'').length>100?'...':'');
+      _chg.push('Keterangan\n  Sebelum: '+_ko+'\n  Sesudah: '+_kn);
+    }
+    _cDetail=_chg.length?_chg.join('\n'):'Tidak ada perubahan terdeteksi';
   }
   persistCfm();addLog('CFM',_cA,_cN,_cDetail);
   closeCfmModal();
@@ -1465,7 +1470,7 @@ function saveTa(){
   if(!tg||!dc||!is){alert('Tag Number, Disiplin, dan Issue wajib diisi.');return}
   const ns=document.getElementById('ta-stat').value;
   const item={id:editTaId||nTaId(),tagNumber:tg,disc:dc,issue:is,area:document.getElementById('ta-area').value,priority:document.getElementById('ta-prio').value,tanggal:document.getElementById('ta-tgl').value,status:ns,updateBy:document.getElementById('ta-uby').value.trim(),statusUpdate:document.getElementById('ta-supdate').value.trim(),timeline:[]};
-  const _taSnap=editTaId?{...ta.find(x=>x.id===editTaId)}:null;
+  const _taSnap=editTaId?JSON.parse(JSON.stringify(ta.find(x=>x.id===editTaId)||{})):null;
   if(editTaId){
     const old=ta.find(x=>x.id===editTaId);
     item.timeline=old.timeline?[...old.timeline]:[];
@@ -1480,19 +1485,24 @@ function saveTa(){
   const _tA=editTaId?'Edit':'Tambah',_tN=item.tagNumber;
   let _tDetail='';
   if(_tA==='Tambah'){
-    _tDetail=`Area: ${item.area} | Issue: ${item.issue} | Disiplin: ${item.disc} | Prioritas: ${item.priority} | Status: ${item.status}`;
+    _tDetail=['Area: '+item.area,'Issue: '+item.issue,'Disiplin: '+item.disc,'Prioritas: '+item.priority,'Status: '+item.status].join('\n');
   }else{
     const _tOld=_taSnap||{};
     const _tchg=[];
-    if(_tOld.tagNumber!==item.tagNumber)_tchg.push(`Tag: "${_tOld.tagNumber}" → "${item.tagNumber}"`);
-    if(_tOld.area!==item.area)_tchg.push(`Area: "${_tOld.area}" → "${item.area}"`);
-    if(_tOld.issue!==item.issue)_tchg.push(`Issue: "${_tOld.issue}" → "${item.issue}"`);
-    if(_tOld.disc!==item.disc)_tchg.push(`Disiplin: "${_tOld.disc}" → "${item.disc}"`);
-    if(_tOld.priority!==item.priority)_tchg.push(`Prioritas: "${_tOld.priority}" → "${item.priority}"`);
-    if(_tOld.status!==item.status)_tchg.push(`Status: "${_tOld.status}" → "${item.status}"`);
-    if(_tOld.updateBy!==item.updateBy)_tchg.push(`Update By: "${_tOld.updateBy||'-'}" → "${item.updateBy||'-'}"`);
-    if(_tOld.statusUpdate!==item.statusUpdate)_tchg.push('Status Update diperbarui');
-    _tDetail=_tchg.length?_tchg.join(' | '):'Tidak ada perubahan terdeteksi';
+    const _taDiff=(lbl,a,b)=>{if((a||'')!==(b||''))_tchg.push(lbl+'\n  Sebelum: '+(a||'-')+'\n  Sesudah: '+(b||'-'));};
+    _taDiff('Tag Number',_tOld.tagNumber,item.tagNumber);
+    _taDiff('Area',_tOld.area,item.area);
+    _taDiff('Issue',_tOld.issue,item.issue);
+    _taDiff('Disiplin',_tOld.disc,item.disc);
+    _taDiff('Prioritas',_tOld.priority,item.priority);
+    _taDiff('Status',_tOld.status,item.status);
+    _taDiff('Update By',_tOld.updateBy,item.updateBy);
+    if((_tOld.statusUpdate||'')!==(item.statusUpdate||'')){
+      const _suo=(_tOld.statusUpdate||'-').substring(0,100)+((_tOld.statusUpdate||'').length>100?'...':'');
+      const _sun=(item.statusUpdate||'-').substring(0,100)+((item.statusUpdate||'').length>100?'...':'');
+      _tchg.push('Status Update\n  Sebelum: '+_suo+'\n  Sesudah: '+_sun);
+    }
+    _tDetail=_tchg.length?_tchg.join('\n'):'Tidak ada perubahan terdeteksi';
   }
   persistTa();addLog('TA',_tA,_tN,_tDetail);
   closeTaModal();
