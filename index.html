@@ -4,9 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CFM Utilities – Work Tracker</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CFM Utilities">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -270,6 +278,8 @@ tr:hover td{background:#fafbfc}
   <button class="nav-btn" id="nav-selesai" onclick="goTo('selesai')"><i class="ti ti-circle-check"></i> Pekerjaan Selesai</button>
   <button class="nav-btn" id="nav-ta" onclick="goTo('ta')"><i class="ti ti-building-factory-2"></i> Job List TA</button>
   <button class="nav-btn" id="nav-log" onclick="goTo('log')"><i class="ti ti-history"></i> Log Perubahan</button>
+  <button class="nav-btn" id="nav-export" onclick="openExportModal()"><i class="ti ti-download"></i> Export</button>
+  <div id="rt-indicator" title="Realtime sync" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:0 8px;flex-shrink:0"><span id="rt-dot" style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block"></span><span id="rt-label">Offline</span></div>
   <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
   <div class="nav-sp"></div>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
@@ -329,6 +339,18 @@ tr:hover td{background:#fafbfc}
     <div class="dcard-title"><i class="ti ti-chart-bar"></i> Status Job TA per Area</div>
     <div style="position:relative;height:220px">
       <canvas id="chart-ta-prog"></canvas>
+    </div>
+  </div>
+
+  <!-- TREND CHARTS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px" class="d2col">
+    <div class="dcard" style="margin-bottom:0">
+      <div class="dcard-title"><i class="ti ti-trending-up" style="color:var(--green)"></i> Trend CFM — 6 Bulan Terakhir</div>
+      <div style="position:relative;height:220px"><canvas id="chart-trend"></canvas></div>
+    </div>
+    <div class="dcard" style="margin-bottom:0">
+      <div class="dcard-title"><i class="ti ti-clock-hour-3" style="color:var(--amber)"></i> Aging Analysis (Hari Penyelesaian)</div>
+      <div style="position:relative;height:220px"><canvas id="chart-aging"></canvas></div>
     </div>
   </div>
 </div>
@@ -419,6 +441,18 @@ tr:hover td{background:#fafbfc}
       </button>
     </div>
 
+  </div>
+</div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="exportBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center">
+<div style="background:var(--bg-card);border-radius:var(--rl);padding:24px;width:340px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="font-size:15px;font-weight:700;margin-bottom:16px"><i class="ti ti-download" style="color:var(--blue)"></i> Export Data</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <button class="btn btn-primary" style="justify-content:center" onclick="exportExcel()"><i class="ti ti-table-export"></i> Export Excel (.xlsx)</button>
+    <button class="btn" style="justify-content:center;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0" onclick="exportPDF()"><i class="ti ti-file-type-pdf"></i> Export PDF (Print)</button>
+    <button class="btn" style="justify-content:center;margin-top:4px" onclick="closeExportModal()">Batal</button>
   </div>
 </div>
 </div>
@@ -632,6 +666,8 @@ async function loadFromDB(){
   goTo('dashboard');
   setTimeout(autoSendOverdueEmail,3000);
   const ld=document.getElementById('db-loading');if(ld)ld.style.display='none';
+  setupRealtime();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 
 function weekToFriday(weekNum, month0, year){
@@ -1088,6 +1124,8 @@ function renderDash(){
 }
 
 // ---- OUTSTANDING ----
+  renderTrendCharts();
+
 function renderOut(){
   const act=cfm.filter(d=>d.status!=='Done');
   const open=act.filter(d=>d.status==='Open').length,prog=act.filter(d=>d.status==='In Progress').length,hold=act.filter(d=>d.status==='On Hold').length,ovd=act.filter(isOvd).length;
@@ -1416,26 +1454,43 @@ function saveCfm(){
     toast('Item berhasil ditambahkan');
   }
   const _cA=editCfmId?'Edit':'Tambah',_cN=item.equipment;
+  // helpers untuk log
+  const _docsStr=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
+  const _ketLines=s=>(s||'').split(' | ').filter(x=>x.trim());
+  const _trunc=(s,n)=>s.length>n?s.substring(0,n)+'…':s;
   let _cDetail='';
   if(_cA==='Tambah'){
     const _tDates=(item.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'Belum ditentukan';
-    _cDetail=['Area: '+item.area,'Masalah: '+item.masalah,'PIC: '+(item.pic||'-'),'Status: '+item.status,'Target: '+_tDates].join('\n');
+    const _dStr=_docsStr(item.docs);
+    const _ketArr=_ketLines(item.ket);
+    const _lines=['Area: '+item.area,'Masalah: '+item.masalah,'PIC: '+(item.pic||'-'),'Status: '+item.status,'Target: '+_tDates];
+    if(_dStr!=='-')_lines.push('Dokumen: '+_dStr);
+    if(_ketArr.length)_ketArr.forEach((k,i)=>_lines.push((i===0?'Keterangan: ':' '.repeat(11))+_trunc(k,80)));
+    _cDetail=_lines.join('\n');
   }else{
     const _cOld=_cfmSnap||{};
     const _chg=[];
-    const _cfDiff=(lbl,a,b)=>{if((a||'')!==(b||''))_chg.push(lbl+'\n  Sebelum: '+(a||'-')+'\n  Sesudah: '+(b||'-'));};
-    _cfDiff('Equipment',_cOld.equipment,item.equipment);
-    _cfDiff('Area',_cOld.area,item.area);
-    _cfDiff('Masalah',_cOld.masalah,item.masalah);
-    _cfDiff('PIC',_cOld.pic,item.pic);
-    _cfDiff('Status',_cOld.status,item.status);
+    const _diff=(lbl,a,b)=>{if((a||'')!==(b||''))_chg.push(lbl+'\n  Sebelum: '+_trunc(a||'-',80)+'\n  Sesudah: '+_trunc(b||'-',80));};
+    _diff('Equipment',_cOld.equipment,item.equipment);
+    _diff('Area',_cOld.area,item.area);
+    _diff('Masalah',_cOld.masalah,item.masalah);
+    _diff('PIC',_cOld.pic,item.pic);
+    _diff('Status',_cOld.status,item.status);
+    if(_cOld.tanggal!==item.tanggal)_chg.push('Tanggal CFM\n  Sebelum: '+(fd(_cOld.tanggal)||'-')+'\n  Sesudah: '+(fd(item.tanggal)||'-'));
     const _oldDates=((_cOld.targets)||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
     const _newDates=(item.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
     if(_oldDates!==_newDates)_chg.push('Target\n  Sebelum: '+_oldDates+'\n  Sesudah: '+_newDates);
+    const _oldDoc=_docsStr(_cOld.docs||((_cOld.type)?[{type:_cOld.type,docno:_cOld.docno||''}]:[]));
+    const _newDoc=_docsStr(item.docs);
+    if(_oldDoc!==_newDoc)_chg.push('Dokumen\n  Sebelum: '+_oldDoc+'\n  Sesudah: '+_newDoc);
+    const _oldKets=_ketLines(_cOld.ket),_newKets=_ketLines(item.ket);
     if((_cOld.ket||'')!==(item.ket||'')){
-      const _ko=(_cOld.ket||'-').substring(0,100)+((_cOld.ket||'').length>100?'...':'');
-      const _kn=(item.ket||'-').substring(0,100)+((item.ket||'').length>100?'...':'');
-      _chg.push('Keterangan\n  Sebelum: '+_ko+'\n  Sesudah: '+_kn);
+      const _kLabel='Keterangan ('+_oldKets.length+' → '+_newKets.length+' entri)';
+      const _kOld=_oldKets.length?_trunc(_oldKets[0],70):'(kosong)';
+      const _kNew=_newKets.length?_trunc(_newKets[0],70):'(kosong)';
+      const _kLines=[_kLabel+'\n  Terbaru sebelum: '+_kOld+'\n  Terbaru sesudah: '+_kNew];
+      if(_newKets.length>1)_kLines.push('  (dan '+(_newKets.length-1)+' entri lainnya)');
+      _chg.push(_kLines.join('\n'));
     }
     _cDetail=_chg.length?_chg.join('\n'):'Tidak ada perubahan terdeteksi';
   }
@@ -1483,25 +1538,27 @@ function saveTa(){
     toast('Job TA berhasil ditambahkan');
   }
   const _tA=editTaId?'Edit':'Tambah',_tN=item.tagNumber;
+  const _tTrunc=(s,n)=>s.length>n?s.substring(0,n)+'…':s;
   let _tDetail='';
   if(_tA==='Tambah'){
-    _tDetail=['Area: '+item.area,'Issue: '+item.issue,'Disiplin: '+item.disc,'Prioritas: '+item.priority,'Status: '+item.status].join('\n');
+    const _tlines=['Area: '+item.area,'Issue: '+item.issue,'Disiplin: '+item.disc,'Prioritas: '+item.priority,'Status: '+item.status];
+    if(item.tanggal)_tlines.push('Tanggal: '+fd(item.tanggal));
+    if(item.updateBy)_tlines.push('Update By: '+item.updateBy);
+    if(item.statusUpdate)_tlines.push('Status Update: '+_tTrunc(item.statusUpdate,80));
+    _tDetail=_tlines.join('\n');
   }else{
     const _tOld=_taSnap||{};
     const _tchg=[];
-    const _taDiff=(lbl,a,b)=>{if((a||'')!==(b||''))_tchg.push(lbl+'\n  Sebelum: '+(a||'-')+'\n  Sesudah: '+(b||'-'));};
-    _taDiff('Tag Number',_tOld.tagNumber,item.tagNumber);
-    _taDiff('Area',_tOld.area,item.area);
-    _taDiff('Issue',_tOld.issue,item.issue);
-    _taDiff('Disiplin',_tOld.disc,item.disc);
-    _taDiff('Prioritas',_tOld.priority,item.priority);
-    _taDiff('Status',_tOld.status,item.status);
-    _taDiff('Update By',_tOld.updateBy,item.updateBy);
-    if((_tOld.statusUpdate||'')!==(item.statusUpdate||'')){
-      const _suo=(_tOld.statusUpdate||'-').substring(0,100)+((_tOld.statusUpdate||'').length>100?'...':'');
-      const _sun=(item.statusUpdate||'-').substring(0,100)+((item.statusUpdate||'').length>100?'...':'');
-      _tchg.push('Status Update\n  Sebelum: '+_suo+'\n  Sesudah: '+_sun);
-    }
+    const _tDiff=(lbl,a,b)=>{if((a||'')!==(b||''))_tchg.push(lbl+'\n  Sebelum: '+_tTrunc(a||'-',80)+'\n  Sesudah: '+_tTrunc(b||'-',80));};
+    _tDiff('Tag Number',_tOld.tagNumber,item.tagNumber);
+    _tDiff('Area',_tOld.area,item.area);
+    _tDiff('Issue',_tOld.issue,item.issue);
+    _tDiff('Disiplin',_tOld.disc,item.disc);
+    _tDiff('Prioritas',_tOld.priority,item.priority);
+    _tDiff('Status',_tOld.status,item.status);
+    if(_tOld.tanggal!==item.tanggal)_tchg.push('Tanggal\n  Sebelum: '+(fd(_tOld.tanggal)||'-')+'\n  Sesudah: '+(fd(item.tanggal)||'-'));
+    _tDiff('Update By',_tOld.updateBy,item.updateBy);
+    if((_tOld.statusUpdate||'')!==(item.statusUpdate||''))_tchg.push('Status Update\n  Sebelum: '+_tTrunc(_tOld.statusUpdate||'-',70)+'\n  Sesudah: '+_tTrunc(item.statusUpdate||'-',70));
     _tDetail=_tchg.length?_tchg.join('\n'):'Tidak ada perubahan terdeteksi';
   }
   persistTa();addLog('TA',_tA,_tN,_tDetail);
@@ -1517,12 +1574,18 @@ function closeConfirm(){document.getElementById('confirmBg').classList.remove('o
 function confirmDel(){
   const _dI=delType==='cfm'?cfm.find(x=>x.id===delId):ta.find(x=>x.id===delId);
   const _dN=delType==='cfm'?(_dI?.equipment||''):(_dI?.tagNumber||'');
+  const _dDocsStr=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
   let _dDetail='';
   if(delType==='cfm'&&_dI){
-    const _dTgt=_dI.targets&&_dI.targets.length?(_dI.targets[_dI.targets.length-1].date?fd(_dI.targets[_dI.targets.length-1].date):(_dI.targets[_dI.targets.length-1].label||'-')):'-';
-    _dDetail=`Area: ${_dI.area} | Masalah: ${_dI.masalah} | PIC: ${_dI.pic||'-'} | Status: ${_dI.status} | Target: ${_dTgt}`;
+    const _dTgts=(_dI.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
+    const _dDoc=_dDocsStr(_dI.docs||((_dI.type&&_dI.docno)?[{type:_dI.type,docno:_dI.docno}]:[]));
+    const _dLines=['Area: '+(_dI.area||'-'),'Masalah: '+(_dI.masalah||'-'),'PIC: '+(_dI.pic||'-'),'Status: '+(_dI.status||'-'),'Target: '+_dTgts];
+    if(_dDoc!=='-')_dLines.push('Dokumen: '+_dDoc);
+    _dDetail=_dLines.join('\n');
   }else if(_dI){
-    _dDetail=`Area: ${_dI.area} | Issue: ${_dI.issue} | Disiplin: ${_dI.disc} | Prioritas: ${_dI.priority} | Status: ${_dI.status}`;
+    const _dLines=['Area: '+(_dI.area||'-'),'Issue: '+(_dI.issue||'-'),'Disiplin: '+(_dI.disc||'-'),'Prioritas: '+(_dI.priority||'-'),'Status: '+(_dI.status||'-')];
+    if(_dI.updateBy)_dLines.push('Update By: '+_dI.updateBy);
+    _dDetail=_dLines.join('\n');
   }
   if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm();addLog('CFM','Hapus',_dN,_dDetail);}
   else{ta=ta.filter(x=>x.id!==delId);persistTa();addLog('TA','Hapus',_dN,_dDetail);}
@@ -2129,6 +2192,233 @@ function showEjsStatus(msg,color){
 
 
 loadFromDB();
+
+// ===================================================================
+// REALTIME SYNC
+// ===================================================================
+function setupRealtime(){
+  try{
+    const ch=_supa.channel('cfm-rt-v1');
+    ch.on('postgres_changes',{event:'UPDATE',schema:'public',table:'cfm_items'},()=>{
+      _supa.from('cfm_items').select('data').eq('id',1).maybeSingle().then(r=>{
+        if(r.data?.data){cfm=r.data.data;migrateAreas();migrateWeekTargets();_rtRerender();_rtPulse();}
+      });
+    }).on('postgres_changes',{event:'UPDATE',schema:'public',table:'ta_items'},()=>{
+      _supa.from('ta_items').select('data').eq('id',1).maybeSingle().then(r=>{
+        if(r.data?.data){ta=r.data.data;_rtRerender();_rtPulse();}
+      });
+    }).subscribe(status=>{
+      const dot=document.getElementById('rt-dot');
+      const lbl=document.getElementById('rt-label');
+      if(!dot||!lbl)return;
+      if(status==='SUBSCRIBED'){dot.style.background='#22c55e';lbl.textContent='Live';}
+      else if(status==='CHANNEL_ERROR'){dot.style.background='#ef4444';lbl.textContent='Error';}
+      else{dot.style.background='#f59e0b';lbl.textContent='Menghubungkan...';}
+    });
+  }catch(e){console.warn('Realtime setup failed:',e);}
+}
+function _rtRerender(){
+  const m={dashboard:renderDash,outstanding:renderOut,selesai:renderSelesai,ta:renderTa};
+  if(m[vw])m[vw]();
+}
+function _rtPulse(){
+  const dot=document.getElementById('rt-dot');
+  if(!dot)return;
+  dot.style.background='#2563eb';
+  setTimeout(()=>dot.style.background='#22c55e',600);
+}
+
+// ===================================================================
+// EXPORT MODAL
+// ===================================================================
+function openExportModal(){document.getElementById('exportBg').style.display='flex';}
+function closeExportModal(){document.getElementById('exportBg').style.display='none';}
+
+// ===================================================================
+// EXPORT EXCEL
+// ===================================================================
+function exportExcel(){
+  if(typeof XLSX==='undefined'){alert('Library Excel belum siap, coba lagi.');return;}
+  const wb=XLSX.utils.book_new();
+  const _tDate=s=>s?fd(s):'-';
+  const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
+  const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
+
+  // Sheet 1 — Outstanding CFM
+  const cfmOut=cfm.filter(x=>x.status!=='Done');
+  const ws1=XLSX.utils.json_to_sheet(cfmOut.map((x,i)=>({
+    'No':i+1,'Equipment':x.equipment||'','Area':x.area||'','Masalah':x.masalah||'',
+    'Tanggal':_tDate(x.tanggal),'PIC':x.pic||'-','Target':_tTgts(x.targets),
+    'Status':x.status||'','Dokumen':_tDocs(x.docs),'Keterangan':x.ket||''
+  })));
+  _excelStyle(ws1,[18,15,12,30,12,12,14,10,20,35]);
+  XLSX.utils.book_append_sheet(wb,ws1,'Outstanding CFM');
+
+  // Sheet 2 — Selesai CFM
+  const cfmDone=cfm.filter(x=>x.status==='Done');
+  const ws2=XLSX.utils.json_to_sheet(cfmDone.map((x,i)=>({
+    'No':i+1,'Equipment':x.equipment||'','Area':x.area||'','Masalah':x.masalah||'',
+    'Tanggal':_tDate(x.tanggal),'PIC':x.pic||'-','Target':_tTgts(x.targets),
+    'Dokumen':_tDocs(x.docs),'Keterangan':x.ket||''
+  })));
+  _excelStyle(ws2,[18,15,12,30,12,12,14,20,35]);
+  XLSX.utils.book_append_sheet(wb,ws2,'Selesai CFM');
+
+  // Sheet 3 — Job List TA
+  const ws3=XLSX.utils.json_to_sheet(ta.map((x,i)=>({
+    'No':i+1,'Tag Number':x.tagNumber||'','Area':x.area||'','Issue':x.issue||'',
+    'Disiplin':x.disc||'','Prioritas':x.priority||'','Status':x.status||'',
+    'Tanggal':_tDate(x.tanggal),'Update By':x.updateBy||'-','Status Update':x.statusUpdate||''
+  })));
+  _excelStyle(ws3,[18,15,30,10,10,10,12,22,40]);
+  XLSX.utils.book_append_sheet(wb,ws3,'Job List TA');
+
+  // Sheet 4 — Rekap
+  const act=cfm.filter(x=>x.status!=='Done');
+  const ovdC=act.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).length;
+  const ws4=XLSX.utils.json_to_sheet([
+    {'Keterangan':'Tanggal Export','Nilai':new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})},
+    {'Keterangan':'Total CFM','Nilai':cfm.length},
+    {'Keterangan':'Outstanding','Nilai':act.length},
+    {'Keterangan':'Open','Nilai':act.filter(x=>x.status==='Open').length},
+    {'Keterangan':'In Progress','Nilai':act.filter(x=>x.status==='In Progress').length},
+    {'Keterangan':'On Hold','Nilai':act.filter(x=>x.status==='On Hold').length},
+    {'Keterangan':'Overdue','Nilai':ovdC},
+    {'Keterangan':'Selesai (Done)','Nilai':cfmDone.length},
+    {'Keterangan':'Total Job TA','Nilai':ta.length},
+    {'Keterangan':'TA Open','Nilai':ta.filter(x=>x.status==='Open').length},
+    {'Keterangan':'TA In Progress','Nilai':ta.filter(x=>x.status==='In Progress').length},
+    {'Keterangan':'TA Done','Nilai':ta.filter(x=>x.status==='Done').length},
+  ]);
+  _excelStyle(ws4,[35,20]);
+  XLSX.utils.book_append_sheet(wb,ws4,'Rekap');
+
+  const fname='CFM_Utilities_'+todayStr().replace(/-/g,'')+'.xlsx';
+  XLSX.writeFile(wb,fname);
+  closeExportModal();
+  toast('File '+fname+' berhasil diunduh');
+}
+function _excelStyle(ws,widths){
+  ws['!cols']=(widths||[]).map(w=>({wch:w}));
+}
+
+// ===================================================================
+// EXPORT PDF
+// ===================================================================
+function exportPDF(){
+  const act=cfm.filter(x=>x.status!=='Done');
+  const ovdIds=new Set(act.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).map(x=>x.id));
+  const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
+  const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
+  const tgl=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+
+  const rowsCFM=act.map((x,i)=>`<tr style="${ovdIds.has(x.id)?'background:#fef2f2':''}">
+    <td>${i+1}</td><td>${esc(x.equipment)}</td><td>${esc(x.area)}</td>
+    <td>${esc(x.masalah)}</td><td>${esc(x.pic||'-')}</td>
+    <td>${_tTgts(x.targets)}</td><td><b>${esc(x.status)}</b></td>
+    <td>${esc(_tDocs(x.docs))}</td></tr>`).join('');
+
+  const rowsTA=ta.filter(x=>x.status!=='Done').map((x,i)=>`<tr>
+    <td>${i+1}</td><td>${esc(x.tagNumber)}</td><td>${esc(x.area)}</td>
+    <td>${esc(x.issue)}</td><td>${esc(x.disc)}</td>
+    <td>${esc(x.priority)}</td><td><b>${esc(x.status)}</b></td></tr>`).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Laporan CFM Utilities — ${tgl}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#111}
+    h1{font-size:14px;margin-bottom:2px}h2{font-size:12px;margin:16px 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px}
+    .meta{font-size:10px;color:#666;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px}
+    th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left;font-weight:600}
+    td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top}
+    tr:nth-child(even){background:#f8fafc}
+    .stat{display:inline-block;padding:4px 10px;border-radius:6px;margin:2px;font-weight:700;font-size:10px}
+    @media print{body{margin:10px}@page{size:A4 landscape;margin:10mm}}
+  </style></head><body>
+  <h1>Laporan CFM Utilities — Bagian Pertamina Utilities</h1>
+  <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total Outstanding: ${act.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
+  <div>
+    <span class="stat" style="background:#fee2e2;color:#dc2626">Open: ${act.filter(x=>x.status==='Open').length}</span>
+    <span class="stat" style="background:#fef9c3;color:#b45309">In Progress: ${act.filter(x=>x.status==='In Progress').length}</span>
+    <span class="stat" style="background:#f3f4f6;color:#374151">On Hold: ${act.filter(x=>x.status==='On Hold').length}</span>
+    <span class="stat" style="background:#fee2e2;color:#dc2626">⚠ Overdue: ${ovdIds.size}</span>
+  </div>
+  <h2>Outstanding CFM</h2>
+  <table><thead><tr><th>#</th><th>Equipment</th><th>Area</th><th>Masalah</th><th>PIC</th><th>Target</th><th>Status</th><th>Dokumen</th></tr></thead>
+  <tbody>${rowsCFM||'<tr><td colspan="8" style="text-align:center;color:#999">Tidak ada outstanding</td></tr>'}</tbody></table>
+  <h2>Outstanding Job TA</h2>
+  <table><thead><tr><th>#</th><th>Tag Number</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Status</th></tr></thead>
+  <tbody>${rowsTA||'<tr><td colspan="7" style="text-align:center;color:#999">Tidak ada outstanding</td></tr>'}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else{alert('Popup diblokir browser. Izinkan popup untuk export PDF.');}
+  closeExportModal();
+}
+
+// ===================================================================
+// TREND & AGING CHARTS (dipanggil dari renderDash)
+// ===================================================================
+let _chartTrend=null,_chartAging=null;
+
+function renderTrendCharts(){
+  // --- Trend 6 bulan ---
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),
+      label:d.toLocaleDateString('id-ID',{month:'short',year:'numeric'})});
+  }
+  const masuk=months.map(m=>cfm.filter(x=>x.tanggal&&x.tanggal.startsWith(m.key)).length);
+  const selesai=months.map(m=>{
+    return cfm.filter(x=>{
+      if(x.status!=='Done')return false;
+      const tl=(x.timeline||[]).find(t=>t.type==='done'||t.note?.includes('Done'));
+      const doneTs=tl?.ts||x.tanggal||'';
+      return doneTs.startsWith(m.key);
+    }).length;
+  });
+  const ctxT=document.getElementById('chart-trend');
+  if(!ctxT)return;
+  if(_chartTrend)_chartTrend.destroy();
+  _chartTrend=new Chart(ctxT,{type:'bar',data:{
+    labels:months.map(m=>m.label),
+    datasets:[
+      {label:'Item Masuk',data:masuk,backgroundColor:'rgba(37,99,235,0.7)',borderRadius:4},
+      {label:'Item Selesai',data:selesai,backgroundColor:'rgba(34,197,94,0.7)',borderRadius:4}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},
+    scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+
+  // --- Aging Analysis ---
+  const doneCfm=cfm.filter(x=>x.status==='Done'&&x.tanggal);
+  const agingBuckets=[0,0,0,0,0]; // <7, 7-14, 14-30, 30-60, >60 hari
+  doneCfm.forEach(x=>{
+    const tl=(x.timeline||[]).find(t=>t.type==='done');
+    const endDate=tl?.ts?new Date(tl.ts.substring(0,10)):new Date();
+    const days=Math.round((endDate-new Date(x.tanggal))/(1000*60*60*24));
+    if(days<7)agingBuckets[0]++;
+    else if(days<14)agingBuckets[1]++;
+    else if(days<30)agingBuckets[2]++;
+    else if(days<60)agingBuckets[3]++;
+    else agingBuckets[4]++;
+  });
+  const ctxA=document.getElementById('chart-aging');
+  if(!ctxA)return;
+  if(_chartAging)_chartAging.destroy();
+  _chartAging=new Chart(ctxA,{type:'doughnut',data:{
+    labels:['< 7 hari','7–14 hari','14–30 hari','30–60 hari','> 60 hari'],
+    datasets:[{data:agingBuckets,
+      backgroundColor:['#22c55e','#84cc16','#f59e0b','#ef4444','#7c3aed'],
+      borderWidth:2,borderColor:'var(--bg-card)'}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}});
+}
+
 </script>
 
 <!-- report-confirm-modal removed: use view-email page instead -->
