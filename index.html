@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFM Utilities – Work Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f5f7;--bg-card:#fff;--bg-sec:#f8f9fa;
+  --text:#1a1a1a;--muted:#6b7280;--border:#e5e7eb;--border-em:#d1d5db;
+  --blue:#185FA5;--blue-dk:#0C447C;--blue-lt:#E6F1FB;
+  --green:#3B6D11;--green-lt:#EAF3DE;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --amber:#854F0B;--amber-lt:#FAEEDA;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;
+  --purple:#534AB7;--purple-lt:#EEEDFE;
+  --teal:#0F6E56;--teal-lt:#E1F5EE;
+  --r:8px;--rl:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* NAV */
+.nav{background:var(--bg-card);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:50;overflow-x:auto}
+.nav-brand{display:flex;align-items:center;gap:8px;margin-right:12px;flex-shrink:0}
+.nav-logo{width:32px;height:32px;background:var(--blue);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+.nav-logo i{color:#fff;font-size:17px}
+.nav-name{font-size:13px;font-weight:700;white-space:nowrap}
+.nav-sub{font-size:10px;color:var(--muted)}
+.nav-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.nav-btn:hover{background:var(--bg-sec);color:var(--text)}
+.nav-btn.active{background:var(--blue-lt);color:var(--blue);font-weight:600}
+.nav-sp{flex:1}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover{background:var(--bg-sec)}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk)}
+.btn-danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn-danger:hover{background:#791F1F}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--bg-sec)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:5px 7px}
+
+/* CONTENT */
+.content{padding:18px 20px;max-width:1440px;margin:0 auto}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);padding:14px 15px}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:5px}
+.stat-value{font-size:26px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.prog-bar{height:6px;background:var(--bg-sec);border-radius:3px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;border-radius:3px;background:var(--blue);transition:width .4s}
+.prog-green{background:var(--green)}
+
+/* AREA TABS */
+.area-tabs{display:flex;gap:5px;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:7px;margin-bottom:12px}
+.tab{padding:5px 13px;border-radius:var(--r);border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.tab:hover{background:var(--bg-sec);color:var(--text)}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tab .cnt{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:9px;font-size:11px;padding:0 3px;margin-left:3px;background:rgba(255,255,255,.25)}
+.tab:not(.active) .cnt{background:var(--bg-sec);color:var(--muted)}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:7px;margin-bottom:11px;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:180px}
+.sw>i{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.si{width:100%;padding:7px 11px 7px 30px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);color:var(--text);font-size:13px;font-family:inherit}
+.si:focus{outline:none;border-color:var(--blue)}
+.fsel{padding:7px 10px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer}
+.fsel:focus{outline:none;border-color:var(--blue)}
+
+/* TABLE */
+.tw{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+th{padding:9px 11px;text-align:left;font-weight:600;font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #c8ccd4;background:#eef0f3;white-space:nowrap}
+td{padding:9px 11px;word-wrap:break-word;overflow-wrap:break-word;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+.acts{display:flex;gap:3px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;line-height:1.4}
+.b-open{background:var(--red-lt);color:var(--red)}
+.b-prog{background:var(--amber-lt);color:var(--amber)}
+.b-done{background:var(--green-lt);color:var(--green)}
+.b-hold{background:var(--gray-lt);color:var(--gray)}
+.b-planned{background:var(--blue-lt);color:var(--blue)}
+.b-ready{background:var(--purple-lt);color:var(--purple)}
+.b-cancel{background:var(--gray-lt);color:var(--gray)}
+.b-notif{background:var(--amber-lt);color:var(--amber)}
+.b-wo{background:var(--blue-lt);color:var(--blue)}
+.b-pr{background:var(--purple-lt);color:var(--purple)}
+.b-po{background:var(--teal-lt);color:var(--teal)}
+.b-critical{background:#501313;color:#fff}
+.b-high{background:var(--red-lt);color:var(--red)}
+.b-medium{background:var(--amber-lt);color:var(--amber)}
+.b-low{background:var(--green-lt);color:var(--green)}
+.b-a0{background:var(--blue-lt);color:var(--blue)}
+.b-a1{background:var(--purple-lt);color:var(--purple)}
+.b-a2{background:var(--teal-lt);color:var(--teal)}
+.b-a3{background:var(--amber-lt);color:var(--amber)}
+.b-a4{background:var(--purple-lt);color:var(--purple)}
+.b-a5{background:var(--teal-lt);color:var(--teal)}
+.doc-no{font-size:10px;color:var(--muted);margin-top:1px}
+.ovd-cell{color:var(--red);font-weight:600}
+.btn-det{color:var(--blue);border-color:#B5D4F4}
+.btn-del{color:var(--red);border-color:#F7C1C1}
+
+/* EMPTY */
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.empty i{font-size:32px;display:block;margin-bottom:8px;opacity:.35}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.sh-title{font-size:15px;font-weight:700}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:20px 14px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);width:min(620px,100%);box-shadow:0 20px 60px rgba(0,0,0,.15);margin:auto}
+.mhd{padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.mtitle{font-size:15px;font-weight:700;display:flex;align-items:center;gap:7px}
+.mbody{padding:14px 18px}
+.mft{padding:13px 18px;display:flex;justify-content:flex-end;gap:7px;border-top:1px solid var(--border)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.ff{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select,.fg textarea{padding:7px 10px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);color:var(--text);font-size:13px;font-family:inherit}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue)}
+.fg textarea{resize:vertical;min-height:58px}
+.fdiv{grid-column:1/-1;border:none;border-top:1px solid var(--border)}
+.fsec{grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.req{color:var(--red)}
+
+/* TARGETS IN FORM */
+.tgt-list{display:flex;flex-direction:column;gap:7px}
+.tgt-row{display:flex;gap:7px;align-items:center;background:var(--bg-sec);border-radius:var(--r);padding:8px 10px;margin-bottom:4px}
+.tgt-row input{background:var(--bg-card)}
+.tgt-date{padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--blue);width:140px;flex-shrink:0}
+.tgt-lbl{flex:1}
+.pic-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--blue);color:#fff;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.pic-chip button{background:none;border:none;color:#fff;cursor:pointer;padding:0;line-height:1;font-size:13px;opacity:.8}
+.pic-chip button:hover{opacity:1}
+
+/* DETAIL OVERLAY */
+.det-ov{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto}
+.det-ov.open{display:block}
+.det-hd{background:var(--bg-card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.det-bd{padding:18px 20px;max-width:860px;margin:0 auto}
+.dcard{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);padding:18px;margin-bottom:14px}
+.dcard-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:13px;display:flex;align-items:center;gap:5px}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.il{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.iv{font-size:13px}
+
+/* TARGETS DISPLAY */
+.tgts-disp{display:flex;flex-direction:column;gap:7px}
+.tgt-di{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--bg-sec);border-radius:var(--r);border-left:3px solid var(--border-em)}
+.tgt-di.cur{border-left-color:var(--blue)}
+.tgt-di.tovd{border-left-color:var(--red)}
+.tgt-di.tdone{border-left-color:var(--green);opacity:.7}
+
+/* TIMELINE */
+.tl-item{display:flex;gap:12px;padding-bottom:20px}
+.tl-item:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tl-dot i{font-size:14px}
+.tl-line{width:2px;background:var(--border);flex:1;min-height:14px;margin-top:3px}
+.tl-created{background:var(--blue-lt);color:var(--blue)}
+.tl-status{background:var(--purple-lt);color:var(--purple)}
+.tl-target{background:var(--amber-lt);color:var(--amber)}
+.tl-note{background:var(--gray-lt);color:var(--gray)}
+.tl-done{background:var(--green-lt);color:var(--green)}
+.tl-body{flex:1;padding-top:3px}
+.tl-ts{font-size:11px;color:var(--muted);margin-bottom:2px}
+.tl-date-inp{font-size:11px;font-weight:700;color:var(--green);border:none;background:transparent;padding:0;cursor:pointer;outline:none;border-bottom:1px dashed var(--border)}
+.tl-date-inp:hover,.tl-date-inp:focus{border-bottom-color:var(--green)}
+.tl-txt{font-size:13px;line-height:1.5}
+.note-form{display:flex;gap:7px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.note-form textarea{flex:1;padding:7px 10px;border-radius:var(--r);border:1px solid var(--border-em);font-size:13px;font-family:inherit;resize:none}
+.note-form textarea:focus{outline:none;border-color:var(--blue)}
+
+/* CONFIRM */
+.confirm-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:14px}
+.confirm-bg.open{display:flex}
+.confirm-box{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);width:min(370px,100%);padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.ci{width:44px;height:44px;border-radius:50%;background:var(--red-lt);display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+.ci i{font-size:20px;color:var(--red)}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;right:22px;z-index:999;background:#1a1a1a;color:#fff;padding:11px 15px;border-radius:var(--r);font-size:13px;display:flex;align-items:center;gap:7px;transform:translateY(70px);opacity:0;transition:all .25s;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast i{color:#4ade80}
+
+/* TA PROGRESS */
+.ta-pb{display:flex;align-items:center;gap:7px}
+.ta-pb-bar{flex:1;height:5px;background:var(--bg-sec);border-radius:3px;overflow:hidden}
+.ta-pb-fill{height:100%;border-radius:3px}
+
+/* DASHBOARD area cards */
+.area-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.acard{background:var(--bg-card);border-radius:var(--rl);border:1px solid var(--border);padding:14px}
+.acard-name{font-size:12px;font-weight:700;margin-bottom:10px}
+.amini{display:flex;gap:10px;flex-wrap:wrap}
+.amv{font-size:17px;font-weight:700}
+.aml{font-size:10px;color:var(--muted);text-transform:uppercase}
+
+/* OVERDUE LIST */
+.date-chip{display:inline-block;color:var(--blue);font-weight:600;font-size:12px;white-space:nowrap}
+.date-chip.date-green{color:var(--green)}
+.date-chip.date-red{color:var(--red)}
+.ket-cell{font-size:12px;line-height:1.4}
+.ket-timeline{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.ket-entry{display:grid;grid-template-columns:88px 1fr;gap:8px;padding:7px 10px 7px 12px;border-left:3px solid var(--border);font-size:13px;line-height:1.5;color:var(--muted)}
+.ket-entry.ket-last{border-left-color:var(--blue);color:var(--text);background:rgba(24,95,165,.06);border-radius:0 var(--r) var(--r) 0}
+.ket-date{font-weight:800;font-size:12px;color:var(--green);white-space:nowrap;padding-top:1px;letter-spacing:.01em}
+.pic-card{background:var(--bg-sec);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.pic-name{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pic-nums{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--muted)}
+.pn-open{color:var(--red);font-weight:600}.pn-prog{color:var(--amber);font-weight:600}.pn-hold{color:var(--gray);font-weight:600}.pn-ovd{color:var(--red);font-weight:700}
+.ovd-list{display:flex;flex-direction:column;gap:5px}
+.ovd-item{background:var(--red-lt);border-radius:var(--r);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-left:3px solid var(--red)}
+.ovd-eq{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ovd-info{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* DASH 2COL */
+.d2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:900px){
+  .dash-3col{grid-template-columns:1fr!important}}
+@media(max-width:700px){
+  .d2col{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr}
+  .ff{grid-column:1}
+  .content{padding:12px}
+  .det-bd{padding:12px}
+}
+
+/* FOOTER */
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:18px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:6px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo"><i class="ti ti-tool"></i></div>
+    <div><div class="nav-name">Utilities Work Tracker</div><div class="nav-sub">Cross Functional Meeting</div></div>
+  </div>
+  <button class="nav-btn" id="nav-dashboard" onclick="goTo('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+  <button class="nav-btn" id="nav-outstanding" onclick="goTo('outstanding')"><i class="ti ti-clipboard-list"></i> Outstanding CFM</button>
+  <button class="nav-btn" id="nav-selesai" onclick="goTo('selesai')"><i class="ti ti-circle-check"></i> Pekerjaan Selesai</button>
+  <button class="nav-btn" id="nav-ta" onclick="goTo('ta')"><i class="ti ti-building-factory-2"></i> Job List TA</button>
+  <div class="nav-sp"></div>
+  <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
+  <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
+  <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
+</nav>
+
+<!-- VIEW: DASHBOARD -->
+<div id="view-dashboard" class="vc">
+<div class="content">
+  <div class="sh"><div class="sh-title"><i class="ti ti-layout-dashboard" style="color:var(--blue)"></i> Dashboard Overview</div><div id="dash-date" style="font-size:12px;color:var(--muted)"></div></div>
+
+  <!-- KPI CARDS -->
+  <div class="stat-grid" id="dash-stats"></div>
+
+  <!-- CHARTS ROW 1 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px" class="dash-3col">
+    <div class="dcard" style="margin-bottom:0">
+      <div class="dcard-title"><i class="ti ti-chart-donut"></i> Status CFM</div>
+      <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center">
+        <canvas id="chart-status"></canvas>
+      </div>
+    </div>
+    <div class="dcard" style="margin-bottom:0">
+      <div class="dcard-title"><i class="ti ti-chart-bar"></i> Item per Area</div>
+      <div style="position:relative;height:200px">
+        <canvas id="chart-area"></canvas>
+      </div>
+    </div>
+    <div class="dcard" style="margin-bottom:0">
+      <div class="dcard-title"><i class="ti ti-chart-donut"></i> Tipe Dokumen</div>
+      <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center">
+        <canvas id="chart-type"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px" class="d2col">
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">Breakdown per Area</div>
+      <div class="area-cards" id="dash-areas"></div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px"><i class="ti ti-alert-triangle" style="color:var(--red)"></i> Item Overdue</div>
+      <div id="dash-overdue"></div>
+    </div>
+  </div>
+
+  <!-- PIC OUTSTANDING -->
+  <div style="font-size:13px;font-weight:700;margin-bottom:10px"><i class="ti ti-users" style="color:var(--purple)"></i> PIC Outstanding</div>
+  <div id="dash-pic" style="margin-bottom:16px"></div>
+
+  <!-- TA SUMMARY -->
+  <div style="font-size:13px;font-weight:700;margin-bottom:10px"><i class="ti ti-building-factory-2" style="color:var(--blue)"></i> Summary Job List TA</div>
+  <div class="stat-grid" id="dash-ta" style="margin-bottom:14px"></div>
+  <div class="dcard" style="margin-bottom:0">
+    <div class="dcard-title"><i class="ti ti-chart-bar"></i> Status Job TA per Area</div>
+    <div style="position:relative;height:220px">
+      <canvas id="chart-ta-prog"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- VIEW: OUTSTANDING -->
+<div id="view-outstanding" class="vc" style="display:none">
+<div class="content">
+  <div class="sh"><div class="sh-title"><i class="ti ti-clipboard-list" style="color:var(--blue)"></i> Outstanding CFM – Bagian Utilities</div><button class="btn btn-primary" onclick="openCfmModal()"><i class="ti ti-plus"></i> Tambah Item</button></div>
+  <div class="stat-grid" id="out-stats"></div>
+  <div class="area-tabs" id="out-tabs"></div>
+  <div class="toolbar">
+    <div class="sw"><i class="ti ti-search"></i><input class="si" id="out-q" placeholder="Cari equipment, masalah, PIC..." oninput="renderOut()"></div>
+    <select class="fsel" id="out-sf" onchange="renderOut()"><option value="">Semua Status</option><option>Open</option><option>In Progress</option><option>On Hold</option></select>
+    <select class="fsel" id="out-tf" onchange="renderOut()"><option value="">Semua Tipe</option><option>Notifikasi</option><option>WO</option><option>PR</option><option>PO</option></select>
+    <span id="out-cnt" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+  <div class="tw"><table style="table-layout:fixed;width:100%;min-width:1100px">
+    <colgroup>
+      <col style="width:36px"><col style="width:155px"><col style="width:120px"><col style="width:165px">
+      <col style="width:88px"><col style="width:72px"><col style="width:135px"><col style="width:90px">
+      <col style="width:105px"><col style="width:165px"><col style="width:90px">
+    </colgroup>
+    <thead><tr><th>#</th><th>Equipment</th><th>Area</th><th>Masalah</th><th>Tanggal</th><th>PIC</th><th>Target Terkini</th><th>Status</th><th>Tipe / No. Dok</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+    <tbody id="out-body"></tbody>
+  </table></div>
+</div>
+</div>
+
+<!-- VIEW: SELESAI -->
+<div id="view-selesai" class="vc" style="display:none">
+<div class="content">
+  <div class="sh"><div class="sh-title"><i class="ti ti-circle-check" style="color:var(--green)"></i> Pekerjaan Selesai</div><span id="done-cnt" style="font-size:13px;color:var(--muted)"></span></div>
+  <div class="toolbar">
+    <div class="sw"><i class="ti ti-search"></i><input class="si" id="done-q" placeholder="Cari equipment, masalah, PIC..." oninput="renderSelesai()"></div>
+    <select class="fsel" id="done-af" onchange="renderSelesai()"><option value="">Semua Area</option><option>Boiler HDC</option><option>Boiler Existing</option><option>PLTU</option><option>DTL</option><option>WPS Rokan</option><option>WTP</option></select>
+  </div>
+  <div class="tw"><table style="table-layout:fixed;width:100%;min-width:960px">
+    <colgroup>
+      <col style="width:36px"><col style="width:145px"><col style="width:115px"><col style="width:155px">
+      <col style="width:88px"><col style="width:70px"><col style="width:88px">
+      <col style="width:105px"><col style="width:190px"><col style="width:90px">
+    </colgroup>
+    <thead><tr><th>#</th><th>Equipment</th><th>Area</th><th>Masalah</th><th>Tanggal</th><th>PIC</th><th>Tgl Selesai</th><th>Tipe / No. Dok</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+    <tbody id="done-body"></tbody>
+  </table></div>
+</div>
+</div>
+
+<!-- VIEW: KIRIM EMAIL -->
+<div id="view-email" class="vc" style="display:none">
+<div class="content">
+  <div class="sh"><div class="sh-title"><i class="ti ti-mail-forward" style="color:var(--blue)"></i> Kirim Email Notifikasi</div></div>
+  <div style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:8px">
+
+    <!-- Card 1: Laporan CFM Selesai -->
+    <div style="background:var(--bg-card);border-radius:12px;border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-send" style="font-size:22px;color:var(--blue)"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">Laporan Setelah CFM Selesai</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Kirim ringkasan lengkap Outstanding CFM dan Job List TA ke <strong>m.burhan@pertamina.com</strong>. Berisi dashboard, tabel outstanding, dan status setiap item.</div>
+        </div>
+      </div>
+      <div id="email-report-status" style="display:none;font-size:12px;padding:8px 12px;border-radius:6px;background:var(--bg-sec)"></div>
+      <button class="btn btn-primary" style="align-self:flex-start" onclick="doSendReport()">
+        <i class="ti ti-send"></i> Kirim Laporan CFM
+      </button>
+    </div>
+
+    <!-- Card 2: Notifikasi Overdue -->
+    <div style="background:var(--bg-card);border-radius:12px;border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:green;flex-shrink:0;justify-content:center">
+          <i class="ti ti-alert-triangle" style="font-size:22px;color:#dc2626"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">Notifikasi Item Overdue</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Kirim email daftar item yang sudah melewati target penyelesaian ke <strong>m.burhan@pertamina.com</strong>. Dapat dikirim kapan saja tanpa menunggu pengiriman otomatis harian.</div>
+        </div>
+      </div>
+      <div id="email-ovd-status" style="display:none;font-size:12px;padding:8px 12px;border-radius:6px;background:var(--bg-sec)"></div>
+      <div id="email-ovd-count" style="font-size:12px;color:var(--muted)">Menghitung item overdue...</div>
+      <button class="btn" style="align-self:flex-start;background:#dc2626;color:#fff;border:none" onclick="doSendOverdue()">
+        <i class="ti ti-alert-triangle"></i> Kirim Notifikasi Overdue
+      </button>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- VIEW: JOB LIST TA -->
+<div id="view-ta" class="vc" style="display:none">
+<div class="content">
+  <div class="sh"><div class="sh-title"><i class="ti ti-building-factory-2" style="color:var(--blue)"></i> Job List Turnaround (TA)</div><button class="btn btn-primary" onclick="openTaModal()"><i class="ti ti-plus"></i> Tambah Job</button></div>
+  <div class="stat-grid" id="ta-stats"></div>
+  <div class="toolbar">
+    <div class="sw"><i class="ti ti-search"></i><input class="si" id="ta-q" placeholder="Cari no. job, deskripsi, PIC..." oninput="renderTa()"></div>
+    <select class="fsel" id="ta-sf" onchange="renderTa()"><option value="">Semua Status</option><option>Planned</option><option>Ready</option><option>In Progress</option><option>Done</option><option>Cancelled</option></select>
+    <select class="fsel" id="ta-df" onchange="renderTa()"><option value="">Semua Disiplin</option><option>Mechanical</option><option>Electrical</option><option>Instrument</option><option>Civil</option><option>Process</option></select>
+    <select class="fsel" id="ta-pf" onchange="renderTa()"><option value="">Semua Prioritas</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+    <span id="ta-cnt" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+    <div class="tw"><table style="width:100%">
+<thead><tr><th>#</th><th>Tag Number</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Tanggal</th><th>Status</th><th>Status Update</th><th>Update By</th><th>Aksi</th></tr></thead>
+    <tbody id="ta-body"></tbody>
+  </table></div>
+</div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div class="det-ov" id="detOv">
+  <div class="det-hd">
+    <button class="btn btn-ghost btn-sm" onclick="closeDetail()"><i class="ti ti-arrow-left"></i> Kembali</button>
+    <div style="flex:1;min-width:0">
+      <div id="det-title" style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      <div id="det-sub" style="font-size:11px;color:var(--muted)"></div>
+    </div>
+    <div id="det-acts" style="display:flex;gap:5px;flex-shrink:0"></div>
+  </div>
+  <div class="det-bd" id="det-body"></div>
+</div>
+
+<!-- CFM MODAL -->
+<div class="modal-bg" id="cfmModal">
+<div class="modal">
+  <div class="mhd"><div class="mtitle"><i class="ti ti-clipboard-list"></i><span id="cfm-mtitle">Tambah Item CFM</span></div><button class="btn btn-ghost btn-icon" onclick="closeCfmModal()"><i class="ti ti-x"></i></button></div>
+  <div class="mbody"><div class="fgrid">
+    <div class="fsec">Informasi Utama</div>
+    <div class="fg"><label>Equipment <span class="req">*</span></label><input id="cf-eq" placeholder="Nama equipment / tag number"></div>
+    <div class="fg"><label>Area <span class="req">*</span></label><select id="cf-area"><option value="">— Pilih area —</option><option>Boiler HDC</option><option>Boiler Existing</option><option>PLTU</option><option>DTL</option><option>WPS Rokan</option><option>WTP</option></select></div>
+    <div class="fg ff"><label>Masalah <span class="req">*</span></label><textarea id="cf-masalah" rows="3" placeholder="Deskripsi masalah / temuan..."></textarea></div>
+    <hr class="fdiv">
+    <div class="fsec">Jadwal &amp; PIC</div>
+    <div class="fg"><label>Tanggal Temuan</label><input type="date" id="cf-tgl"></div>
+    <div class="fg ff"><label>PIC <span style="font-size:10px;color:var(--muted);font-weight:400">(bisa lebih dari 1)</span></label>
+      <div id="pic-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:34px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card);cursor:text;align-items:center" onclick="document.getElementById('pic-inp').focus()">
+        <input id="pic-inp" list="pic-list" placeholder="Tambah PIC..." autocomplete="off"
+          style="border:none;outline:none;font-size:13px;background:transparent;min-width:120px;flex:1;padding:1px 2px"
+          onkeydown="picKeydown(event)" oninput="this.style.width=(this.value.length*8+80)+'px'" onblur="if(this.value.trim())addPic(this.value)">
+      </div>
+      <datalist id="pic-list"></datalist>
+    </div>
+    <div class="fg"><label>Status</label><select id="cf-status"><option>Open</option><option>In Progress</option><option>On Hold</option><option>Done</option></select></div>
+    <div class="fg ff"><label>Dokumen (Notifikasi / WO / PR / PO)</label>
+      <div id="cfm-doc-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" class="btn btn-sm" onclick="addDoc()"><i class="ti ti-plus"></i> Tambah Dokumen</button>
+    </div>
+    <hr class="fdiv">
+    <div class="fsec">Target Penyelesaian</div>
+    <div class="ff">
+      <div class="tgt-list" id="cfm-tgt-list"></div>
+      <button class="btn btn-sm" style="margin-top:7px" onclick="addCfmTgt()"><i class="ti ti-plus"></i> Tambah Target</button>
+    </div>
+    <hr class="fdiv">
+    <div class="fsec">Keterangan / Update</div>
+    <div class="fg ff">
+      <div id="cfm-ket-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" class="btn btn-sm" onclick="addKet()"><i class="ti ti-plus"></i> Tambah Keterangan</button>
+    </div>
+  </div></div>
+  <div class="mft"><button class="btn" onclick="closeCfmModal()">Batal</button><button class="btn btn-primary" onclick="saveCfm()"><i class="ti ti-check"></i> Simpan</button></div>
+</div>
+</div>
+
+<!-- TA MODAL -->
+<div class="modal-bg" id="taModal">
+<div class="modal">
+  <div class="mhd"><div class="mtitle"><i class="ti ti-building-factory-2"></i><span id="ta-mtitle">Tambah Job TA</span></div><button class="btn btn-ghost btn-icon" onclick="closeTaModal()"><i class="ti ti-x"></i></button></div>
+  <div class="mbody"><div class="fgrid">
+    <div class="fg"><label>Tag Number <span class="req">*</span></label><input id="ta-tag" placeholder="BFP-101A / 925-P-7B"></div>
+    <div class="fg"><label>Area</label><select id="ta-area"><option value="">— Pilih area —</option><option>Boiler HDC</option><option>Boiler Existing</option><option>PLTU</option><option>DTL</option><option>WPS Rokan</option><option>WTP</option></select></div>
+    <div class="fg ff"><label>Issue / Masalah <span class="req">*</span></label><textarea id="ta-issue" rows="2" placeholder="Deskripsi masalah / pekerjaan TA..."></textarea></div>
+    <div class="fg"><label>Disiplin <span class="req">*</span></label><select id="ta-disc"><option value="">— Pilih —</option><option>Mechanical</option><option>Electrical</option><option>Instrument</option><option>Civil</option><option>Process</option></select></div>
+    <div class="fg"><label>Prioritas</label><select id="ta-prio"><option>Medium</option><option>Low</option><option>High</option><option>Critical</option></select></div>
+    <div class="fg"><label>Tanggal</label><input type="date" id="ta-tgl"></div>
+    <div class="fg"><label>Status</label><select id="ta-stat"><option>Open</option><option>In Progress</option><option>On Hold</option><option>Done</option><option>Cancelled</option></select></div>
+    <div class="fg"><label>Update By</label><input id="ta-uby" placeholder="Nama / Inisial"></div>
+    <div class="fg ff"><label>Status Update</label><textarea id="ta-supdate" rows="3" placeholder="Update terbaru, kendala, progress..."></textarea></div>
+  </div></div>
+  <div class="mft"><button class="btn" onclick="closeTaModal()">Batal</button><button class="btn btn-primary" onclick="saveTa()"><i class="ti ti-check"></i> Simpan</button></div>
+</div>
+</div>
+
+
+<!-- PIC ITEMS MODAL -->
+<div class="modal-bg" id="picModal" style="z-index:1100;padding:24px 16px;align-items:flex-start">
+<div style="background:var(--bg-card);width:100%;max-width:1100px;max-height:85vh;border-radius:var(--rl);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+  <div class="mhd" style="flex-shrink:0;border-bottom:1px solid var(--border);border-radius:var(--rl) var(--rl) 0 0"><div class="mtitle"><i class="ti ti-user-circle" style="color:var(--purple)"></i><span id="pic-modal-title">Outstanding</span></div><button class="btn btn-ghost btn-icon" onclick="closePicModal()"><i class="ti ti-x"></i></button></div>
+  <div id="pic-modal-body" style="flex:1;overflow-y:auto;overflow-x:auto"></div>
+</div>
+</div>
+<!-- CONFIRM DELETE -->
+<div class="confirm-bg" id="confirmBg">
+  <div class="confirm-box">
+    <div class="ci"><i class="ti ti-trash"></i></div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:5px">Hapus Item?</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Yakin ingin menghapus? Tindakan ini tidak dapat dibatalkan.</div>
+    <div style="display:flex;gap:7px;justify-content:flex-end"><button class="btn" onclick="closeConfirm()">Batal</button><button class="btn btn-danger" onclick="confirmDel()"><i class="ti ti-trash"></i> Hapus</button></div>
+  </div>
+</div>
+
+
+<!-- H-7 EMAIL NOTIF BANNER -->
+<div id="h7-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#d97706;color:#fff;padding:10px 16px;align-items:center;gap:12px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+  <i class="ti ti-alert-triangle" style="font-size:18px;flex-shrink:0"></i>
+  <span id="h7-msg" style="flex:1"></span>
+  <a id="h7-mailto" href="#" target="_blank"
+    style="background:#fff;color:#d97706;padding:5px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0">
+    <i class="ti ti-mail"></i> Kirim Email
+  </a>
+  <button onclick="document.getElementById('h7-banner').style.display='none'"
+    style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0">&#215;</button>
+</div>
+<div id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg"></span></div>
+
+<div class="footer">CFM Utilities Tracker &nbsp;|&nbsp; Bagian Utilities &nbsp;|&nbsp; Data tersimpan di browser (localStorage)</div>
+
+<script>
+'use strict';
+const AREAS=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
+const ACLS=['b-a3','b-a0','b-a1','b-a2','b-a4','b-a5'];
+const SCLS={Open:'b-open','In Progress':'b-prog',Done:'b-done','On Hold':'b-hold'};
+const TCLS={Notifikasi:'b-notif',WO:'b-wo',PR:'b-pr',PO:'b-po'};
+const TACLS={Planned:'b-planned',Ready:'b-pr','In Progress':'b-prog',Done:'b-done',Cancelled:'b-cancel'};
+const PCLS={Critical:'b-critical',High:'b-high',Medium:'b-medium',Low:'b-low'};
+const TL_DOT={created:'tl-created',status:'tl-status',target:'tl-target',note:'tl-note',done:'tl-done'};
+const TL_ICO={created:'ti-plus',status:'ti-refresh',target:'ti-calendar',note:'ti-message',done:'ti-circle-check'};
+
+let cfm=JSON.parse(localStorage.getItem('cfm-v6')||'[]');
+let ta=JSON.parse(localStorage.getItem('ta-v2')||'[]');
+let vw='dashboard',cfmArea='All',editCfmId=null,editTaId=null,delId=null,delType=null,detId=null,detType=null,tmpTgts=[];
+
+if(!cfm.length){
+  cfm=[{"id": 1, "equipment": "Pipa Distribusi Raw Water (KM 4-7)", "area": "WTP & WPS Rokan", "masalah": "Pipa Bocor", "tanggal": "2024-12-09", "pic": "Comrell, Asset", "targets": [{"id": 1, "date": "", "label": "Sustain"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- 12.03.2026 rencana survey bersama KM 6-7 tanggal 16.03.2026 | - 17.03.2026 : Menunggu koordinasi dengan stakeholder dan masyarakat (DONE) | - 07.04.2026 : inprogress pekerjaan", "timeline": [{"id": 1, "ts": "2024-12-09", "type": "created", "note": "Item dibuat - Pipa Bocor"}]}, {"id": 2, "equipment": "Line Suction 16\" ke sungai", "area": "WTP & WPS Rokan", "masalah": "Penggantian pipa", "tanggal": "2025-02-04", "pic": "PS", "targets": [{"id": 1, "date": "", "label": "Mei 2025"}], "status": "On Hold", "type": "Notifikasi", "docno": "2102335964", "ket": "- 07.04.2026 : material sudah onsite | - 09.04.2026 : menunggu informasi dari PS untuk kontrak piping bordesk | - 21.04.2026 : rencana menggunakan kontrak lain untuk jasa penggantian pipa", "timeline": [{"id": 1, "ts": "2025-02-04", "type": "created", "note": "Item dibuat - Penggantian pipa"}]}, {"id": 3, "equipment": "WTP Mini - WPS Sei Rokan", "area": "WTP & WPS Rokan", "masalah": "Pembangunan WTP Mini - WPS Sei Rokan", "tanggal": "2025-10-28", "pic": "PE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102340156", "ket": "- Review HSSE Form 3 (Done) | - Review form 4a (PE) | 13% vs 100%", "timeline": [{"id": 1, "ts": "2025-10-28", "type": "created", "note": "Item dibuat - Pembangunan WTP Mini - WPS Sei Rokan"}]}, {"id": 4, "equipment": "510 P-1B (Ex. dari 510-P-1D)", "area": "WTP & WPS Rokan", "masalah": "Tidak ada press saat running", "tanggal": "2026-04-21", "pic": "MA-3/REIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "21.04.2026 : rencana pengecekan oleh REIE | '23.04.2026 : Pompa sudah dibawa ke WS", "timeline": [{"id": 1, "ts": "2026-04-21", "type": "created", "note": "Item dibuat - Tidak ada press saat running"}]}, {"id": 5, "equipment": "Bak Sedimentasi", "area": "WTP & WPS Rokan", "masalah": "Dinding bak longsor", "tanggal": "2020-04-14", "pic": "PS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "On Hold", "type": "WO", "docno": "8201035042", "ket": "- Menunggu rekomendasi SSIE terkait kedalaman tiang pancang untuk melakukan soundier dan boring | - 22.09.2025 rekomendasi done (Rekomendasi belum update di SAP) | - 21.10.2025  Job Plan", "timeline": [{"id": 1, "ts": "2020-04-14", "type": "created", "note": "Item dibuat - Dinding bak longsor"}]}, {"id": 6, "equipment": "520-CL-02", "area": "WTP & WPS Rokan", "masalah": "Agitator abnormal", "tanggal": "2024-06-20", "pic": "Purch", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "On Hold", "type": "WO", "docno": "8202217196", "ket": "- inprogress sourcing ke manufacture | - I/P evaluasi spec dan klarifikasi budgetary hasil inquiry. | 21.04.2026 : menunggu quotation baru dari manufacture via distributor", "timeline": [{"id": 1, "ts": "2024-06-20", "type": "created", "note": "Item dibuat - Agitator abnormal"}]}, {"id": 7, "equipment": "520-CL-01", "area": "WTP & WPS Rokan", "masalah": "Motor agitator running, gearbox tidak running", "tanggal": "2025-11-11", "pic": "MA-3/REIE / PS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102348397", "ket": "09.04.2026 : agitator sudah terpasang di lapangan, menunggu connecting | 14.04.2026 : Sudah di test, namun speed terlalu tinggi, menunggu gearbox baru | 21.04.2026 : Menunggu pemilihan vendor baru", "timeline": [{"id": 1, "ts": "2025-11-11", "type": "created", "note": "Item dibuat - Motor agitator running, gearbox tidak running"}]}, {"id": 8, "equipment": "520-PM-606-G", "area": "WTP & WPS Rokan", "masalah": "Suara kasar dan putaran berat", "tanggal": "2026-04-23", "pic": "WS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "IKD | '28.04.2026 : Motor sudah dibawa ke WS", "timeline": [{"id": 1, "ts": "2026-04-23", "type": "created", "note": "Item dibuat - Suara kasar dan putaran berat"}]}, {"id": 9, "equipment": "580-P-302A", "area": "Boiler Existing", "masalah": "Crack pada flange dekat casing pompa", "tanggal": "2024-12-17", "pic": "WS", "targets": [{"id": 1, "date": "", "label": "12 Mei 2025"}, {"id": 2, "date": "", "label": "W-1 Juli 2025"}, {"id": 3, "date": "", "label": "W-2 Juli 2025"}, {"id": 4, "date": "", "label": "W-4 Agustus 2025"}, {"id": 5, "date": "", "label": "Target W-1 September 2025"}, {"id": 6, "date": "", "label": "Target W-4 september 2025"}, {"id": 7, "date": "", "label": "Target W-2 Oktober 2025"}, {"id": 8, "date": "", "label": "Target W-4 November 2025"}, {"id": 9, "date": "", "label": "Target W-2 Mei 2026"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102334516", "ket": "- 03.02.2026 : inprogress repair casing | - 12.03.2026 : menunggu laporan dari PT IAS | - 28.04.2026 : Target W2 mei 2026, delivery ke Dumai", "timeline": [{"id": 1, "ts": "2024-12-17", "type": "created", "note": "Item dibuat - Crack pada flange dekat casing pompa"}]}, {"id": 10, "equipment": "580-P-303B", "area": "Boiler Existing", "masalah": "Bocoran pada casing pompa", "tanggal": "2025-09-16", "pic": "Purch", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "WO", "docno": "8202231488", "ket": "- Perbaikan di WS (material lama) | - 10.03.2026 Menunggu rekomendasi baru dari engineer (gagal perbaikan) | - 07.04.2026 : inprogress pengadaan pompa baru", "timeline": [{"id": 1, "ts": "2025-09-16", "type": "created", "note": "Item dibuat - Bocoran pada casing pompa"}]}, {"id": 11, "equipment": "550 P 703 B", "area": "Boiler Existing", "masalah": "Pompa fuel boiler stork mech seal bocor", "tanggal": "2026-02-19", "pic": "MA-3/WS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- 10.03.2026 : Menunggu rekomendasi REIE | -14.04.2026 : Follow up ke LTSA | - 21.04.2026 : inprogress pengadaan material oleh vendor (John Crane)", "timeline": [{"id": 1, "ts": "2026-02-19", "type": "created", "note": "Item dibuat - Pompa fuel boiler stork mech seal bocor"}]}, {"id": 12, "equipment": "HE Boiler Stork", "area": "Boiler Existing", "masalah": "Bocor", "tanggal": "2026-03-10", "pic": "UTL", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "10.03.2026 : Rencana akan dilakukan survey oleh SSIE | 21.04.2026 : Pembuatan undangan survey ulang bersama SSIE", "timeline": [{"id": 1, "ts": "2026-03-10", "type": "created", "note": "Item dibuat - Bocor"}]}, {"id": 13, "equipment": "580-P-301B", "area": "Boiler Existing", "masalah": "High Vibrasi (pompa 3, motor 18)", "tanggal": "2026-04-07", "pic": "MA-3/EIIE/WS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "-motor dibawa ke WS untuk ganti bearing | 28.04.2026 : Pompa sudah selesai terpasang, | -motor dibawa ke WS untuk ganti bearing", "timeline": [{"id": 1, "ts": "2026-04-07", "type": "created", "note": "Item dibuat - High Vibrasi (pompa 3, motor 18)"}]}, {"id": 14, "equipment": "580-P-301C", "area": "Boiler Existing", "masalah": "High Vibrasi dan Gland Packing berasap", "tanggal": "2026-04-07", "pic": "REIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "' 28.04.2026 : | - long term : Menunggu fabrikasi unit pompa dari PT IAS | - short term : Temporary repair di WS RU II", "timeline": [{"id": 1, "ts": "2026-04-07", "type": "created", "note": "Item dibuat - High Vibrasi dan Gland Packing berasap"}]}, {"id": 15, "equipment": "Boiler Stork", "area": "Boiler Existing", "masalah": "Penggantian Aerofoil", "tanggal": "2026-04-28", "pic": "ECLC/MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "28.04.2026 : Material sudah di WS (Indo Boiler), Progress perizinan masuk.", "timeline": [{"id": 1, "ts": "2026-04-28", "type": "created", "note": "Item dibuat - Penggantian Aerofoil"}]}, {"id": 16, "equipment": "925-P-5C", "area": "Boiler HDC", "masalah": "Gearbox rusak", "tanggal": "2022-06-28", "pic": "TA/OH", "targets": [{"id": 1, "date": "", "label": "Februari 24"}], "status": "On Hold", "type": "Notifikasi", "docno": "", "ket": "13.01.2026 : gearbox sudah terinstall, menunggu install governor dan lovejoy | 14. 22.01.2026 : lakukan tes kosong gearbox, vibrasi gearbox 14 mm/s, turbin : 2 mm/s | 15. Pengadaan gearbox baru W4 Desember 2026 - W1 Januari 2027", "timeline": [{"id": 1, "ts": "2022-06-28", "type": "created", "note": "Item dibuat - Gearbox rusak"}]}, {"id": 17, "equipment": "925-ME-9 dan Bak Sea Side Ext", "area": "Boiler HDC", "masalah": "Cleaning ME-9 dan bak Existing", "tanggal": "2025-02-04", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "WO", "docno": "8202225499", "ket": "- Eksekusi menunggu perizinan dan badge manpower | - 10.03.2026 : inprogress pekerjaan ME-5 | - 21.04.2026 : inprogress pekerjaan ME-5, (perlu rekomendasi pembuangan lumpur ke laut oleh HSSE)", "timeline": [{"id": 1, "ts": "2025-02-04", "type": "created", "note": "Item dibuat - Cleaning ME-9 dan bak Existing"}]}, {"id": 18, "equipment": "Tanki HCl B", "area": "Boiler HDC", "masalah": "Bocor", "tanggal": "2025-07-07", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "WO", "docno": "8202230797", "ket": "18.02.2026 : menunggu SP3MK - Done | 26.02.2026 : KOM - Done, menunggu persiapan perijinan | '23.04.2026 : Perijinan Done, Perlu pengosongan tanki", "timeline": [{"id": 1, "ts": "2025-07-07", "type": "created", "note": "Item dibuat - Bocor"}]}, {"id": 19, "equipment": "925-P-7A", "area": "Boiler HDC", "masalah": "Mech. Seal Bocor", "tanggal": "2026-10-02", "pic": "WS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "21.04.2026 : rencana test performance | 23.04.2026 : Pompa dan check valve sudah di site, inprogress perakitan | '28.04.20256 : Perakitan Done, inprogress pengetesan", "timeline": [{"id": 1, "ts": "2026-10-02", "type": "created", "note": "Item dibuat - Mech. Seal Bocor"}]}, {"id": 20, "equipment": "940-B-5", "area": "Boiler HDC", "masalah": "Total Retubing", "tanggal": "2026-02-10", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Mei 2026"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- 23.04.2026 : plan 94.29 %, actual : 75.17% (Behind 19.13%) | - 28.04.2026 : plan 87.63 %, actual : 87.26 % (Behind 2.34%) | - 30.04.2026 :", "timeline": [{"id": 1, "ts": "2026-02-10", "type": "created", "note": "Item dibuat - Total Retubing"}]}, {"id": 21, "equipment": "925 ME-5 (sluice gate)", "area": "Boiler HDC", "masalah": "Bordesk perlu perbaikan", "tanggal": "2026-02-19", "pic": "CO", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102345195", "ket": "12.03.2026 : inprogress pemasangan | 16.03.2026 : progress pra tender | 21.04.2026 : pemasukan penawaran, deadline 23 April 2026", "timeline": [{"id": 1, "ts": "2026-02-19", "type": "created", "note": "Item dibuat - Bordesk perlu perbaikan"}]}, {"id": 22, "equipment": "Line 12 inch Treated Water", "area": "Boiler HDC", "masalah": "Pemindahan pipa ke bawah jalan untuk percepatan TA", "tanggal": "2026-02-24", "pic": "MA-3/SEIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102364996", "ket": "10.03.2026 : Rekomendasi done | 12.03.2026 : Peninjauan rekomendasi | 21.04.2026: Inprogress pekerjaan", "timeline": [{"id": 1, "ts": "2026-02-24", "type": "created", "note": "Item dibuat - Pemindahan pipa ke bawah jalan untuk percepatan TA"}]}, {"id": 23, "equipment": "925-P-7B", "area": "Boiler HDC", "masalah": "Bocoran pada discharge pompa setelah kerangan", "tanggal": "2026-04-08", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- IKD | - Menunggu pemasangan scaffolding | 14.04.2026 : Inprogress pekerjaan (Menunggu info vendor untuk penggantian line header Sea Water)", "timeline": [{"id": 1, "ts": "2026-04-08", "type": "created", "note": "Item dibuat - Bocoran pada discharge pompa setelah kerangan"}]}, {"id": 24, "equipment": "925-P-7D", "area": "Boiler HDC", "masalah": "Bocoran mech seal", "tanggal": "2026-04-14", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- Monitoring | '16.04.2026 : Setelah pompa 925 P 7A selesai", "timeline": [{"id": 1, "ts": "2026-04-14", "type": "created", "note": "Item dibuat - Bocoran mech seal"}]}, {"id": 25, "equipment": "560-GT-03", "area": "PLTU & DTL", "masalah": "Gas External", "tanggal": "2023-08-01", "pic": "EIIE/PS", "targets": [{"id": 1, "date": "", "label": "W-4 Juni 2025"}], "status": "On Hold", "type": "WO", "docno": "8202223085", "ket": "- Sudah onsite di Jakarta | - Sudah onsite di dumai | - Menunggu pengetesan di WS", "timeline": [{"id": 1, "ts": "2023-08-01", "type": "created", "note": "Item dibuat - Gas External"}]}, {"id": 26, "equipment": "Bordesk area finfan", "area": "PLTU & DTL", "masalah": "terindikasi berkarat perlu perbaikan", "tanggal": "2024-04-29", "pic": "MA-3/SSIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "On Hold", "type": "Notifikasi", "docno": "", "ket": "29.01.2026 : menunggu eksekusi | 12.03.2026 : rencana fabrikasi (menunggu penyelesaian ME-5) | 07.04.2026 : inprogress pekerjaan", "timeline": [{"id": 1, "ts": "2024-04-29", "type": "created", "note": "Item dibuat - terindikasi berkarat perlu perbaikan"}]}, {"id": 27, "equipment": "Condensor PLTU", "area": "PLTU & DTL", "masalah": "Kondisi external coating terkelupas", "tanggal": "2024-04-29", "pic": "TA", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "On Hold", "type": "Notifikasi", "docno": "", "ket": "IKD (Rekomendasi SSIE Done) | - Menunggu paket kontrak (Kontrak TA)", "timeline": [{"id": 1, "ts": "2024-04-29", "type": "created", "note": "Item dibuat - Kondisi external coating terkelupas"}]}, {"id": 28, "equipment": "940-CM-55-AL", "area": "PLTU & DTL", "masalah": "Dinding lepas", "tanggal": "2024-05-21", "pic": "PS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- Rencana menggunkaan kontrak emergency | - Akan dikirimkan memo dari MA-3 ke Planner 01 Agustus 2024 (done) | - Menunggu informasi dari planner", "timeline": [{"id": 1, "ts": "2024-05-21", "type": "created", "note": "Item dibuat - Dinding lepas"}]}, {"id": 29, "equipment": "Motor Fan DEG", "area": "PLTU & DTL", "masalah": "Vibrasi Motor tinggi no.1 (33 mm/s) dan no.2 (20 mm/s)", "tanggal": "2025-02-10", "pic": "SSIE/MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- 30.12.2025 : material sudah sesuai spec (kecuali H-beam 175 tidak sesuai KAK) | - 03.02.2026 : menunggu eksekusi | - 10.03.2026 : menunggu tim Kamisatoyo", "timeline": [{"id": 1, "ts": "2025-02-10", "type": "created", "note": "Item dibuat - Vibrasi Motor tinggi no.1 (33 mm/s) dan no.2 (20 mm/s)"}]}, {"id": 30, "equipment": "Pondasi AOP STG 1-4", "area": "PLTU & DTL", "masalah": "Pondasi turun", "tanggal": "2025-03-03", "pic": "SSIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "Menunggu rekomendasi - Done | - Pekerjaan menunggu TA", "timeline": [{"id": 1, "ts": "2025-03-03", "type": "created", "note": "Item dibuat - Pondasi turun"}]}, {"id": 31, "equipment": "905-TG-05", "area": "PLTU & DTL", "masalah": "Main blower di atap gedung TG-05 Mati/Rusak", "tanggal": "2025-05-26", "pic": "WS/ Genmaint", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102340724", "ket": "- Menunggu un-install equipment | - Menunggu crane - Done | - Inprogress perbaikan di WS/Genmaint", "timeline": [{"id": 1, "ts": "2025-05-26", "type": "created", "note": "Item dibuat - Main blower di atap gedung TG-05 Mati/Rusak"}]}, {"id": 32, "equipment": "905-TG-05", "area": "PLTU & DTL", "masalah": "Overhaul", "tanggal": "2025-05-26", "pic": "MA-3/REIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "' 16.04.2026 : Menunggu Perijinan - Done | 21. 04.2026 : Inprogress pekerjaan Centering , Allignment, dan Rakit Gear Box - target w4 april 2026 | 28.04.2026 : Inprogress perbaikan piping stress, kendala pada center alignmentnya", "timeline": [{"id": 1, "ts": "2025-05-26", "type": "created", "note": "Item dibuat - Overhaul"}]}, {"id": 33, "equipment": "GEG-03", "area": "PLTU & DTL", "masalah": "Top Overhaul", "tanggal": "2026-04-06", "pic": "PPI", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- Inprogress (20 HK) | ' 28.06.2026 : Masih menunggu AVR baru", "timeline": [{"id": 1, "ts": "2026-04-06", "type": "created", "note": "Item dibuat - Top Overhaul"}]}, {"id": 34, "equipment": "Leveling lantai auxillary PLTU", "area": "PLTU & DTL", "masalah": "Leveling lantai", "tanggal": "2026-04-06", "pic": "MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "- Inprogress pembobokan | 21.04.2026 : inprogress pembobokan, bor pile", "timeline": [{"id": 1, "ts": "2026-04-06", "type": "created", "note": "Item dibuat - Leveling lantai"}]}, {"id": 35, "equipment": "Feeder SWS#4 ke WTP 3", "area": "PLTU & DTL", "masalah": "Penggantian kabel power", "tanggal": "2025-11-27", "pic": "PS", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102347288", "ket": "- 23.12.2025 : Job Plan | - 29.01.2026 : menunggu planning | - 07.04.2026 : inprogress komen KAK", "timeline": [{"id": 1, "ts": "2025-11-27", "type": "created", "note": "Item dibuat - Penggantian kabel power"}]}, {"id": 36, "equipment": "Retrofit trafo T-4-5", "area": "PLTU & DTL", "masalah": "Penggantian Trafo", "tanggal": "2026-04-20", "pic": "MA-4/ EIIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "21.04.2026 : Inprogress pekerjaan | 28.04.2026 : Pemasangan rubber busduct dan isolasi LV busbar", "timeline": [{"id": 1, "ts": "2026-04-20", "type": "created", "note": "Item dibuat - Penggantian Trafo"}]}, {"id": 37, "equipment": "Tower SUTET bundaran di dekat bukit gelanggang (lampu merah bundaran chevron)", "area": "PLTU & DTL", "masalah": "Skor besi sutet sudah banyak yang hilang", "tanggal": "", "pic": "SSIE/MA-3", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102364901", "ket": "- 02.04.2026 : material sudah ready, menunggu pemasangan scaffolding | - 07.04.2026 : masih menunggu pemasangan scaffolding | '-16.04.2026 : pelaksanaan selesai TA", "timeline": [{"id": 1, "ts": "2026-06-16", "type": "created", "note": "Item dibuat - Skor besi sutet sudah banyak yang hilang"}]}, {"id": 38, "equipment": "Retrofit trafo T-2-6", "area": "PLTU & DTL", "masalah": "Penggantian Trafo", "tanggal": "2026-04-27", "pic": "MA-1/EIIE", "targets": [{"id": 1, "date": "", "label": "Target belum ditentukan"}], "status": "In Progress", "type": "Notifikasi", "docno": "", "ket": "27.04.2026 : Inprogress pekerjaan", "timeline": [{"id": 1, "ts": "2026-04-27", "type": "created", "note": "Item dibuat - Penggantian Trafo"}]}, {"id": 39, "equipment": "Flow Counter ADO WPS Rokan", "area": "WTP & WPS Rokan", "masalah": "Flow counter lama rusak, selisih pengukuran vs counter DTL", "tanggal": "2025-03-18", "pic": "MA-3", "targets": [{"id": 1, "date": "2025-04-17", "label": "Pengetesan pertama"}, {"id": 2, "date": "2025-04-24", "label": "Pengetesan lanjutan"}], "status": "Done", "type": "Notifikasi", "docno": "2102344477", "ket": "28.04.2026: Done. Selisih -2 liter (acceptable)", "timeline": [{"id": 1, "ts": "2025-03-18", "type": "created", "note": "Item dibuat - flow counter lama rusak"}, {"id": 2, "ts": "2026-04-28", "type": "done", "note": "Done - flow counter terpasang dan diverifikasi"}]}, {"id": 40, "equipment": "ES WPS Rokan", "area": "WTP & WPS Rokan", "masalah": "Terdapat 2 AC Rusak", "tanggal": "2026-03-10", "pic": "WS", "targets": [{"id": 1, "date": "", "label": "Menunggu rekomendasi Engineer"}], "status": "In Progress", "type": "Notifikasi", "docno": "2102366510", "ket": "21.04.2026: menunggu rekomendasi Engineer", "timeline": [{"id": 1, "ts": "2026-03-10", "type": "created", "note": "Item dibuat - 2 unit AC rusak"}]}];
+  persistCfm();
+}
+if(!ta.length){
+  ta=[
+    {id:1,tagNumber:'BFP-101A',area:'Boiler HDC',issue:'Overhaul Boiler Feed Pump P-101A — vibrasi tinggi, bearing aus',disc:'Mechanical',priority:'Critical',tanggal:'2026-06-01',status:'In Progress',updateBy:'Andi S.',statusUpdate:'16.06.2026: Disassembly selesai, impeller dikirim ke machine shop | 15.06.2026: Pekerjaan dimulai, disassembly BFP | 01.06.2026: Job dibuat untuk TA Juni 2026',timeline:[{id:1,ts:'2026-06-01',type:'created',note:'Job dibuat'}]},
+    {id:2,tagNumber:'HE-E-201',area:'Boiler Existing',issue:'Penggantian Tube Bundle HE E-201 — fouling berat, efisiensi turun 30%',disc:'Mechanical',priority:'High',tanggal:'2026-06-02',status:'Open',updateBy:'Budi W.',statusUpdate:'02.06.2026: Tube bundle sudah ready di warehouse, menunggu shutdown',timeline:[{id:1,ts:'2026-06-02',type:'created',note:'Job dibuat'}]},
+    {id:3,tagNumber:'FT-310',area:'PLTU & DTL',issue:'Kalibrasi & Penggantian Flow Transmitter FT-310 — drift >5%',disc:'Instrument',priority:'Medium',tanggal:'2026-06-05',status:'Open',updateBy:'Citra N.',statusUpdate:'05.06.2026: Spare transmitter sudah disiapkan di gudang instrument',timeline:[{id:1,ts:'2026-06-05',type:'created',note:'Job dibuat'}]},
+    {id:4,tagNumber:'CWS-Filter',area:'PLTU & DTL',issue:'Penggantian Filter Cartridge Cooling Water — DP tinggi',disc:'Mechanical',priority:'Low',tanggal:'2026-06-10',status:'Done',updateBy:'Dika R.',statusUpdate:'14.06.2026: Pekerjaan selesai tepat waktu, DP normal | 10.06.2026: Job dibuat, filter cartridge ready',timeline:[{id:1,ts:'2026-06-10',type:'created',note:'Job dibuat'},{id:2,ts:'2026-06-14',type:'done',note:'Selesai'}]},
+    {id:5,tagNumber:'SF-WPS-01',area:'WTP & WPS Rokan',issue:'Cleaning & Inspeksi Sand Filter WPS — kapasitas turun',disc:'Civil',priority:'Medium',tanggal:'2026-06-06',status:'Open',updateBy:'Eka P.',statusUpdate:'06.06.2026: Job dibuat, jadwal cleaning saat shutdown WPS',timeline:[{id:1,ts:'2026-06-06',type:'created',note:'Job dibuat'}]},
+  ];
+  persistTa();
+}
+migrateAreas();
+migrateWeekTargets();
+setTimeout(checkH7,500);
+
+function persistCfm(){localStorage.setItem('cfm-v6',JSON.stringify(cfm))}
+function weekToFriday(weekNum, month0, year){
+  // Find Friday in the Nth 7-day block of the month
+  // Week 1 = days 1-7, Week 2 = days 8-14, etc.
+  const weekStart = (weekNum - 1) * 7 + 1;
+  for(let day = weekStart; day <= weekStart + 6; day++){
+    const d = new Date(year, month0, day);
+    if(d.getMonth() !== month0) break; // overflowed to next month
+    if(d.getDay() === 5) return d; // Friday
+  }
+  // Fallback: last valid day of the week block
+  for(let day = Math.min(weekStart + 6, 28 + weekNum); day >= weekStart; day--){
+    const d = new Date(year, month0, day);
+    if(d.getMonth() === month0) return d;
+  }
+  return null;
+}
+
+function migrateWeekTargets(){
+  // Convert "W-N Month Year" labels to actual Friday ISO date
+  // Use inline map — cannot reference MONTHS_ID (const, defined later in file)
+  const BULAN_MAP={januari:0,februari:1,maret:2,april:3,mei:4,juni:5,
+    juli:6,agustus:7,september:8,oktober:9,november:10,desember:11};
+  const weekPat = /[Ww][-\u2013]?(\d+)\s+([A-Za-z]+)(?:\s+(\d{4}))?/;
+  let changed = false;
+  cfm.forEach(d=>{
+    if(!d.targets) return;
+    d.targets.forEach(t=>{
+      if(t.date) return; // already has date
+      const lbl = (t.label||'').trim();
+      const m = lbl.match(weekPat);
+      if(!m) return;
+      const wk = parseInt(m[1]);
+      const mon = BULAN_MAP[m[2].toLowerCase()];
+      const yr = parseInt(m[3] || new Date().getFullYear());
+      if(isNaN(mon) || isNaN(wk) || isNaN(yr)) return;
+      const fri = weekToFriday(wk, mon, yr);
+      if(!fri) return;
+      t.date = fri.toISOString().slice(0,10);
+      changed = true;
+    });
+  });
+  if(changed){ persistCfm(); console.log('migrateWeekTargets: dates updated'); }
+}
+
+function migrateAreas(){
+  // Split old "WTP & WPS Rokan" into WPS Rokan or WTP
+  const wpsEq=['Flow Counter ADO WPS Rokan','ES WPS Rokan','Pipa Distribusi Raw Water (KM 4-7)',
+    'Line Suction 16" ke sungai','WTP Mini - WPS Sei Rokan'];
+  let changed=false;
+  cfm.forEach(d=>{
+    if(d.area==='PLTU & DTL'){d.area='PLTU';changed=true;}
+    if(d.area==='WTP & WPS Rokan'){
+      d.area=wpsEq.includes(d.equipment)?'WPS Rokan':'WTP';
+      changed=true;
+    }
+  });
+  if(changed)persistCfm();
+}
+function persistTa(){localStorage.setItem('ta-v2',JSON.stringify(ta))}
+function nCfmId(){return cfm.length?Math.max(...cfm.map(d=>d.id))+1:1}
+function nTaId(){return ta.length?Math.max(...ta.map(d=>d.id))+1:1}
+function nTlId(arr){return arr&&arr.length?Math.max(...arr.map(t=>t.id))+1:1}
+function today(){return new Date().toISOString().slice(0,10)}
+function renderDocs(d){
+  const docs=d.docs&&d.docs.length?d.docs:(d.type?[{type:d.type,docno:d.docno||''}]:[]);
+  if(!docs.length)return'<span style="color:var(--muted)">—</span>';
+  return docs.map(x=>`<span class="badge ${TCLS[x.type]||''}">${esc(x.type)}</span>${x.docno?`<div class="doc-no">${esc(x.docno)}</div>`:''}`).join('<div style="height:3px"></div>');
+}
+function renderKet(ket){
+  if(!ket)return'';
+  const parts=ket.split(' | ').map(s=>s.trim()).filter(Boolean);
+  return'<div class="ket-timeline">'+parts.map((p,i)=>{
+    const m=p.match(/^[-\u2013\u2014\s]*?(\d{2}\.\d{2}\.\d{4})\s*:\s*/);
+    const isLast=i===parts.length-1;
+    const date=m?m[1]:'';
+    const rawText=m?p.slice(m[0].length):p;
+    const text=(rawText||'').replace(/^[-\u2013\u2014\s]+/,'').trim()||rawText.trim();
+    return`<div class="ket-entry ${isLast?'ket-last':''}"><div class="ket-date">${date||'—'}</div><div class="ket-text">${esc(text)}</div></div>`;
+  }).join('')+'</div>';
+}
+function ketLast(ket){
+  if(!ket)return'<span style="color:var(--muted);font-size:11px">—</span>';
+  const parts=ket.split(' | ').map(s=>s.trim()).filter(Boolean);
+  const show=parts.slice(-3);
+  return show.map((p,i)=>{
+    const m=p.match(/^[-\u2013\u2014\s]*?(\d{2}\.\d{2}\.\d{4})\s*:\s*/);
+    const isLast=i===show.length-1;
+    const date=m?m[1]:'';
+    const text=m?p.slice(m[0].length):p;
+    return`<div style="margin-bottom:${isLast?0:4}px">${date?`<span style="font-size:10px;color:var(--green);font-weight:700">${date}</span> `:''}<span style="font-size:11px;color:${isLast?'var(--text)':'var(--muted)'};line-height:1.4">${esc(text)}</span></div>`;
+  }).join('');
+}
+function fd(d){if(!d)return'—';const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+function daysAgo(ds){
+  if(!ds)return'';
+  const d=new Date(ds);if(isNaN(d.getTime()))return'';
+  const now=new Date();
+  const future=d>now;
+  const [from,to]=future?[now,d]:[d,now];
+  let y=to.getFullYear()-from.getFullYear();
+  let mo=to.getMonth()-from.getMonth();
+  let dy=to.getDate()-from.getDate();
+  if(dy<0){mo--;const prev=new Date(to.getFullYear(),to.getMonth(),0);dy+=prev.getDate();}
+  if(mo<0){y--;mo+=12;}
+  const totalDays=Math.floor((to-from)/86400000);
+  if(totalDays===0)return'Hari ini';
+  const parts=[];
+  if(y)parts.push(y+' thn');
+  if(mo)parts.push(mo+' bln');
+  if(dy||!parts.length)parts.push(dy+' hr');
+  return parts.join(' ')+(future?' lagi':' lalu');
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function abadge(a){const i=AREAS.indexOf(a);return`<span class="badge ${i>=0?ACLS[i]:'b-a0'}">${esc(a)}</span>`}
+const MONTHS_ID={'Januari':0,'Februari':1,'Maret':2,'April':3,'Mei':4,'Juni':5,'Juli':6,'Agustus':7,'September':8,'Oktober':9,'November':10,'Desember':11};
+function parseTargetDate(t){
+  if(t.date)return new Date(t.date);
+  // parse label: W-2 Mei 2026, W2 Mei 2026, Minggu 2 Mei 2026, Minggu ke-2 April
+  const lbl=(t.label||'').trim();
+  const wm=lbl.match(/[Ww][-–]?(\d)\s+([A-Za-z]+)(?:\s+(\d{4}))?/) ||
+            lbl.match(/[Mm]inggu\s+(?:ke-?)?(\d)\s+([A-Za-z]+)(?:\s+(\d{4}))?/);
+  if(wm){
+    const wk=+wm[1],mon=MONTHS_ID[wm[2]],yr=+(wm[3]||new Date().getFullYear());
+    if(mon!==undefined){const day=wk*7;return new Date(yr,mon,Math.min(day,28));}
+  }
+  // parse label: "14 Mei 2026" or "14/05/2026"
+  const dm=lbl.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if(dm){const mon=MONTHS_ID[dm[2]];if(mon!==undefined)return new Date(+dm[3],mon,+dm[1]);}
+  const sl=lbl.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+  if(sl)return new Date(+sl[3],+sl[2]-1,+sl[1]);
+  return null;
+}
+function isOvd(d){if(d.status==='Done')return false;if(!d.targets||!d.targets.length)return false;const t=d.targets[d.targets.length-1];const dt=parseTargetDate(t);return dt&&dt<new Date(today())}
+function fmtTarget(t){
+  if(t.date)return fd(t.date);
+  const lbl=(t.label||'').trim();
+  const wm=lbl.match(/[Ww][-–]?(\d)\s+([A-Za-z]+)(?:\s+(\d{4}))?/) ||
+            lbl.match(/[Mm]inggu\s+(?:ke-?)?(\d)\s+([A-Za-z]+)(?:\s+(\d{4}))?/);
+  if(wm)return`W-${wm[1]} ${wm[2]}${wm[3]?' '+wm[3]:''}`;
+  return lbl||'—';
+}
+function checkH7(){
+  const EMAIL='m.burhan@pertamina.com';
+  const now=new Date();now.setHours(0,0,0,0);
+  const H7=3*86400000;
+  const items=[];
+  cfm.filter(d=>d.status!=='Done').forEach(d=>{
+    if(!d.targets||!d.targets.length)return;
+    const tgt=d.targets[d.targets.length-1];
+    if(!tgt||!tgt.date)return;
+    const td=new Date(tgt.date);td.setHours(0,0,0,0);
+    const diff=td-now;
+    if(diff>=0&&diff<=H7){
+      const days=Math.round(diff/86400000);
+      items.push({equip:d.equipment,area:d.area,pic:d.pic,date:tgt.date,days});
+    }
+  });
+  const banner=document.getElementById('h7-banner');
+  if(!banner)return;
+  if(!items.length){banner.style.display='none';return;}
+  const plural=items.length>1?'item':'item';
+  document.getElementById('h7-msg').textContent=
+    `\u26A0 ${items.length} ${plural} mendekati batas waktu (H-3)`;
+  // Build mailto
+  const subj=encodeURIComponent(`[CFM Utilities] Notifikasi H-7 Target Penyelesaian`);
+  const lines=items.map(x=>`- ${x.equip} (${x.area}) | PIC: ${x.pic||'-'} | Target: ${x.date} | H-${x.days}`).join('\n');
+  const body=encodeURIComponent(
+    `Yth. Tim CFM Bagian Utilities,\n\nBerikut item yang mendekati batas target penyelesaian (H-7):\n\n${lines}\n\nMohon segera ditindaklanjuti.\n\nSalam,\nSistem CFM Utilities`
+  );
+  document.getElementById('h7-mailto').href=`mailto:${EMAIL}?subject=${subj}&body=${body}`;
+  banner.style.display='flex';
+}
+function toast(m){document.getElementById('toast-msg').textContent=m;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+
+function goTo(v){
+  vw=v;
+  document.querySelectorAll('.vc').forEach(e=>e.style.display='none');
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+v).style.display='block';
+  const nb=document.getElementById('nav-'+v);if(nb)nb.classList.add('active');
+  if(v==='dashboard')renderDash();
+  if(v==='outstanding')renderOut();
+  if(v==='selesai')renderSelesai();
+  if(v==='ta')renderTa();
+  if(v==='email')renderEmailPage();
+}
+
+function renderEmailPage(){
+  const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
+  const el=document.getElementById('email-ovd-count');
+  if(el){
+    if(ovd.length===0){
+      el.innerHTML='<span style="color:#16a34a"><i class="ti ti-circle-check"></i> Tidak ada item overdue saat ini</span>';
+    }else{
+      el.innerHTML=`<span style="color:#dc2626;font-weight:600"><i class="ti ti-alert-triangle"></i> ${ovd.length} item overdue</span>: `+
+        ovd.slice(0,3).map(d=>d.equipment).join(', ')+(ovd.length>3?` dan ${ovd.length-3} lainnya`:'');
+    }
+  }
+}
+
+async function doSendReport(){
+  if(!isEmailConfigured()){
+    if(confirm('Email belum dikonfigurasi. Buka pengaturan?'))openEmailSetup();
+    return;
+  }
+  const btn=event.target.closest('button');
+  const statusEl=document.getElementById('email-report-status');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';
+  statusEl.style.display='none';
+  const d=new Date();
+  const tglSubj=d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const subject=`[CFM Utilities] Laporan Harian — ${tglSubj}`;
+  const html=buildReportHTML();
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,subject,html);
+    statusEl.style.display='block';
+    statusEl.style.background='#dcfce7';
+    statusEl.style.color='#166534';
+    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Laporan berhasil dikirim ke '+REPORT_EMAIL;
+    toast('Laporan berhasil dikirim');
+  }catch(e){
+    console.error(e);
+    statusEl.style.display='block';
+    statusEl.style.background='#fef2f2';
+    statusEl.style.color='#dc2626';
+    const errMsg=e.text||e.message||JSON.stringify(e)||'Error';
+    statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+errMsg;
+  }finally{
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Kirim Laporan CFM';
+  }
+}
+
+async function doSendOverdue(){
+  if(!isEmailConfigured()){
+    if(confirm('Email belum dikonfigurasi. Buka pengaturan?'))openEmailSetup();
+    return;
+  }
+  const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
+  if(!ovd.length){toast('Tidak ada item overdue');return;}
+  const btn=event.target.closest('button');
+  const statusEl=document.getElementById('email-ovd-status');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';
+  statusEl.style.display='none';
+  const rows=ovd.map((d,i)=>{
+    const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+    const tgtStr=tgt?(tgt.date?fd(tgt.date):(tgt.label||'—')):'—';
+    const bg=i%2===0?'#fff5f5':'#ffffff';
+    return`<tr style="background:${bg}">
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca;text-align:center;color:#6b7280">${i+1}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca;font-weight:600">${esc(d.equipment||'')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca;color:#4b5563">${d.area||''}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca">${esc(d.masalah||'')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca;text-align:center">${d.pic||'—'}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #fecaca;text-align:center;color:#dc2626;font-weight:700">${tgtStr}</td>
+    </tr>`;
+  }).join('');
+  const tglStr=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;color:#1f2937;border:1px solid #fecaca;border-radius:10px;overflow:hidden">
+    <div style="background-color:#dc2626;color:#ffffff;padding:22px 28px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#fca5a5;margin-bottom:4px">Pertamina Bagian Utilities</div>
+      <h1 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#ffffff">&#9888; Notifikasi Item Overdue</h1>
+      <div style="font-size:12px;color:#fecaca">${tglStr}</div>
+    </div>
+    <div style="padding:20px 28px;background:#fff">
+      <p style="font-size:13px;margin:0 0 14px">Terdapat <strong style="color:#dc2626">${ovd.length} item</strong> yang telah melewati batas target penyelesaian dan memerlukan tindakan segera:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #fecaca;border-radius:6px;overflow:hidden">
+        <thead><tr style="background:#dc2626;color:#fff">
+          <th style="padding:8px;text-align:center">#</th>
+          <th style="padding:8px;text-align:left">Equipment</th>
+          <th style="padding:8px;text-align:left">Area</th>
+          <th style="padding:8px;text-align:left">Masalah / Pekerjaan</th>
+          <th style="padding:8px;text-align:center">PIC</th>
+          <th style="padding:8px;text-align:center">Target (Lewat)</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="font-size:12px;color:#6b7280;margin-top:16px">Mohon segera ditindaklanjuti dan perbarui status di sistem CFM Utilities.</p>
+    </div>
+    <div style="background:#fef2f2;border-top:1px solid #fecaca;padding:10px 28px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#9ca3af">Email ini dikirim otomatis oleh <strong>Sistem CFM Utilities</strong> &mdash; Pertamina Bagian Utilities &mdash; Do Not Reply</p>
+    </div>
+  </div>`;
+  const tglSubj=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,`[CFM Utilities] ⚠ ${ovd.length} Item Overdue — ${tglSubj}`,html);
+    statusEl.style.display='block';
+    statusEl.style.background='#dcfce7';
+    statusEl.style.color='#166534';
+    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Notifikasi berhasil dikirim ke '+REPORT_EMAIL;
+    toast('Notifikasi overdue berhasil dikirim');
+  }catch(e){
+    console.error(e);
+    statusEl.style.display='block';
+    statusEl.style.background='#fef2f2';
+    statusEl.style.color='#dc2626';
+    statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+(e.text||e.message||'Error');
+  }finally{
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-alert-triangle"></i> Kirim Notifikasi Overdue';
+  }
+}
+
+// ---- DASHBOARD ----
+let chartStatus=null,chartArea=null,chartType=null,chartTaProg=null;
+
+function destroyChart(c){if(c){try{c.destroy()}catch(e){}}}
+
+function renderDash(){
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const act=cfm.filter(d=>d.status!=='Done');
+  const done=cfm.filter(d=>d.status==='Done');
+  const open=cfm.filter(d=>d.status==='Open').length;
+  const prog=cfm.filter(d=>d.status==='In Progress').length;
+  const hold=cfm.filter(d=>d.status==='On Hold').length;
+  const ovd=act.filter(isOvd).length;
+  const pct=cfm.length?Math.round(done.length/cfm.length*100):0;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total CFM</div><div class="stat-value">${cfm.length}</div><div class="stat-sub">seluruh area</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value" style="color:var(--red)">${open}</div><div class="stat-sub">belum dikerjakan</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--amber)">${prog}</div><div class="stat-sub">sedang berjalan</div></div>
+    <div class="stat-card"><div class="stat-label">On Hold</div><div class="stat-value" style="color:var(--gray)">${hold}</div><div class="stat-sub">tertunda</div></div>
+    <div class="stat-card"><div class="stat-label">Selesai</div><div class="stat-value" style="color:var(--green)">${done.length}</div><div class="stat-sub">completed</div></div>
+    <div class="stat-card" style="border-color:#F7C1C1"><div class="stat-label" style="color:var(--red)">⚠ Overdue</div><div class="stat-value" style="color:var(--red)">${ovd}</div><div class="stat-sub">melewati target</div></div>
+    <div class="stat-card" style="grid-column:span 2"><div class="stat-label">Progress Keseluruhan</div><div style="display:flex;align-items:baseline;gap:8px"><div class="stat-value">${pct}%</div><div class="stat-sub">${done.length} dari ${cfm.length} item selesai</div></div><div class="prog-bar" style="height:8px;margin-top:10px"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;
+
+  // -- Chart 1: Status donut --
+  destroyChart(chartStatus);
+  const csCtx=document.getElementById('chart-status');
+  if(csCtx){
+    chartStatus=new Chart(csCtx,{type:'doughnut',data:{labels:['Open','In Progress','On Hold','Done'],datasets:[{data:[open,prog,hold,done.length],backgroundColor:['#FCEBEB','#FAEEDA','#F1EFE8','#EAF3DE'],borderColor:['#A32D2D','#854F0B','#5F5E5A','#3B6D11'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:8,boxWidth:12}},tooltip:{callbacks:{label:function(c){return c.label+': '+c.parsed+' item'}}}}}});
+  }
+
+  // -- Chart 2: Area bar --
+  destroyChart(chartArea);
+  const caCtx=document.getElementById('chart-area');
+  if(caCtx){
+    const aLabels=AREAS.map(a=>a.length>14?a.substring(0,14)+'…':a);
+    const aOpen=AREAS.map(a=>cfm.filter(d=>d.area===a&&d.status==='Open').length);
+    const aProg=AREAS.map(a=>cfm.filter(d=>d.area===a&&d.status==='In Progress').length);
+    const aHold=AREAS.map(a=>cfm.filter(d=>d.area===a&&d.status==='On Hold').length);
+    const aDone=AREAS.map(a=>cfm.filter(d=>d.area===a&&d.status==='Done').length);
+    chartArea=new Chart(caCtx,{type:'bar',data:{labels:aLabels,datasets:[{label:'Open',data:aOpen,backgroundColor:'#FCEBEB',borderColor:'#A32D2D',borderWidth:1},{label:'In Progress',data:aProg,backgroundColor:'#FAEEDA',borderColor:'#854F0B',borderWidth:1},{label:'On Hold',data:aHold,backgroundColor:'#F1EFE8',borderColor:'#5F5E5A',borderWidth:1},{label:'Done',data:aDone,backgroundColor:'#EAF3DE',borderColor:'#3B6D11',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{stepSize:1,font:{size:10}},beginAtZero:true}},plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}}}}});
+  }
+
+  // -- Chart 3: Type donut --
+  destroyChart(chartType);
+  const ctCtx=document.getElementById('chart-type');
+  if(ctCtx){
+    const types=['Notifikasi','WO','PR','PO'];
+    const tData=types.map(t=>cfm.filter(d=>d.type===t).length);
+    chartType=new Chart(ctCtx,{type:'doughnut',data:{labels:types,datasets:[{data:tData,backgroundColor:['#FAEEDA','#E6F1FB','#EEEDFE','#E1F5EE'],borderColor:['#854F0B','#185FA5','#534AB7','#0F6E56'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:8,boxWidth:12}}}}});
+  }
+
+  // Area cards
+  document.getElementById('dash-areas').innerHTML=AREAS.map((a,i)=>{
+    const items=cfm.filter(d=>d.area===a);
+    const ao=items.filter(d=>d.status==='Open').length,ap=items.filter(d=>d.status==='In Progress').length,ad=items.filter(d=>d.status==='Done').length,aov=items.filter(d=>d.status!=='Done').filter(isOvd).length;
+    const apct=items.length?Math.round(ad/items.length*100):0;
+    return`<div class="acard"><div class="acard-name"><span class="badge ${ACLS[i]}">${a}</span></div><div class="amini"><div><div class="amv" style="color:var(--red)">${ao}</div><div class="aml">Open</div></div><div><div class="amv" style="color:var(--amber)">${ap}</div><div class="aml">In Prog</div></div><div><div class="amv" style="color:var(--green)">${ad}</div><div class="aml">Done</div></div>${aov?`<div><div class="amv" style="color:var(--red)">⚠${aov}</div><div class="aml">OVD</div></div>`:''}</div><div style="margin-top:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${apct}% selesai</div><div class="prog-bar" style="height:4px"><div class="prog-fill" style="width:${apct}%"></div></div></div></div>`;
+  }).join('');
+
+  // Overdue list
+  const ovdItems=act.filter(isOvd);
+  document.getElementById('dash-overdue').innerHTML=ovdItems.length
+    ?`<div class="ovd-list">${ovdItems.slice(0,6).map(d=>{const t=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;return`<div class="ovd-item"><div style="flex:1;min-width:0"><div class="ovd-eq">${esc(d.equipment)}</div><div class="ovd-info">${esc(d.area)} · PIC: ${esc(d.pic||'—')} · Target: ${t?fd(t.date):'—'}</div></div><button class="btn btn-sm" onclick="openDetail(${d.id},'cfm')"><i class="ti ti-eye"></i></button></div>`;}).join('')}${ovdItems.length>6?`<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">+${ovdItems.length-6} item lainnya</div>`:''}</div>`
+    :`<div class="empty" style="padding:20px"><i class="ti ti-circle-check" style="font-size:28px;color:var(--green);opacity:1"></i><p style="color:var(--green);font-weight:600">Tidak ada item overdue</p></div>`;
+
+  // PIC Outstanding
+  const act2=cfm.filter(d=>d.status!=='Done');
+  const picMap={};
+  act2.forEach(d=>{const p=d.pic||'—';if(!picMap[p])picMap[p]={total:0,open:0,prog:0,hold:0,ovd:0};picMap[p].total++;if(d.status==='Open')picMap[p].open++;if(d.status==='In Progress')picMap[p].prog++;if(d.status==='On Hold')picMap[p].hold++;if(isOvd(d))picMap[p].ovd++;});
+  const picEntries=Object.entries(picMap).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('dash-pic').innerHTML=picEntries.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${picEntries.map(([pic,v])=>`<div class="pic-card" style="cursor:pointer" onclick="showPicItems(this.getAttribute('data-pic'))" data-pic="${esc(pic)}"><div class="pic-name"><i class="ti ti-user-circle"></i> ${esc(pic)}</div><div class="pic-nums"><span title="Total">${v.total} item</span>${v.open?`<span class="pn-open">${v.open} Open</span>`:''} ${v.prog?`<span class="pn-prog" style="color:var(--green);font-weight:600">${v.prog} Progress</span>`:''} ${v.hold?`<span class="pn-hold">${v.hold} Hold</span>`:''} ${v.ovd?`<span class="pn-ovd">⚠${v.ovd} OVD</span>`:''}</div><div class="prog-bar" style="height:4px;margin-top:8px"><div class="prog-fill" style="width:${Math.round(v.prog/v.total*100)}%;background:var(--amber)"></div></div></div>`).join('')}</div>`:'<div style="color:var(--muted);font-size:13px">Tidak ada outstanding</div>';
+
+  // TA stats
+  const tAll=ta.length,tPl=ta.filter(d=>d.status==='Open').length,tRd=ta.filter(d=>d.status==='In Progress').length,tPr=ta.filter(d=>d.status==='On Hold').length,tDn=ta.filter(d=>d.status==='Done').length;
+  document.getElementById('dash-ta').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Job TA</div><div class="stat-value">${tAll}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value" style="color:var(--red)">${tPl}</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--amber)">${tRd}</div></div>
+    <div class="stat-card"><div class="stat-label">On Hold</div><div class="stat-value" style="color:var(--gray)">${tPr}</div></div>
+    <div class="stat-card"><div class="stat-label">Done</div><div class="stat-value" style="color:var(--green)">${tDn}</div></div>`;
+
+  // TA status chart (donut)
+  destroyChart(chartTaProg);
+  const tpCtx=document.getElementById('chart-ta-prog');
+  if(tpCtx&&ta.length){
+    const taAreas=AREAS.map(a=>a.length>14?a.substring(0,14)+'…':a);
+    const taOpen=AREAS.map(a=>ta.filter(d=>d.area===a&&d.status!=='Done').length);
+    const taDone=AREAS.map(a=>ta.filter(d=>d.area===a&&d.status==='Done').length);
+    chartTaProg=new Chart(tpCtx,{type:'bar',data:{labels:taAreas,datasets:[{label:'Outstanding',data:taOpen,backgroundColor:'#FAEEDA',borderColor:'#854F0B',borderWidth:1},{label:'Done',data:taDone,backgroundColor:'#EAF3DE',borderColor:'#3B6D11',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{stepSize:1,font:{size:10}},beginAtZero:true}},plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}}}}});
+  }
+}
+
+// ---- OUTSTANDING ----
+function renderOut(){
+  const act=cfm.filter(d=>d.status!=='Done');
+  const open=act.filter(d=>d.status==='Open').length,prog=act.filter(d=>d.status==='In Progress').length,hold=act.filter(d=>d.status==='On Hold').length,ovd=act.filter(isOvd).length;
+  document.getElementById('out-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Outstanding</div><div class="stat-value">${act.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value" style="color:var(--red)">${open}</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--amber)">${prog}</div></div>
+    <div class="stat-card"><div class="stat-label">On Hold</div><div class="stat-value" style="color:var(--gray)">${hold}</div></div>
+    <div class="stat-card"><div class="stat-label" style="color:var(--red)">Overdue</div><div class="stat-value" style="color:var(--red)">${ovd}</div></div>`;
+  const cnts={All:act.length};AREAS.forEach(a=>cnts[a]=act.filter(d=>d.area===a).length);
+  document.getElementById('out-tabs').innerHTML=['All',...AREAS].map(a=>`<button class="tab ${cfmArea===a?'active':''}" data-area="${a.replace(/&/g,'&amp;')}" onclick="setCfmArea(this.dataset.area)">${a==='All'?'Semua Area':a}<span class="cnt">${cnts[a]||0}</span></button>`).join('');
+  const q=document.getElementById('out-q').value.toLowerCase(),sf=document.getElementById('out-sf').value,tf=document.getElementById('out-tf').value;
+  let rows=cfm.filter(d=>{
+    if(d.status==='Done')return false;
+    if(cfmArea!=='All'&&d.area!==cfmArea)return false;
+    if(sf&&d.status!==sf)return false;
+    if(tf&&!(d.docs?d.docs.some(x=>x.type===tf):d.type===tf))return false;
+    if(q&&!`${d.equipment} ${d.masalah} ${d.pic} ${d.ket} ${(d.docs||[]).map(x=>x.docno).join(' ')} ${d.docno}`.toLowerCase().includes(q))return false;
+    return true;
+  });
+  // Sort: All tab → by Area order then oldest date; area tab → oldest date first
+  const areaOrder={};AREAS.forEach((a,i)=>areaOrder[a]=i);
+  rows.sort((a,b)=>{
+    if(cfmArea==='All'){
+      const ao=areaOrder[a.area]??99,bo=areaOrder[b.area]??99;
+      if(ao!==bo)return ao-bo;
+    }
+    const da=a.tanggal||'9999',db=b.tanggal||'9999';
+    return da<db?-1:da>db?1:0;
+  });
+  document.getElementById('out-cnt').textContent=`${rows.length} item`;
+  if(!rows.length){document.getElementById('out-body').innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-inbox"></i><p>Tidak ada data</p></div></td></tr>`;return;}
+  document.getElementById('out-body').innerHTML=rows.map((d,i)=>{
+    const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+    const ovd=isOvd(d);
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td><strong>${esc(d.equipment||'—')}</strong></td>
+      <td>${abadge(d.area)}</td>
+      <td style="line-height:1.5">${esc(d.masalah||'—')}</td>
+      <td><span class="date-chip">${fd(d.tanggal)}</span>${d.tanggal?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${daysAgo(d.tanggal)}</div>`:''}</td>
+      <td>${esc(d.pic||'—')}</td>
+      <td class="${ovd?'ovd-cell':''}">
+        ${tgt?`<span style="font-weight:600;color:${ovd?'var(--red)':'var(--blue)'}">${fmtTarget(tgt)}</span><div class="doc-no">${esc(tgt.label||'')}</div>`:'<span style="color:var(--muted);font-size:12px">Belum ditentukan</span>'}
+        ${d.targets&&d.targets.length>1?`<div class="doc-no" style="color:var(--blue)">${d.targets.length} target (revisi ${d.targets.length-1}x)</div>`:''}
+        ${ovd?' <i class="ti ti-alert-triangle" style="font-size:11px;color:var(--red)"></i>':''}
+      </td>
+      <td><span class="badge ${SCLS[d.status]||''}">${esc(d.status)}</span></td>
+      <td>${renderDocs(d)}</td>
+      <td class="ket-cell">${ketLast(d.ket)}</td>
+      <td><div class="acts">
+        <button class="btn btn-sm btn-icon btn-det" onclick="openDetail(${d.id},'cfm')" title="Detail"><i class="ti ti-eye"></i></button>
+        <button class="btn btn-sm btn-icon" onclick="openCfmModal(${d.id})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-icon btn-del" onclick="openDel(${d.id},'cfm')" title="Hapus"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function setCfmArea(a){cfmArea=a;renderOut()}
+
+// ---- SELESAI ----
+function renderSelesai(){
+  const done=cfm.filter(d=>d.status==='Done');
+  document.getElementById('done-cnt').textContent=`${done.length} pekerjaan selesai`;
+  const q=document.getElementById('done-q').value.toLowerCase(),af=document.getElementById('done-af').value;
+  let rows=done.filter(d=>{
+    if(af&&d.area!==af)return false;
+    if(q&&!`${d.equipment} ${d.masalah} ${d.pic} ${d.ket} ${(d.docs||[]).map(x=>x.docno).join(' ')} ${d.docno}`.toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(!rows.length){document.getElementById('done-body').innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-inbox"></i><p>Tidak ada pekerjaan selesai</p></div></td></tr>`;return;}
+  document.getElementById('done-body').innerHTML=rows.map((d,i)=>{
+    const tlDone=d.timeline?d.timeline.filter(t=>t.type==='done'):[];
+    const doneDate=tlDone.length?tlDone[tlDone.length-1].ts:'';
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td><strong>${esc(d.equipment||'—')}</strong></td>
+      <td>${abadge(d.area)}</td>
+      <td style="max-width:180px;line-height:1.5">${esc(d.masalah||'—')}</td>
+      <td><span class="date-chip">${fd(d.tanggal)}</span>${d.tanggal?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${daysAgo(d.tanggal)}</div>`:''}</td>
+      <td>${esc(d.pic||'—')}</td>
+      <td><span class="date-chip date-green">${fd(doneDate)||'—'}</span></td>
+      <td>${renderDocs(d)}</td>
+      <td class="ket-cell" style="max-width:200px">${ketLast(d.ket)}</td>
+      <td><div class="acts">
+        <button class="btn btn-sm btn-icon btn-det" onclick="openDetail(${d.id},'cfm')" title="Detail"><i class="ti ti-eye"></i></button>
+        <button class="btn btn-sm btn-icon" onclick="openCfmModal(${d.id})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-icon btn-del" onclick="openDel(${d.id},'cfm')" title="Hapus"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- TA TABLE ----
+function renderTa(){
+  const all=ta;
+  const pl=all.filter(d=>d.status==='Open').length,rd=all.filter(d=>d.status==='In Progress').length,pr=all.filter(d=>d.status==='On Hold').length,dn=all.filter(d=>d.status==='Done').length;
+  document.getElementById('ta-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Job</div><div class="stat-value">${all.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value" style="color:var(--red)">${pl}</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--amber)">${rd}</div></div>
+    <div class="stat-card"><div class="stat-label">On Hold</div><div class="stat-value" style="color:var(--gray)">${pr}</div></div>
+    <div class="stat-card"><div class="stat-label">Done</div><div class="stat-value" style="color:var(--green)">${dn}</div></div>`;
+  const q=document.getElementById('ta-q').value.toLowerCase(),sf=document.getElementById('ta-sf').value,df=document.getElementById('ta-df').value,pf=document.getElementById('ta-pf').value;
+  let rows=ta.filter(d=>{
+    if(sf&&d.status!==sf)return false;
+    if(df&&d.disc!==df)return false;
+    if(pf&&d.priority!==pf)return false;
+    if(q&&!`${d.tagNumber||''} ${d.issue||''} ${d.desc||''} ${d.updateBy||''} ${d.statusUpdate||''} ${d.area||''}`.toLowerCase().includes(q))return false;
+    return true;
+  });
+  document.getElementById('ta-cnt').textContent=`${rows.length} job`;
+  if(!rows.length){document.getElementById('ta-body').innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-inbox"></i><p>Tidak ada job TA</p></div></td></tr>`;return;}
+  document.getElementById('ta-body').innerHTML=rows.map((d,i)=>{
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td style="font-weight:600">${esc(d.tagNumber||d.jobNo||'—')}</td>
+      <td>${d.area?abadge(d.area):'—'}</td>
+      <td style="max-width:180px;line-height:1.5">${esc(d.issue||d.desc||'—')}</td>
+      <td><span class="badge b-wo">${esc(d.disc||'—')}</span></td>
+      <td><span class="badge ${PCLS[d.priority]||''}">${esc(d.priority||'—')}</span></td>
+      <td><span class="date-chip">${fd(d.tanggal||d.startDate)}</span></td>
+      <td><span class="badge ${SCLS[d.status]||''}">${esc(d.status||'—')}</span></td>
+      <td class="ket-cell" style="max-width:220px;min-width:160px">${ketLast(d.statusUpdate||d.ket)}</td>
+      <td style="white-space:nowrap">${esc(d.updateBy||d.pic||'—')}</td>
+      <td><div class="acts">
+        <button class="btn btn-sm btn-icon btn-det" onclick="openDetail(${d.id},'ta')" title="Detail"><i class="ti ti-eye"></i></button>
+        <button class="btn btn-sm btn-icon" onclick="openTaModal(${d.id})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-icon btn-del" onclick="openDel(${d.id},'ta')" title="Hapus"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ---- CFM MODAL ----
+let tmpKets=[];
+function todayStr(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()}
+function fmtDateInput(str){
+  if(!str)return'';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str; // already ISO
+  const m=str.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m?`${m[3]}-${m[2]}-${m[1]}`:'';
+}
+function fmtDateDisplay(iso){
+  if(!iso)return'';
+  const m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?`${m[3]}.${m[2]}.${m[1]}`:iso;
+}
+function renderTmpKets(){
+  const el=document.getElementById('cfm-ket-list');
+  if(!el)return;
+  if(tmpKets.length===0){el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:4px 0">Belum ada keterangan. Klik tombol di bawah untuk menambah.</div>';return;}
+  el.innerHTML=tmpKets.map((k,i)=>`<div style="display:flex;gap:6px;align-items:flex-start;padding:8px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border);margin-bottom:4px">
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+      <input type="date" style="font-size:11px;font-weight:700;color:var(--green);border:1px solid var(--border);border-radius:4px;padding:3px 5px;background:var(--bg-card);width:130px" value="${fmtDateInput(k.date)}" onchange="tmpKets[${i}].date=fmtDateDisplay(this.value)">
+    </div>
+    <textarea style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical;min-height:38px;font-family:inherit;background:var(--bg-card)" oninput="tmpKets[${i}].text=this.value">${esc(k.text||'')}</textarea>
+    <button type="button" class="btn btn-sm btn-icon btn-del" title="Hapus" onclick="rmKet(${i})"><i class="ti ti-trash"></i></button>
+  </div>`).join('');
+}
+function addKet(){tmpKets.push({date:todayStr(),text:''});renderTmpKets()}
+function rmKet(i){tmpKets.splice(i,1);renderTmpKets()}
+function ddmmyyyyToIso(s){
+  const m=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m?`${m[3]}-${m[2]}-${m[1]}`:'';
+}
+function isoToDdmmyyyy(iso){
+  const m=iso&&iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?`${m[3]}.${m[2]}.${m[1]}`:'';
+}
+function parseKets(ket){
+  if(!ket)return[];
+  return ket.split(' | ').map(s=>s.trim()).filter(Boolean).reverse().map(s=>{
+    // strip leading dashes/spaces
+    const clean=s.replace(/^[-\u2013\u2014\s]+/,'').trim();
+    // try: "DD.MM.YYYY: text" or "DD.MM.YYYY text" at start
+    const m=clean.match(/^(\d{2}\.\d{2}\.\d{4})(?:\s*:\s*|\s+(?!\d{2}\.\d{2}\.\d{4}))/);
+    if(m){
+      const rawTxt=clean.slice(m[0].length).replace(/^[-\u2013\u2014\s]+/,'').trim();
+      return{date:ddmmyyyyToIso(m[1]),text:rawTxt};
+    }
+    return{date:'',text:clean};
+  });
+}
+function ketsToStr(kts){
+  return kts.filter(k=>k.text.trim()).reverse().map(k=>{
+    if(!k.date)return k.text.trim();
+    // k.date may be YYYY-MM-DD (from date input) or DD.MM.YYYY (legacy)
+    const display=k.date.includes('-')?isoToDdmmyyyy(k.date):k.date;
+    return(display?display+': ':'')+k.text.trim();
+  }).join(' | ');
+}
+let tmpPics=[];
+function renderPicChips(){
+  const box=document.getElementById('pic-chips');
+  const inp=document.getElementById('pic-inp');
+  if(!box||!inp)return;
+  // remove existing chips
+  box.querySelectorAll('.pic-chip').forEach(el=>el.remove());
+  tmpPics.forEach((p,i)=>{
+    const chip=document.createElement('span');
+    chip.className='pic-chip';
+    chip.innerHTML=`${esc(p)}<button type="button" onclick="rmPic(${i})" title="Hapus">&#215;</button>`;
+    box.insertBefore(chip,inp);
+  });
+}
+function addPic(val){
+  const v=val.trim();
+  if(!v||tmpPics.includes(v))return;
+  tmpPics.push(v);
+  renderPicChips();
+  document.getElementById('pic-inp').value='';
+}
+function rmPic(i){tmpPics.splice(i,1);renderPicChips();}
+function picKeydown(e){
+  const inp=e.target;
+  if((e.key==='Enter'||e.key===','||e.key===';')&&inp.value.trim()){
+    e.preventDefault();addPic(inp.value);
+  }else if(e.key==='Backspace'&&!inp.value&&tmpPics.length){
+    rmPic(tmpPics.length-1);
+  }
+}
+let tmpDocs=[];
+function renderTmpDocs(){
+  const el=document.getElementById('cfm-doc-list');
+  if(!el)return;
+  el.innerHTML=tmpDocs.map((doc,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+    <select style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;background:var(--bg-card)" onchange="tmpDocs[${i}].type=this.value">
+      ${['Notifikasi','WO','PR','PO'].map(t=>`<option ${doc.type===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <input style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px" placeholder="No. dokumen" value="${esc(doc.docno||'')}" oninput="tmpDocs[${i}].docno=this.value">
+    <button type="button" class="btn btn-sm btn-icon btn-del" onclick="rmDoc(${i})"><i class="ti ti-trash"></i></button>
+  </div>`).join('');
+}
+function addDoc(){tmpDocs.push({type:'Notifikasi',docno:''});renderTmpDocs()}
+function rmDoc(i){tmpDocs.splice(i,1);renderTmpDocs()}
+
+function populatePicList(){
+  // Datalist dikosongkan — PIC diisi manual / chip input
+  const dl=document.getElementById('pic-list');
+  if(dl)dl.innerHTML='';
+}
+function openCfmModal(id){
+  editCfmId=id||null;
+  document.getElementById('cfm-mtitle').textContent=id?'Edit Item CFM':'Tambah Item CFM';
+  const d=id?cfm.find(x=>x.id===id):{};
+  document.getElementById('cf-eq').value=d.equipment||'';
+  document.getElementById('cf-area').value=d.area||'';
+  document.getElementById('cf-masalah').value=d.masalah||'';
+  document.getElementById('cf-tgl').value=d.tanggal||'';
+  tmpPics=(d.pic||'').split(',').map(s=>s.trim()).filter(Boolean);renderPicChips();
+  document.getElementById('cf-status').value=d.status||'Open';
+  tmpKets=parseKets(d.ket||'');
+  renderTmpKets();
+  if(d.docs&&d.docs.length) tmpDocs=d.docs.map(x=>({...x}));
+  else if(d.type) tmpDocs=[{type:d.type,docno:d.docno||''}];
+  else tmpDocs=[{type:'Notifikasi',docno:''}];
+  renderTmpDocs();
+  const TGT_STATUS=['OVERDUE','Sustain','Sustain','Target Belum Ditentukan','Target belum ditentukan',''];
+  tmpTgts=(d.targets&&d.targets.length?JSON.parse(JSON.stringify(d.targets)):[{id:1,date:'',label:''}]).map(t=>{
+    let date=t.date||'';
+    // DD.MM.YYYY in date field → ISO
+    if(date&&/^\d{2}\.\d{2}\.\d{4}$/.test(date))date=ddmmyyyyToIso(date);
+    // date empty → try to extract DD.MM.YYYY from label text
+    if(!date&&t.label){const m2=t.label.match(/(\d{2})\.(\d{2})\.(\d{4})/);if(m2)date=`${m2[3]}-${m2[2]}-${m2[1]}`;}
+    // date still empty but label is already ISO format
+    if(!date&&t.label&&/^\d{4}-\d{2}-\d{2}$/.test(t.label))date=t.label;
+    return{...t,date};
+  });
+  renderTmpTgts();
+  populatePicList();renderPicChips();document.getElementById('cfmModal').classList.add('open');
+  setTimeout(()=>document.getElementById('cf-eq').focus(),80);
+}
+function closeCfmModal(){document.getElementById('cfmModal').classList.remove('open');editCfmId=null;tmpTgts=[]}
+
+function autoTgtLabel(date){
+  if(!date)return'Target Belum Ditentukan';
+  const d=new Date(date),now=new Date(today());
+  d.setHours(0,0,0,0);now.setHours(0,0,0,0);
+  return d<now?'OVERDUE':'Sustain';
+}
+function isIsoDate(s){return s&&/^\d{4}-\d{2}-\d{2}$/.test(s)}
+function renderTmpTgts(){
+  document.getElementById('cfm-tgt-list').innerHTML=tmpTgts.map((t,i)=>{
+    const autoLbl=autoTgtLabel(t.date);
+    const isOvdLbl=autoLbl==='OVERDUE';
+    const isSustai=t.date&&!isOvdLbl&&autoLbl!=='Target Belum Ditentukan';
+    tmpTgts[i].label=autoLbl;
+    const dateVal=isIsoDate(t.date)?t.date:'';
+    const _statusLbls=new Set(['OVERDUE','Sustain','Target Belum Ditentukan','Target belum ditentukan','']);
+    // show original label as hint when date is not set but label has meaningful text
+    const legacyText=(!isIsoDate(t.date)&&t.date)?t.date:(!t.date&&!_statusLbls.has(t.label||''))?(t.label||''):'';
+    return`<div class="tgt-row">
+      <span style="font-size:12px;color:var(--muted);min-width:20px;font-weight:700;flex-shrink:0">${i+1}.</span>
+      <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+        <input type="date" class="tgt-date" value="${dateVal}" placeholder="dd/mm/yyyy"
+          onchange="tmpTgts[${i}].date=this.value;renderTmpTgts()" style="width:100%">
+        ${legacyText?`<span style="font-size:10px;color:var(--muted);font-style:italic">${legacyText}</span>`:''}
+      </div>
+      <span style="font-size:11px;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:20px;flex-shrink:0;background:${isOvdLbl?'var(--red-lt)':isSustai?'var(--green-lt)':'var(--gray-lt)'};color:${isOvdLbl?'var(--red)':isSustai?'var(--green)':'var(--gray)'}">${autoLbl}</span>
+      ${tmpTgts.length>1?`<button class="btn btn-sm btn-icon btn-del" onclick="rmTgt(${i})" title="Hapus" style="flex-shrink:0"><i class="ti ti-x"></i></button>`:''}
+    </div>`;
+  }).join('');
+}
+function addCfmTgt(){tmpTgts.push({id:tmpTgts.length?Math.max(...tmpTgts.map(t=>t.id))+1:1,date:'',label:''});renderTmpTgts()}
+function rmTgt(i){tmpTgts.splice(i,1);renderTmpTgts()}
+
+function saveCfm(){
+  const eq=document.getElementById('cf-eq').value.trim(),ar=document.getElementById('cf-area').value,ma=document.getElementById('cf-masalah').value.trim();
+  if(!eq||!ar||!ma){alert('Equipment, Area, dan Masalah wajib diisi.');return}
+  const ns=document.getElementById('cf-status').value;
+  const docs=tmpDocs.filter(x=>x.type);const nt=(docs[0]||{type:'Notifikasi'}).type,nd=(docs[0]||{docno:''}).docno||'';
+  const item={id:editCfmId||nCfmId(),equipment:eq,area:ar,masalah:ma,tanggal:document.getElementById('cf-tgl').value,pic:tmpPics.join(', '),targets:JSON.parse(JSON.stringify(tmpTgts)),status:ns,type:nt,docno:nd,docs:docs,ket:ketsToStr(tmpKets),timeline:[]};
+  if(editCfmId){
+    const old=cfm.find(x=>x.id===editCfmId);
+    item.timeline=old.timeline?[...old.timeline]:[];
+    if(old.status!==ns)item.timeline.push({id:nTlId(item.timeline),ts:today(),type:ns==='Done'?'done':'status',note:`Status berubah dari "${old.status}" ke "${ns}"`});
+    cfm[cfm.findIndex(x=>x.id===editCfmId)]=item;
+    toast('Item berhasil diperbarui');
+  }else{
+    item.timeline=[{id:1,ts:today(),type:'created',note:`Item dibuat${item.pic?' oleh '+item.pic:''}`}];
+    cfm.push(item);
+    toast('Item berhasil ditambahkan');
+  }
+  persistCfm();closeCfmModal();
+  if(vw==='outstanding')renderOut();
+  if(vw==='selesai')renderSelesai();
+  if(vw==='dashboard')renderDash();
+  if(detId===item.id&&detType==='cfm')openDetail(item.id,'cfm');
+}
+
+// ---- TA MODAL ----
+function openTaModal(id){
+  editTaId=id||null;
+  document.getElementById('ta-mtitle').textContent=id?'Edit Job TA':'Tambah Job TA';
+  const d=id?ta.find(x=>x.id===id):{};
+  document.getElementById('ta-tag').value=d.tagNumber||d.jobNo||d.sys||'';
+  document.getElementById('ta-area').value=d.area||'';
+  document.getElementById('ta-issue').value=d.issue||d.desc||'';
+  document.getElementById('ta-disc').value=d.disc||'';
+  document.getElementById('ta-prio').value=d.priority||'Medium';
+  document.getElementById('ta-tgl').value=d.tanggal||d.startDate||'';
+  document.getElementById('ta-stat').value=d.status||'Open';
+  document.getElementById('ta-uby').value=d.updateBy||d.pic||'';
+  document.getElementById('ta-supdate').value=d.statusUpdate||d.ket||'';
+  document.getElementById('taModal').classList.add('open');
+}
+function closeTaModal(){document.getElementById('taModal').classList.remove('open');editTaId=null}
+
+function saveTa(){
+  const tg=document.getElementById('ta-tag').value.trim(),dc=document.getElementById('ta-disc').value,is=document.getElementById('ta-issue').value.trim();
+  if(!tg||!dc||!is){alert('Tag Number, Disiplin, dan Issue wajib diisi.');return}
+  const ns=document.getElementById('ta-stat').value;
+  const item={id:editTaId||nTaId(),tagNumber:tg,disc:dc,issue:is,area:document.getElementById('ta-area').value,priority:document.getElementById('ta-prio').value,tanggal:document.getElementById('ta-tgl').value,status:ns,updateBy:document.getElementById('ta-uby').value.trim(),statusUpdate:document.getElementById('ta-supdate').value.trim(),timeline:[]};
+  if(editTaId){
+    const old=ta.find(x=>x.id===editTaId);
+    item.timeline=old.timeline?[...old.timeline]:[];
+    if(old.status!==ns)item.timeline.push({id:nTlId(item.timeline),ts:today(),type:ns==='Done'?'done':'status',note:`Status berubah dari "${old.status}" ke "${ns}"`});
+    ta[ta.findIndex(x=>x.id===editTaId)]=item;
+    toast('Job TA berhasil diperbarui');
+  }else{
+    item.timeline=[{id:1,ts:today(),type:'created',note:'Job dibuat untuk TA'}];
+    ta.push(item);
+    toast('Job TA berhasil ditambahkan');
+  }
+  persistTa();closeTaModal();
+  if(vw==='ta')renderTa();
+  if(vw==='dashboard')renderDash();
+  if(detId===item.id&&detType==='ta')openDetail(item.id,'ta');
+}
+
+// ---- DELETE ----
+function openDel(id,type){delId=id;delType=type;document.getElementById('confirmBg').classList.add('open')}
+function closeConfirm(){document.getElementById('confirmBg').classList.remove('open');delId=null;delType=null}
+function confirmDel(){
+  if(delType==='cfm'){cfm=cfm.filter(x=>x.id!==delId);persistCfm()}else{ta=ta.filter(x=>x.id!==delId);persistTa()}
+  closeConfirm();toast('Item berhasil dihapus');
+  if(vw==='outstanding')renderOut();if(vw==='selesai')renderSelesai();if(vw==='ta')renderTa();if(vw==='dashboard')renderDash();
+  if(detId===delId)closeDetail();
+}
+
+// ---- DETAIL ----
+function openDetail(id,type){
+  detId=id;detType=type;
+  const d=type==='cfm'?cfm.find(x=>x.id===id):ta.find(x=>x.id===id);
+  if(!d)return;
+  document.getElementById('det-title').textContent=type==='cfm'?d.equipment:d.jobNo;
+  document.getElementById('det-sub').textContent=type==='cfm'?`${d.area} · ${d.masalah||''}`:`${d.disc} · ${d.desc||''}`;
+  document.getElementById('det-acts').innerHTML=`<button class="btn btn-sm" onclick="${type==='cfm'?`openCfmModal(${id})`:`openTaModal(${id})`}"><i class="ti ti-edit"></i> Edit</button><button class="btn btn-sm btn-danger" onclick="openDel(${id},'${type}')"><i class="ti ti-trash"></i> Hapus</button>`;
+  document.getElementById('det-body').innerHTML=type==='cfm'?cfmDetail(d):taDetail(d);
+  document.getElementById('detOv').classList.add('open');
+}
+function closeDetail(){document.getElementById('detOv').classList.remove('open');detId=null;detType=null}
+
+function cfmDetail(d){
+  const docs=d.docs&&d.docs.length?d.docs:(d.type?[{type:d.type,docno:d.docno||''}]:[]);
+  return`
+  <div class="dcard">
+    <div class="dcard-title"><i class="ti ti-info-circle"></i> Informasi Item</div>
+    <div class="igrid">
+      <div><div class="il">Equipment</div><div class="iv"><strong>${esc(d.equipment||'—')}</strong></div></div>
+      <div><div class="il">Area</div><div class="iv">${abadge(d.area)}</div></div>
+      <div><div class="il">Status</div><div class="iv"><span class="badge ${SCLS[d.status]||''}">${esc(d.status)}</span></div></div>
+      <div><div class="il">PIC</div><div class="iv">${esc(d.pic||'—')}</div></div>
+      <div><div class="il">Tanggal Temuan</div><div class="iv"><span class="date-chip">${fd(d.tanggal)}</span></div></div>
+      <div><div class="il">Dokumen</div><div class="iv">${docs.map(x=>`<span class="badge ${TCLS[x.type]||''}">${esc(x.type)}</span>${x.docno?` <span style="font-size:12px;font-weight:600">${esc(x.docno)}</span>`:''}`).join('<br>')}</div></div>
+    </div>
+    <div style="margin-top:12px"><div class="il">Masalah / Issue</div><div style="margin-top:4px;line-height:1.6;background:var(--bg-sec);padding:9px 13px;border-radius:var(--r);font-size:13px">${esc(d.masalah||'—')}</div></div>
+  </div>
+  ${d.ket?`<div class="dcard">
+    <div class="dcard-title"><i class="ti ti-notes"></i> Riwayat Keterangan</div>
+    ${renderKet(d.ket)}
+  </div>`:''}
+  <div class="dcard">
+    <div class="dcard-title" style="justify-content:space-between"><span><i class="ti ti-calendar"></i> Target Penyelesaian</span><span style="font-weight:400;font-size:12px">${(d.targets||[]).length} target</span></div>
+    <div class="tgts-disp">
+      ${(d.targets||[]).length?(d.targets||[]).map((t,i)=>{
+        const isLast=i===d.targets.length-1;
+        const tovd=d.status!=='Done'&&t.date&&new Date(t.date)<new Date(today());
+        return`<div class="tgt-di ${isLast?'cur':''} ${tovd?'tovd':''} ${d.status==='Done'?'tdone':''}">
+          <i class="ti ti-${isLast?'flag':'flag-2'}" style="color:${tovd?'var(--red)':isLast?'var(--blue)':'var(--muted)'};font-size:18px"></i>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${fd(t.date)}${tovd?' <span style="color:var(--red);font-size:11px">⚠ Overdue</span>':''}</div>
+            <div style="font-size:12px;color:var(--muted)">${esc(t.label||`Target ${i+1}`)}</div>
+          </div>
+          ${isLast?'<span style="font-size:10px;font-weight:700;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:10px">TERKINI</span>':'<span style="font-size:10px;color:var(--muted)">REVISI</span>'}
+        </div>`;
+      }).join(''):'<div style="color:var(--muted);font-size:13px;text-align:center;padding:14px">Belum ada target</div>'}
+    </div>
+  </div>
+  <div class="dcard">
+    <div class="dcard-title"><i class="ti ti-timeline"></i> Timeline Aktivitas</div>
+    <div id="tl-cfm-${d.id}">${renderTl(d.timeline||[],d.id,'cfm')}</div>
+    <div class="note-form" style="flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:11px;color:var(--muted);white-space:nowrap">Tanggal</label>
+        <input type="date" id="ni-dt-cfm" value="${today()}" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--green)">
+      </div>
+      <div style="display:flex;gap:8px">
+        <textarea id="ni-cfm" placeholder="Tambahkan catatan / update..." rows="2" style="flex:1"></textarea>
+        <button class="btn btn-primary btn-sm" style="align-self:flex-end;white-space:nowrap" onclick="addNote(${d.id},'cfm')"><i class="ti ti-send"></i> Tambah</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function taDetail(d){
+  const p=+d.progress||0,pc=p>=100?'var(--green)':p>=50?'var(--blue)':'var(--amber)';
+  return`
+  <div class="dcard">
+    <div class="dcard-title"><i class="ti ti-info-circle"></i> Informasi Job TA</div>
+    <div class="igrid">
+      <div><div class="il">No. Job</div><div class="iv"><strong>${esc(d.jobNo||'—')}</strong></div></div>
+      <div><div class="il">Disiplin</div><div class="iv"><span class="badge b-wo">${esc(d.disc||'—')}</span></div></div>
+      <div><div class="il">Status</div><div class="iv"><span class="badge ${TACLS[d.status]||''}">${esc(d.status)}</span></div></div>
+      <div><div class="il">Prioritas</div><div class="iv"><span class="badge ${PCLS[d.priority]||''}">${esc(d.priority||'—')}</span></div></div>
+      <div><div class="il">Area</div><div class="iv">${d.area?abadge(d.area):'—'}</div></div>
+      <div><div class="il">System / Equipment</div><div class="iv">${esc(d.sys||'—')}</div></div>
+      <div><div class="il">PIC</div><div class="iv">${esc(d.pic||'—')}</div></div>
+      <div><div class="il">Man Hours (est.)</div><div class="iv">${d.mh||'—'} jam</div></div>
+      <div><div class="il">Tanggal Mulai</div><div class="iv">${fd(d.startDate)}</div></div>
+      <div><div class="il">Target Selesai</div><div class="iv">${fd(d.endDate)}</div></div>
+    </div>
+    <div style="margin-top:12px"><div class="il">Deskripsi Pekerjaan</div><div style="margin-top:4px;line-height:1.6;background:var(--bg-sec);padding:9px 13px;border-radius:var(--r);font-size:13px">${esc(d.desc||'—')}</div></div>
+    <div style="margin-top:12px"><div class="il" style="margin-bottom:5px">Progress: <strong style="color:${pc}">${p}%</strong></div><div class="prog-bar" style="height:8px"><div class="prog-fill" style="width:${p}%;background:${pc}"></div></div></div>
+    ${d.ket?`<div style="margin-top:9px"><div class="il">Keterangan</div><div style="margin-top:4px;font-size:13px;color:var(--muted);line-height:1.6">${esc(d.ket)}</div></div>`:''}
+  </div>
+  <div class="dcard">
+    <div class="dcard-title"><i class="ti ti-timeline"></i> Timeline Aktivitas</div>
+    <div id="tl-ta-${d.id}">${renderTl(d.timeline||[],d.id,'ta')}</div>
+    <div class="note-form" style="flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:11px;color:var(--muted);white-space:nowrap">Tanggal</label>
+        <input type="date" id="ni-dt-ta" value="${today()}" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--green)">
+      </div>
+      <div style="display:flex;gap:8px">
+        <textarea id="ni-ta" placeholder="Tambahkan catatan / update..." rows="2" style="flex:1"></textarea>
+        <button class="btn btn-primary btn-sm" style="align-self:flex-end;white-space:nowrap" onclick="addNote(${d.id},'ta')"><i class="ti ti-send"></i> Tambah</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTlItem(t,id,type,ri,len){
+  return`<div class="tl-item" id="tl-item-${type||'x'}-${t.id}">
+    <div class="tl-left">
+      <div class="tl-dot ${TL_DOT[t.type]||'tl-note'}"><i class="ti ${TL_ICO[t.type]||'ti-message'}"></i></div>
+      ${ri<len-1?'<div class="tl-line"></div>':''}
+    </div>
+    <div class="tl-body" style="flex:1">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+        <span class="tl-date-txt" style="font-size:11px;font-weight:700;color:var(--green)">${fd(t.ts)||'(no date)'}</span>
+        ${t.ts?`<span style="font-size:10px;color:var(--muted)">${daysAgo(t.ts)}</span>`:''}
+        <div style="flex:1"></div>
+        <button class="btn btn-sm btn-icon" title="Edit" onclick="editTlNote(${id||0},'${type||'cfm'}',${t.id})"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-icon btn-del" title="Hapus" onclick="delTl(${id||0},'${type||'cfm'}',${t.id})"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="tl-txt">${esc(t.note||'')}</div>
+    </div>
+  </div>`;
+}
+function renderTl(tl,id,type){
+  if(!tl||!tl.length)return'<div style="color:var(--muted);font-size:13px;padding:6px 0">Belum ada aktivitas tercatat.</div>';
+  const rev=[...tl].reverse();
+  return rev.map((t,ri)=>renderTlItem(t,id||0,type||'cfm',ri,rev.length)).join('');
+}
+
+
+function editTlNote(itemId,type,tlId){
+  const arr=type==='cfm'?cfm:ta;
+  const d=arr.find(x=>x.id===itemId);
+  if(!d||!d.timeline)return;
+  const t=d.timeline.find(x=>x.id===tlId);
+  if(!t)return;
+  const el=document.getElementById(`tl-item-${type}-${tlId}`);
+  if(!el)return;
+  const dot=TL_DOT[t.type]||'tl-note',ico=TL_ICO[t.type]||'ti-message';
+  el.innerHTML=`
+    <div class="tl-left"><div class="tl-dot ${dot}"><i class="ti ${ico}"></i></div></div>
+    <div class="tl-body" style="flex:1">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <label style="font-size:11px;color:var(--muted);white-space:nowrap">Tanggal</label>
+        <input type="date" id="tl-edit-dt-${type}-${tlId}" value="${t.ts||''}"
+          style="padding:3px 6px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;font-weight:700;color:var(--green);background:var(--bg-card)">
+        <div style="flex:1"></div>
+        <button class="btn btn-sm btn-primary" onclick="saveTlNote(${itemId},'${type}',${tlId})"><i class="ti ti-check"></i> Simpan</button>
+        <button class="btn btn-sm" onclick="cancelTlEdit(${itemId},'${type}',${tlId})"><i class="ti ti-x"></i></button>
+      </div>
+      <textarea style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-family:inherit;resize:vertical;min-height:48px;box-sizing:border-box;background:var(--bg-card)"
+        id="tl-edit-${type}-${tlId}">${esc(t.note||'')}</textarea>
+    </div>`;
+}
+
+function saveTlNote(itemId,type,tlId){
+  const arr=type==='cfm'?cfm:ta;
+  const d=arr.find(x=>x.id===itemId);
+  if(!d||!d.timeline)return;
+  const t=d.timeline.find(x=>x.id===tlId);
+  if(!t)return;
+  const dtInp=document.getElementById(`tl-edit-dt-${type}-${tlId}`);
+  const txtInp=document.getElementById(`tl-edit-${type}-${tlId}`);
+  if(dtInp&&dtInp.value)t.ts=dtInp.value;
+  if(txtInp)t.note=txtInp.value.trim();
+  type==='cfm'?persistCfm():persistTa();
+  const el=document.getElementById(`tl-${type}-${itemId}`);
+  if(el)el.innerHTML=renderTl(d.timeline,itemId,type);
+  toast('Catatan diperbarui');
+}
+
+function cancelTlEdit(itemId,type,tlId){
+  const arr=type==='cfm'?cfm:ta;
+  const d=arr.find(x=>x.id===itemId);
+  if(!d)return;
+  const el=document.getElementById(`tl-${type}-${itemId}`);
+  if(el)el.innerHTML=renderTl(d.timeline,itemId,type);
+}
+
+function delTl(itemId,type,tlId){
+  const arr=type==='cfm'?cfm:ta;
+  const d=arr.find(x=>x.id===itemId);
+  if(!d||!d.timeline)return;
+  d.timeline=d.timeline.filter(x=>x.id!==tlId);
+  type==='cfm'?persistCfm():persistTa();
+  const el=document.getElementById(`tl-${type}-${itemId}`);
+  if(el)el.innerHTML=renderTl(d.timeline,itemId,type);
+  toast('Aktivitas dihapus');
+}
+
+function addNote(id,type){
+  const inp=document.getElementById(`ni-${type}`);
+  const dtInp=document.getElementById(`ni-dt-${type}`);
+  const note=inp.value.trim();
+  if(!note){inp.focus();return}
+  const ts=dtInp&&dtInp.value?dtInp.value:today();
+  if(type==='cfm'){
+    const d=cfm.find(x=>x.id===id);if(!d)return;
+    if(!d.timeline)d.timeline=[];
+    d.timeline.push({id:nTlId(d.timeline),ts,type:'note',note});
+    persistCfm();
+    document.getElementById(`tl-cfm-${id}`).innerHTML=renderTl(d.timeline,id,'cfm');
+  }else{
+    const d=ta.find(x=>x.id===id);if(!d)return;
+    if(!d.timeline)d.timeline=[];
+    d.timeline.push({id:nTlId(d.timeline),ts,type:'note',note});
+    persistTa();
+    document.getElementById(`tl-ta-${id}`).innerHTML=renderTl(d.timeline,id,'ta');
+  }
+  inp.value='';if(dtInp)dtInp.value=today();toast('Catatan ditambahkan');
+}
+
+// ---- EXPORT ----
+function closePicModal(){document.getElementById('picModal').classList.remove('open')}
+function showPicItems(pic){
+  const items=cfm.filter(d=>d.status!=='Done'&&(d.pic||'')===pic);
+  document.getElementById('pic-modal-title').textContent=`Outstanding — ${pic} (${items.length} item)`;
+  document.getElementById('pic-modal-body').innerHTML=items.length?`<table style="width:100%;border-collapse:collapse;min-width:600px">
+    <thead><tr><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">#</th><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">Equipment</th><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">Area</th><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">Masalah</th><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">Target</th><th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);background:#f0f1f3">Status</th></tr></thead>
+    <tbody>${items.map((d,i)=>{const t=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;const ovd=isOvd(d);return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--muted);font-size:11px">${i+1}</td><td style="padding:9px 12px"><strong style="cursor:pointer;color:var(--blue)" onclick="document.getElementById('picModal').classList.remove('open');openDetail(${d.id},'cfm')">${esc(d.equipment)}</strong></td><td style="padding:9px 12px">${abadge(d.area)}</td><td style="padding:9px 12px;max-width:180px;font-size:13px">${esc(d.masalah)}</td><td style="padding:9px 12px;white-space:nowrap"><span style="color:${ovd?'var(--red)':'var(--blue)'};font-weight:600">${t?fmtTarget(t):'—'}</span>${ovd?' <i class="ti ti-alert-triangle" style="color:var(--red);font-size:11px"></i>':''}</td><td style="padding:9px 12px"><span class="badge ${SCLS[d.status]||''}">${esc(d.status)}</span></td></tr>`}).join('')}</tbody>
+  </table>`:'<div class="empty"><i class="ti ti-circle-check"></i><p>Tidak ada outstanding</p></div>';
+  document.getElementById('picModal').classList.add('open');
+}
+function exportCSV(){
+  let csv='No,Equipment,Area,Masalah,Tanggal,PIC,Target Terkini,Status,Tipe,No Dokumen,Keterangan\n';
+  cfm.forEach((d,i)=>{
+    const t=d.targets&&d.targets.length?d.targets[d.targets.length-1]:{};
+    csv+=[i+1,d.equipment,d.area,d.masalah,fd(d.tanggal),d.pic,fd(t.date||''),d.status,d.type,d.docno,d.ket].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')+'\n';
+  });
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`CFM_Utilities_${today()}.csv`;a.click();
+  toast('Export CSV berhasil');
+}
+
+// ---- EVENTS ----
+['cfmModal','taModal','confirmBg'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{
+    if(e.target===document.getElementById(id)){
+      if(id==='cfmModal')closeCfmModal();
+      else if(id==='taModal')closeTaModal();
+      else closeConfirm();
+    }
+  });
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCfmModal();closeTaModal();closeConfirm()}});
+
+// ===== EMAIL / REPORT FUNCTIONS =====
+const REPORT_EMAIL = 'm.burhan@pertamina.com';
+
+function getEmailCfg(){try{return JSON.parse(localStorage.getItem('ejs-cfg')||'{}')}catch(e){return{}}}
+function saveEmailCfgData(cfg){localStorage.setItem('ejs-cfg',JSON.stringify(cfg))}
+
+function isEmailConfigured(){
+  const c=getEmailCfg();
+  return !!(c.publicKey&&c.serviceId&&c.templateId);
+}
+
+function initEmailJS(){
+  const c=getEmailCfg();
+  if(c.publicKey){try{emailjs.init(c.publicKey);return true}catch(e){return false}}
+  return false;
+}
+
+function compressHtml(html){
+  // Strip whitespace between tags, collapse multiple spaces — reduces ~40% size
+  return html
+    .replace(/>\s+</g,'><')
+    .replace(/\s{2,}/g,' ')
+    .replace(/<!--[\s\S]*?-->/g,'')  // remove comments
+    .trim();
+}
+
+async function sendEmailViaEJS(toEmail,subject,message){
+  message=compressHtml(message);
+  const c=getEmailCfg();
+  initEmailJS();
+  // Pass recipient under multiple common param names for compatibility
+  const params={
+    to_email:toEmail,
+    email:toEmail,
+    recipient:toEmail,
+    user_email:toEmail,
+    to:toEmail,
+    subject:subject,
+    message:message,
+    reply_to:'noreply@cfm-utilities.noreply'
+  };
+  return emailjs.send(c.serviceId,c.templateId,params);
+}
+
+function buildReportHTML(){
+  const act=cfm.filter(d=>d.status!=='Done');
+  const ovd=act.filter(isOvd);
+  const done=cfm.filter(d=>d.status==='Done');
+  const tglStr=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Helper: status badge
+  const badge=(st)=>{
+    const bg=st==='Done'?'#dcfce7':st==='On Hold'?'#fef3c7':'#dbeafe';
+    const cl=st==='Done'?'#166534':st==='On Hold'?'#92400e':'#1e40af';
+    return`<span style="background:${bg};color:${cl};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${st||''}</span>`;
+  };
+
+  // --- CFM grouped by area ---
+  const AREA_ORDER=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
+  const byArea={};
+  act.forEach(d=>{
+    const a=d.area||'Lainnya';
+    if(!byArea[a])byArea[a]=[];
+    byArea[a].push(d);
+  });
+  // Sort areas by AREA_ORDER, unknown areas at end
+  const areaKeys=[...AREA_ORDER.filter(a=>byArea[a]),...Object.keys(byArea).filter(a=>!AREA_ORDER.includes(a)&&byArea[a])];
+
+  let cfmSections='';
+  areaKeys.forEach(area=>{
+    const items=byArea[area];
+    const areaOvd=items.filter(isOvd).length;
+    const areaRows=items.map((d,i)=>{
+      const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+      const tgtStr=tgt?(tgt.date?fd(tgt.date):(tgt.label||'—')):'—';
+      const ovdItem=isOvd(d);
+      const bg=ovdItem?'#fff5f5':(i%2===0?'#f8faff':'#ffffff');
+      const tgtCell=ovdItem?`<span style="color:#dc2626;font-weight:700">${tgtStr} &#9888;</span>`:tgtStr;
+      return`<tr style="background:${bg}">
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">${i+1}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;font-size:12px">${esc(d.equipment||'')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px">${esc(d.masalah||'')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px">${d.pic||'—'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px">${tgtCell}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">${badge(d.status)}</td>
+      </tr>`;
+    }).join('');
+
+    const areaColor=areaOvd>0?'#dc2626':'#1e40af';
+    const areaTag=areaOvd>0?` <span style="background:#fef2f2;color:#dc2626;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:700;vertical-align:middle">&#9888; ${areaOvd} overdue</span>`:'';
+    cfmSections+=`
+    <div style="margin-bottom:20px">
+      <div style="background:${areaOvd>0?'#fef2f2':'#f0f5ff'};border-left:4px solid ${areaColor};padding:7px 12px;margin-bottom:0;border-radius:4px 4px 0 0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:700;color:${areaColor}">${area}</span>
+        <span style="font-size:11px;color:#6b7280;margin-left:4px">— ${items.length} item</span>${areaTag}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid ${areaOvd>0?'#fecaca':'#e5e7eb'};border-top:none;border-radius:0 0 4px 4px;overflow:hidden">
+        <thead><tr style="background:${areaOvd>0?'#fee2e2':'#e8eeff'}">
+          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor};width:32px">#</th>
+          <th style="padding:6px 8px;text-align:left;font-weight:600;color:${areaColor}">Equipment</th>
+          <th style="padding:6px 8px;text-align:left;font-weight:600;color:${areaColor}">Masalah / Pekerjaan</th>
+          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">PIC</th>
+          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">Target</th>
+          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">Status</th>
+        </tr></thead>
+        <tbody>${areaRows}</tbody>
+      </table>
+    </div>`;
+  });
+
+  if(!cfmSections) cfmSections='<p style="color:#9ca3af;font-style:italic;text-align:center;padding:16px">Tidak ada item outstanding</p>';
+
+  // --- TA rows: semua kolom ---
+  let taRowsHtml='';
+  ta.forEach((d,i)=>{
+    const bg=i%2===0?'#f8faff':'#ffffff';
+    const prioColor=d.priority==='Critical'||d.priority==='High'?'#dc2626':d.priority==='Medium'?'#d97706':'#6b7280';
+    const prioBg=d.priority==='Critical'||d.priority==='High'?'#fef2f2':d.priority==='Medium'?'#fffbeb':'#f9fafb';
+    taRowsHtml+=`<tr style="background:${bg}">
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">${i+1}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-weight:700;font-size:12px;white-space:nowrap">${esc(d.tagNumber||'—')}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#4b5563">${d.area||'—'}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px">${esc(d.issue||'—')}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px;white-space:nowrap">${d.disc||'—'}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">
+        <span style="background:${prioBg};color:${prioColor};padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700">${d.priority||'—'}</span>
+      </td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">${badge(d.status)}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#6b7280">${esc(d.statusUpdate||'')}</td>
+    </tr>`;
+  });
+
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:960px;margin:0 auto;color:#1f2937;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+  <!-- HEADER -->
+  <div style="background-color:#1e40af;color:#ffffff;padding:24px 28px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#93c5fd;margin-bottom:4px">Pertamina Bagian Utilities</div>
+    <h1 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#ffffff">&#128203; Laporan CFM Harian</h1>
+    <div style="font-size:13px;color:#bfdbfe">${tglStr}</div>
+  </div>
+  <!-- DASHBOARD SUMMARY -->
+  <div style="background:#f0f5ff;padding:16px 28px;border-bottom:1px solid #dde4f0">
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="text-align:center;padding:10px 4px">
+          <div style="font-size:32px;font-weight:800;color:#1e40af;line-height:1">${act.length}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">OUTSTANDING</div>
+        </td>
+        <td style="width:1px;background:#dde4f0"></td>
+        <td style="text-align:center;padding:10px 4px">
+          <div style="font-size:32px;font-weight:800;color:#dc2626;line-height:1">${ovd.length}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">OVERDUE</div>
+        </td>
+        <td style="width:1px;background:#dde4f0"></td>
+        <td style="text-align:center;padding:10px 4px">
+          <div style="font-size:32px;font-weight:800;color:#16a34a;line-height:1">${done.length}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">SELESAI</div>
+        </td>
+        <td style="width:1px;background:#dde4f0"></td>
+        <td style="text-align:center;padding:10px 4px">
+          <div style="font-size:32px;font-weight:800;color:#d97706;line-height:1">${ta.length}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">JOB TA</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <!-- OUTSTANDING CFM PER AREA -->
+  <div style="padding:20px 28px">
+    <h2 style="font-size:14px;font-weight:700;color:#1e40af;margin:0 0 14px;padding-bottom:6px;border-bottom:2px solid #1e40af;text-transform:uppercase;letter-spacing:.5px">Outstanding CFM — Per Area</h2>
+    ${cfmSections}
+    <!-- JOB LIST TA -->
+    <h2 style="font-size:14px;font-weight:700;color:#1e40af;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #1e40af;text-transform:uppercase;letter-spacing:.5px">Job List Turnaround (TA)</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden">
+      <thead>
+        <tr style="background:#1e40af;color:#fff">
+          <th style="padding:7px 8px;text-align:center;font-weight:600">#</th>
+          <th style="padding:7px 8px;text-align:left;font-weight:600">Tag Number</th>
+          <th style="padding:7px 8px;text-align:left;font-weight:600">Area</th>
+          <th style="padding:7px 8px;text-align:left;font-weight:600">Issue / Pekerjaan</th>
+          <th style="padding:7px 8px;text-align:center;font-weight:600">Disiplin</th>
+          <th style="padding:7px 8px;text-align:center;font-weight:600">Prioritas</th>
+          <th style="padding:7px 8px;text-align:center;font-weight:600">Status</th>
+          <th style="padding:7px 8px;text-align:left;font-weight:600">Update Status</th>
+        </tr>
+      </thead>
+      <tbody>${taRowsHtml||'<tr><td colspan="8" style="text-align:center;padding:16px;color:#9ca3af;font-style:italic">Tidak ada data TA</td></tr>'}</tbody>
+    </table>
+  </div>
+  <!-- FOOTER -->
+  <div style="background:#f8faff;border-top:1px solid #e5e7eb;padding:12px 28px;text-align:center">
+    <p style="margin:0;font-size:11px;color:#9ca3af">Email ini dikirim otomatis oleh <strong>Sistem CFM Utilities</strong> &mdash; Pertamina Bagian Utilities &mdash; Do Not Reply</p>
+  </div>
+</div>`;
+}
+
+function confirmSendReport(){goTo('email');}
+function closeReportConfirm(){}
+
+async function sendCfmReport(){
+  document.getElementById('report-sending').style.display='block';
+  document.getElementById('report-confirm-btns').style.display='none';
+  const d=new Date();
+  const tglSubj=d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const subject=`[CFM Utilities] Laporan Harian — ${tglSubj}`;
+  const html=buildReportHTML();
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,subject,html);
+    closeReportConfirm();
+    toast('Laporan berhasil dikirim ke '+REPORT_EMAIL);
+  }catch(e){
+    console.error('EmailJS error:',e);
+    document.getElementById('report-sending').style.display='none';
+    document.getElementById('report-confirm-btns').style.display='flex';
+    // Offer mailto fallback
+    const errMsg=(e.text||e.message||JSON.stringify(e)||'');
+    const isRecipientError=errMsg.toLowerCase().includes('recipient')||errMsg.includes('412')||errMsg.includes('empty');
+    if(isRecipientError){
+      showReportError('Template EmailJS: field "To Email" harus diisi dengan <b>{{to_email}}</b> di dashboard emailjs.com. Atau klik "Kirim via Email App" di bawah.');
+    }else{
+      showReportError('Gagal kirim: '+errMsg);
+    }
+  }
+}
+
+function showReportError(msg){
+  let errEl=document.getElementById('report-err');
+  if(!errEl){
+    errEl=document.createElement('div');
+    errEl.id='report-err';
+    errEl.style.cssText='font-size:12px;padding:10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;margin-bottom:10px;line-height:1.6';
+    document.getElementById('report-confirm-btns').insertAdjacentElement('beforebegin',errEl);
+  }
+  errEl.innerHTML=msg+`<br><button class="btn btn-sm" style="margin-top:8px" onclick="openMailtoFallback()"><i class="ti ti-mail"></i> Kirim via Email App</button>`;
+}
+
+function openMailtoFallback(){
+  const _d=new Date();
+  const _tgl=_d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const subject=encodeURIComponent(`[CFM Utilities] Laporan Harian — ${_tgl}`);
+  const act=cfm.filter(d=>d.status!=='Done');
+  const ovd=act.filter(isOvd);
+  const lines=act.slice(0,30).map((d,i)=>{
+    const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+    return`${i+1}. ${d.equipment} | ${d.area} | PIC: ${d.pic||'-'} | Target: ${tgt&&tgt.date?fd(tgt.date):(tgt&&tgt.label||'-')} | ${d.status}${isOvd(d)?' [OVERDUE]':''}`;
+  }).join('\n');
+  const body=encodeURIComponent(
+    `Laporan CFM Utilities — ${new Date().toLocaleDateString('id-ID')}\n\nDashboard:\n- Total Outstanding: ${act.length}\n- Overdue: ${ovd.length}\n- Job TA: ${ta.length}\n\nOutstanding CFM:\n${lines}\n\n---\nDo Not Reply — CFM Utilities System`
+  );
+  window.open('mailto:'+REPORT_EMAIL+'?subject='+subject+'&body='+body,'_blank');
+  closeReportConfirm();
+}
+
+// Auto-send OVERDUE email once per day (silently)
+async function autoSendOverdueEmail(){
+  if(!isEmailConfigured())return;
+  const todayStr=today();
+  const lastSent=localStorage.getItem('overdue-auto-sent');
+  if(lastSent===todayStr)return;
+  const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
+  if(!ovd.length)return;
+  const rows=ovd.map((d,i)=>{
+    const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+    return`<tr style="background:${i%2?'#fff':'#fef2f2'}">
+      <td style="padding:6px 8px">${i+1}</td>
+      <td style="padding:6px 8px;font-weight:600">${esc(d.equipment||'')}</td>
+      <td style="padding:6px 8px">${d.area||''}</td>
+      <td style="padding:6px 8px">${esc(d.masalah||'')}</td>
+      <td style="padding:6px 8px">${d.pic||'-'}</td>
+      <td style="padding:6px 8px;color:#dc2626;font-weight:700">${tgt&&tgt.date?fd(tgt.date):(tgt&&tgt.label||'-')}</td>
+    </tr>`;
+  }).join('');
+  const html=`<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto">
+    <div style="background:#dc2626;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0">
+      <h2 style="margin:0;font-size:17px">&#9888; Notifikasi OVERDUE — CFM Bagian Utilities</h2>
+      <p style="margin:4px 0 0;color:#fecaca;font-size:12px">${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
+    </div>
+    <div style="padding:16px 20px;background:#fff">
+      <p style="font-size:13px;margin-bottom:12px">Terdapat <strong>${ovd.length} item OVERDUE</strong> yang memerlukan perhatian segera:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#dc2626;color:#fff">
+          <th style="padding:6px 8px">#</th><th style="padding:6px 8px">Equipment</th><th style="padding:6px 8px">Area</th>
+          <th style="padding:6px 8px">Masalah</th><th style="padding:6px 8px">PIC</th><th style="padding:6px 8px">Target</th>
+        </tr></thead><tbody>${rows}</tbody>
+      </table>
+      <p style="font-size:11px;color:#999;margin-top:16px;text-align:center">Email ini dikirim otomatis oleh sistem CFM Utilities &mdash; Do Not Reply</p>
+    </div></div>`;
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,`[CFM Utilities] ⚠ Notifikasi Overdue — ${ovd.length} Item Belum Selesai`,html);
+    localStorage.setItem('overdue-auto-sent',todayStr);
+    console.log('Auto overdue email sent:',ovd.length,'items');
+  }catch(e){console.warn('Auto email failed:',e);}
+}
+
+function openEmailSetup(){
+  const c=getEmailCfg();
+  document.getElementById('ejs-pubkey').value=c.publicKey||'';
+  document.getElementById('ejs-svcid').value=c.serviceId||'';
+  document.getElementById('ejs-tplid').value=c.templateId||'';
+  document.getElementById('ejs-status').style.display='none';
+  document.getElementById('email-setup-modal').style.display='flex';
+}
+function closeEmailSetup(){document.getElementById('email-setup-modal').style.display='none'}
+
+function saveEmailSetup(){
+  const cfg={
+    publicKey:document.getElementById('ejs-pubkey').value.trim(),
+    serviceId:document.getElementById('ejs-svcid').value.trim(),
+    templateId:document.getElementById('ejs-tplid').value.trim()
+  };
+  if(!cfg.publicKey||!cfg.serviceId||!cfg.templateId){
+    showEjsStatus('Semua field wajib diisi.','#dc2626');return;
+  }
+  saveEmailCfgData(cfg);
+  showEjsStatus('Konfigurasi tersimpan!','#16a34a');
+  setTimeout(closeEmailSetup,1200);
+}
+
+async function testEmailSetup(){
+  const cfg={
+    publicKey:document.getElementById('ejs-pubkey').value.trim(),
+    serviceId:document.getElementById('ejs-svcid').value.trim(),
+    templateId:document.getElementById('ejs-tplid').value.trim()
+  };
+  if(!cfg.publicKey||!cfg.serviceId||!cfg.templateId){
+    showEjsStatus('Isi semua field dulu.','#dc2626');return;
+  }
+  saveEmailCfgData(cfg);
+  showEjsStatus('Mengirim test email...','#1e40af');
+  try{
+    initEmailJS();
+    await emailjs.send(cfg.serviceId,cfg.templateId,{
+      to_email:REPORT_EMAIL,
+      subject:'[CFM] Test Email — Konfigurasi Berhasil',
+      message:'<p>Email test dari sistem CFM Utilities berhasil dikirim.</p><p style="color:#999;font-size:11px">Do Not Reply</p>'
+    });
+    showEjsStatus('Test email berhasil dikirim ke '+REPORT_EMAIL,'#16a34a');
+  }catch(e){
+    const errTxt=e.text||e.message||JSON.stringify(e)||'';
+    const hint=errTxt.toLowerCase().includes('recipient')||errTxt.includes('412')?
+      ' → Di template EmailJS, pastikan field "To Email" = {{to_email}}':'';
+    showEjsStatus('Gagal: '+errTxt+hint,'#dc2626');
+  }
+}
+
+function showEjsStatus(msg,color){
+  const el=document.getElementById('ejs-status');
+  el.textContent=msg;el.style.color=color;el.style.display='block';
+}
+
+
+goTo('dashboard');
+setTimeout(autoSendOverdueEmail,2000);
+</script>
+
+<!-- report-confirm-modal removed: use view-email page instead -->
+
+<!-- EMAIL SETUP MODAL -->
+<div id="email-setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-size:16px;font-weight:700"><i class="ti ti-settings"></i> Pengaturan Email (EmailJS)</h3>
+      <button class="btn btn-sm btn-icon" onclick="closeEmailSetup()"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="background:var(--blue);color:#fff;border-radius:8px;padding:12px;font-size:12px;margin-bottom:16px;line-height:1.6">
+      <strong>Cara Setup (Gratis):</strong><br>
+      1. Daftar di <strong>emailjs.com</strong> (gratis)<br>
+      2. <em>Email Services</em> → Add Service (Gmail/Outlook) → salin <strong>Service ID</strong><br>
+      3. <em>Email Templates</em> → Create Template:<br>
+      &nbsp;&nbsp;&nbsp;• Field <strong>"To Email"</strong> → isi: <code style="background:rgba(255,255,255,.2);padding:1px 4px;border-radius:3px">{{to_email}}</code><br>
+      &nbsp;&nbsp;&nbsp;• Field <strong>"Subject"</strong> → isi: <code style="background:rgba(255,255,255,.2);padding:1px 4px;border-radius:3px">{{subject}}</code><br>
+      &nbsp;&nbsp;&nbsp;• Field <strong>"Content"</strong> → isi: <code style="background:rgba(255,255,255,.2);padding:1px 4px;border-radius:3px">{{{message}}}</code> (3 kurung kurawal untuk HTML)<br>
+      &nbsp;&nbsp;&nbsp;• Simpan → salin <strong>Template ID</strong><br>
+      4. <em>Account</em> → <em>General</em> → salin <strong>Public Key</strong>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+      <div class="fg"><label style="font-size:12px;font-weight:600">Public Key</label>
+        <input id="ejs-pubkey" placeholder="user_xxxxxxxxxxxx" style="padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace"></div>
+      <div class="fg"><label style="font-size:12px;font-weight:600">Service ID</label>
+        <input id="ejs-svcid" placeholder="service_xxxxxxx" style="padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace"></div>
+      <div class="fg"><label style="font-size:12px;font-weight:600">Template ID</label>
+        <input id="ejs-tplid" placeholder="template_xxxxxxx" style="padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace"></div>
+    </div>
+    <div id="ejs-status" style="font-size:12px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="testEmailSetup()"><i class="ti ti-send"></i> Test Kirim</button>
+      <button class="btn btn-sm btn-primary" onclick="saveEmailSetup()"><i class="ti ti-check"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
