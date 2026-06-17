@@ -2663,32 +2663,39 @@ function exportPDF(){
 #offline-banner{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:10px 16px;font-size:13px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);border-radius:12px;min-width:320px;max-width:90vw}
 #offline-banner.show{display:flex}
 /* ---- COMMENT THREAD ---- */
-.cmt-item{display:flex;gap:12px;margin-bottom:16px}
-.cmt-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;text-transform:uppercase;box-shadow:0 2px 8px rgba(37,99,235,.25)}
-.cmt-bubble{flex:1;min-width:0;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
-.cmt-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.cmt-author{font-size:13px;font-weight:700;color:var(--text)}
-.cmt-time{font-size:11px;color:var(--muted)}
-.cmt-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--text);margin-bottom:8px}
-.cmt-attach-img{max-width:240px;max-height:180px;border-radius:10px;margin-top:8px;cursor:pointer;border:1px solid var(--border);display:block;transition:.2s}
-.cmt-attach-img:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
-.cmt-attach-file{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid #bfdbfe;border-radius:8px;font-size:12px;text-decoration:none;color:var(--blue);font-weight:600;transition:.15s}
-.cmt-attach-file:hover{background:linear-gradient(135deg,#bfdbfe,#dbeafe);box-shadow:0 2px 8px rgba(37,99,235,.15)}
-.cmt-attach-file i{font-size:14px}
-.cmt-actions{display:flex;align-items:center;gap:6px;margin-top:8px}
-.cmt-reply-btn{background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid #bfdbfe;color:#2563eb;font-size:12px;cursor:pointer;padding:5px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:5px;transition:.15s;font-family:inherit}
-.cmt-reply-btn:hover{background:linear-gradient(135deg,#bfdbfe,#dbeafe);box-shadow:0 2px 8px rgba(37,99,235,.15)}
-.cmt-reply-btn i{font-size:13px}
-.cmt-replies{margin-top:12px;padding-left:18px;border-left:2.5px solid var(--blue);margin-left:9px}
-.cmt-reply-form{margin-top:10px;padding:12px 14px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid #d1fae5;border-radius:10px}
-.cmt-compose{margin-top:16px;padding:14px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
+/* ---- COMMENT / DISKUSI ---- */
+.cmt-list{display:flex;flex-direction:column;gap:4px;padding:4px 0}
+.cmt-item{display:flex;gap:10px;padding:6px 0;animation:cmt-in .18s ease}
+@keyframes cmt-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cmt-avatar{width:34px;height:34px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px}
+.cmt-avatar.sm{width:26px;height:26px;font-size:10px}
+.cmt-bubble{flex:1;min-width:0}
+.cmt-meta{display:flex;align-items:baseline;gap:7px;margin-bottom:3px}
+.cmt-author{font-size:12px;font-weight:700;color:var(--text)}
+.cmt-time{font-size:10px;color:var(--muted)}
+.cmt-body{background:var(--bg-card);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:10px 13px;position:relative}
+.cmt-body.is-reply{background:var(--bg-sec);border-radius:0 10px 10px 10px}
+.cmt-text{font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+.cmt-attach-img{max-width:220px;max-height:160px;border-radius:8px;margin-top:8px;cursor:pointer;display:block;transition:.2s;border:1px solid var(--border)}
+.cmt-attach-img:hover{box-shadow:0 4px 14px rgba(0,0,0,.14);transform:scale(1.01)}
+.cmt-attach-file{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:7px 12px;background:var(--blue-lt);border:1px solid #bfdbfe;border-radius:8px;font-size:12px;text-decoration:none;color:var(--blue);font-weight:600;transition:.15s}
+.cmt-attach-file:hover{background:#dbeafe}
+.cmt-actions{display:flex;align-items:center;gap:4px;margin-top:6px}
+.cmt-reply-btn{background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;transition:.15s;font-family:inherit}
+.cmt-reply-btn:hover{background:var(--blue-lt);color:var(--blue)}
+.cmt-del-btn{background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 7px;border-radius:6px;display:inline-flex;align-items:center;transition:.15s;font-family:inherit}
+.cmt-del-btn:hover{background:#fee2e2;color:var(--red)}
+.cmt-replies{margin-top:6px;margin-left:4px;display:flex;flex-direction:column;gap:4px;padding-left:14px;border-left:2px solid var(--border)}
+.cmt-reply-form{margin-top:8px;padding:10px 12px;background:var(--bg-sec);border:1px solid var(--border);border-radius:10px}
+.cmt-compose{margin-top:16px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.cmt-compose-top{display:flex;gap:10px;align-items:flex-start;padding:12px 14px 8px}
+.cmt-compose textarea{width:100%;padding:0;border:none;outline:none;font-size:13px;font-family:inherit;resize:none;min-height:56px;background:transparent;line-height:1.6;color:var(--text)}
+.cmt-compose textarea::placeholder{color:var(--muted)}
+.cmt-compose-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;border-top:1px solid var(--border);gap:8px}
 .cmt-compose-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.cmt-compose textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical;min-height:72px;box-sizing:border-box;background:var(--bg-card);transition:border-color .15s,box-shadow .15s;line-height:1.5}
-.cmt-compose textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-.cmt-compose textarea::placeholder{color:var(--muted);font-style:italic}
-.cmt-file-preview{margin-bottom:8px}
+.cmt-file-preview{padding:0 14px 8px}
 .cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
-.cmt-file-chip img{width:36px;height:36px;object-fit:cover;border-radius:4px}
+.cmt-file-chip img{width:32px;height:32px;object-fit:cover;border-radius:4px}
 /* ---- AUTHOR MODAL ---- */
 #author-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.65);z-index:10000;align-items:center;justify-content:center;display:none}
 #author-modal.open{display:flex !important}
@@ -3088,21 +3095,28 @@ function cmtSection(itemId, type) {
       </div>`;
   return `<div class="dcard">
     <div class="dcard-title"><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</div>
-    <div id="cmt-${type}-${itemId}" style="min-height:40px;margin-bottom:16px"><div style="color:var(--muted);font-size:12px;font-style:italic">Memuat diskusi...</div></div>
+    <div id="cmt-${type}-${itemId}" class="cmt-list" style="min-height:32px;margin-bottom:14px"><div style="color:var(--muted);font-size:12px;font-style:italic;padding:4px 0">Memuat diskusi...</div></div>
     <!-- Compose Box -->
-    <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-card);transition:.2s" onfocusin="this.style.borderColor='#2563eb'" onfocusout="this.style.borderColor='var(--border)'">
-      <!-- Author row -->
-      <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border);background:var(--bg)">${authorRow}</div>
-      <!-- File preview -->
-      <div id="file-preview-${type}-${itemId}" class="cmt-file-preview" style="padding:0 14px"></div>
-      <!-- Textarea -->
-      <textarea id="cmt-inp-${type}-${itemId}"
-        placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
-        style="width:100%;min-height:80px;padding:12px 14px;border:none;outline:none;font-family:inherit;font-size:13px;line-height:1.6;resize:vertical;background:var(--bg-card);color:var(--text);box-sizing:border-box"
-        onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
-      <!-- Action row -->
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
-        <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted);padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);transition:.15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='var(--bg-card)'" title="Lampirkan foto / file (maks 10MB)">
+    <div class="cmt-compose" onfocusin="this.style.borderColor='var(--blue)'" onfocusout="this.style.borderColor='var(--border)'">
+      <div class="cmt-compose-top">
+        <div class="cmt-avatar" style="background:${avatarBg};width:32px;height:32px;font-size:12px;flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            ${_authorName
+              ? `<span style="font-size:12px;font-weight:700;color:var(--text)">${esc(_authorName)}</span>
+                 <button onclick="promptAuthor()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;transition:.15s" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-pencil" style="font-size:11px"></i> Ganti</button>`
+              : `<span style="font-size:12px;color:var(--muted)">Nama belum diset</span>
+                 <button onclick="promptAuthor()" style="background:var(--blue);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user-plus" style="font-size:11px"></i> Set Nama</button>`
+            }
+          </div>
+          <div id="file-preview-${type}-${itemId}" class="cmt-file-preview" style="padding:0"></div>
+          <textarea id="cmt-inp-${type}-${itemId}"
+            placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
+            onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
+        </div>
+      </div>
+      <div class="cmt-compose-footer">
+        <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted);padding:5px 10px;border-radius:8px;transition:.15s" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background='transparent'" title="Lampirkan foto / file (maks 10MB)">
           <i class="ti ti-paperclip" style="font-size:14px"></i> Lampiran
           <input type="file" id="file-inp-${type}-${itemId}" style="display:none"
             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
@@ -3110,8 +3124,8 @@ function cmtSection(itemId, type) {
         </label>
         <span style="font-size:10px;color:var(--muted)">Maks 10MB</span>
         <div style="flex:1"></div>
-        <span style="font-size:10px;color:var(--muted)"><kbd style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:3px;padding:1px 5px;font-size:10px">Ctrl+Enter</kbd> untuk kirim</span>
-        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="padding:7px 18px;font-weight:700"
+        <span style="font-size:10px;color:var(--muted);margin-right:4px"><kbd style="background:var(--bg-sec);border:1px solid var(--border-em);border-radius:3px;padding:1px 5px;font-size:10px">Ctrl+Enter</kbd></span>
+        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="font-weight:700"
           onclick="addComment(${itemId},'${type}')"><i class="ti ti-send"></i> Kirim</button>
       </div>
     </div>
@@ -3176,19 +3190,20 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
     ? `<div class="cmt-replies">${replies.map(r => renderOneCmt(r, [], itemId, type, true)).join('')}</div>` : '';
 
   return `<div class="cmt-item" id="cmt-${c.id}">
-    <div class="cmt-avatar" style="background:${avatarBg}">${initials}</div>
+    <div class="cmt-avatar${isReply?' sm':''}" style="background:${avatarBg}">${initials}</div>
     <div class="cmt-bubble">
-      <div class="cmt-header">
+      <div class="cmt-meta">
         <span class="cmt-author">${esc(c.author)}</span>
         <span class="cmt-time">${timeStr}</span>
-        <div style="flex:1"></div>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-message-circle"></i> Balas</button>` : ''}
-          ${isOwn ? `<button class="btn btn-sm btn-icon" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus" style="color:var(--red);background:#fee2e2"><i class="ti ti-trash"></i></button>` : ''}
-        </div>
       </div>
-      ${c.content ? `<div class="cmt-text">${esc(c.content)}</div>` : ''}
-      ${attachHtml}
+      <div class="cmt-body${isReply?' is-reply':''}">
+        ${c.content ? `<div class="cmt-text">${esc(c.content)}</div>` : ''}
+        ${attachHtml}
+      </div>
+      <div class="cmt-actions">
+        ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-corner-down-right"></i> Balas</button>` : ''}
+        ${isOwn ? `<button class="cmt-del-btn" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus komentar"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
+      </div>
       ${repliesHtml}
       <div id="reply-form-${c.id}"></div>
     </div>
@@ -3203,15 +3218,17 @@ function showReplyForm(parentId, itemId, type, parentAuthor) {
   const el = document.getElementById(`reply-form-${parentId}`);
   if (!el) return;
   el.innerHTML = `<div class="cmt-reply-form">
-    <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:6px">
+    <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px">
       <i class="ti ti-corner-down-right"></i> Balas ke <strong>${esc(parentAuthor)}</strong>
     </div>
     <textarea id="reply-txt-${parentId}" rows="2" placeholder="Tulis balasan..."
-      style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;background:var(--bg-card)"></textarea>
-    <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
-      <button class="btn btn-sm" onclick="cancelReply(${parentId})">Batal</button>
+      style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;resize:none;box-sizing:border-box;background:var(--bg-card);outline:none;line-height:1.5;transition:border-color .15s"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+      onkeydown="if(event.ctrlKey&&event.key==='Enter')submitReply(${parentId},${itemId},'${type}')"></textarea>
+    <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end">
+      <button class="btn btn-sm btn-ghost" onclick="cancelReply(${parentId})">Batal</button>
       <button class="btn btn-sm btn-primary" onclick="submitReply(${parentId},${itemId},'${type}')">
-        <i class="ti ti-send"></i> Kirim
+        <i class="ti ti-send"></i> Kirim Balasan
       </button>
     </div>
   </div>`;
