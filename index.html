@@ -436,8 +436,10 @@ tr:hover td{background:#fafbfc}
   <div class="area-tabs" id="out-tabs"></div>
   <div class="toolbar">
     <div class="sw"><i class="ti ti-search"></i><input class="si" id="out-q" placeholder="Cari equipment, masalah, PIC..." oninput="renderOut()"></div>
-    <select class="fsel" id="out-sf" onchange="renderOut()"><option value="">Semua Status</option><option>Open</option><option>In Progress</option><option>On Hold</option></select>
+    <select class="fsel" id="out-af" onchange="renderOut()"><option value="">Semua Area</option><option>WPS Rokan</option><option>WTP</option><option>Boiler Existing</option><option>Boiler HDC</option><option>PLTU</option><option>DTL</option></select>
+    <select class="fsel" id="out-sf" onchange="renderOut()"><option value="">Semua Status</option><option>Open</option><option>In Progress</option><option>On Hold</option><option>Done</option></select>
     <select class="fsel" id="out-tf" onchange="renderOut()"><option value="">Semua Tipe</option><option>Notifikasi</option><option>WO</option><option>PR</option><option>PO</option></select>
+    <button class="btn btn-sm" onclick="resetOutFilter()" title="Reset filter"><i class="ti ti-refresh"></i> Reset</button>
     <span id="out-cnt" style="font-size:12px;color:var(--muted)"></span>
   </div>
   <div class="tw"><table style="table-layout:fixed;width:100%;min-width:1100px">
@@ -797,6 +799,8 @@ async function loadFromDB(){
   setTimeout(checkH7,500);
   goTo('dashboard');
   setTimeout(autoSendOverdueEmail,3000);
+  setTimeout(autoSendH7Email,4000);
+  setTimeout(autoSendWeeklyEmail,5000);
   const ld=document.getElementById('db-loading');if(ld)ld.style.display='none';
   setupRealtime();
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1075,31 +1079,58 @@ async function doSendReport(){
   }
   etmOpen('report','Kirim Laporan CFM');
 }
+function esmOpen(){
+  const m=document.getElementById('email-send-modal');
+  document.getElementById('esm-icon').style.cssText='width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:26px;background:#eff6ff';
+  document.getElementById('esm-icon').innerHTML='<i class="ti ti-loader" style="color:#2563eb;animation:spin 1s linear infinite"></i>';
+  document.getElementById('esm-title').textContent='Mengirim email...';
+  document.getElementById('esm-progress').textContent='';
+  document.getElementById('esm-detail').style.display='none';
+  document.getElementById('esm-close-btn').style.display='none';
+  m.style.display='flex';
+}
+function esmProgress(cur,total,email){
+  document.getElementById('esm-progress').textContent=`Mengirim ke email ${cur} dari ${total}: ${email}`;
+}
+function esmSuccess(recipients){
+  document.getElementById('esm-icon').style.background='#dcfce7';
+  document.getElementById('esm-icon').innerHTML='<i class="ti ti-circle-check" style="color:#16a34a"></i>';
+  document.getElementById('esm-title').textContent='Berhasil!';
+  document.getElementById('esm-progress').textContent=`${recipients.length} email terkirim`;
+  const det=document.getElementById('esm-detail');
+  det.innerHTML='<strong>Penerima:</strong><br>'+recipients.map(r=>`✓ ${esc(r)}`).join('<br>');
+  det.style.display='block';
+  document.getElementById('esm-close-btn').style.display='inline-flex';
+}
+function esmError(err){
+  document.getElementById('esm-icon').style.background='#fef2f2';
+  document.getElementById('esm-icon').innerHTML='<i class="ti ti-x" style="color:#dc2626"></i>';
+  document.getElementById('esm-title').textContent='Gagal mengirim';
+  document.getElementById('esm-progress').textContent='';
+  const det=document.getElementById('esm-detail');
+  det.innerHTML='<span style="color:#dc2626">'+esc(err)+'</span>';
+  det.style.display='block';
+  document.getElementById('esm-close-btn').style.display='inline-flex';
+}
+
 async function _execSendReport(recipients){
-  const statusEl=document.getElementById('email-report-status');
-  const btn=document.querySelector('#view-email button.btn-primary');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';}
-  statusEl.style.display='none';
+  esmOpen();
   const d=new Date();
   const tglSubj=d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
   const subject=`[CFM Utilities] Laporan Harian — ${tglSubj}`;
   const html=buildReportHTML();
   try{
-    for(const r of recipients) await sendEmailViaEJS(r,subject,html);
-    statusEl.style.display='block';
-    statusEl.style.background='#dcfce7';
-    statusEl.style.color='#166534';
-    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Laporan berhasil dikirim ke '+recipients.join(', ');
+    for(let i=0;i<recipients.length;i++){
+      esmProgress(i+1,recipients.length,recipients[i]);
+      await sendEmailViaEJS(recipients[i],subject,html);
+    }
+    esmSuccess(recipients);
     toast('Laporan berhasil dikirim ke '+recipients.length+' penerima');
+    const statusEl=document.getElementById('email-report-status');
+    if(statusEl){statusEl.style.display='block';statusEl.style.background='#dcfce7';statusEl.style.color='#166534';statusEl.innerHTML='<i class="ti ti-circle-check"></i> Laporan berhasil dikirim ke '+recipients.join(', ');}
   }catch(e){
     console.error(e);
-    statusEl.style.display='block';
-    statusEl.style.background='#fef2f2';
-    statusEl.style.color='#dc2626';
-    const errMsg=e.text||e.message||JSON.stringify(e)||'Error';
-    statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+errMsg;
-  }finally{
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Kirim Laporan CFM';}
+    esmError(e.text||e.message||JSON.stringify(e)||'Error');
   }
 }
 
@@ -1113,9 +1144,9 @@ async function doSendOverdue(){
   etmOpen('overdue','Kirim Notifikasi Overdue');
 }
 async function _execSendOverdue(recipients){
+  esmOpen();
   const statusEl=document.getElementById('email-ovd-status');
   const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
-  statusEl.style.display='none';
   const rows=ovd.map((d,i)=>{
     const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
     const tgtStr=tgt?(tgt.date?fd(tgt.date):(tgt.label||'—')):'—';
@@ -1157,18 +1188,17 @@ async function _execSendOverdue(recipients){
   </div>`;
   const tglSubj=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
   try{
-    for(const r of recipients) await sendEmailViaEJS(r,`[CFM Utilities] ⚠ ${ovd.length} Item Overdue — ${tglSubj}`,html);
-    statusEl.style.display='block';
-    statusEl.style.background='#dcfce7';
-    statusEl.style.color='#166534';
-    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Notifikasi berhasil dikirim ke '+recipients.join(', ');
+    for(let i=0;i<recipients.length;i++){
+      esmProgress(i+1,recipients.length,recipients[i]);
+      await sendEmailViaEJS(recipients[i],`[CFM Utilities] ⚠ ${ovd.length} Item Overdue — ${tglSubj}`,html);
+    }
+    esmSuccess(recipients);
     toast('Notifikasi overdue berhasil dikirim ke '+recipients.length+' penerima');
+    if(statusEl){statusEl.style.display='block';statusEl.style.background='#dcfce7';statusEl.style.color='#166534';statusEl.innerHTML='<i class="ti ti-circle-check"></i> Notifikasi berhasil dikirim ke '+recipients.join(', ');}
   }catch(e){
     console.error(e);
-    statusEl.style.display='block';
-    statusEl.style.background='#fef2f2';
-    statusEl.style.color='#dc2626';
-    statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+(e.text||e.message||'Error');
+    esmError(e.text||e.message||'Error');
+    if(statusEl){statusEl.style.display='block';statusEl.style.background='#fef2f2';statusEl.style.color='#dc2626';statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+(e.text||e.message||'Error');}
   }
 }
 
@@ -1396,11 +1426,12 @@ function renderOut(){
     <div class="stat-card"><div class="stat-label" style="color:var(--red)">Overdue</div><div class="stat-value" style="color:var(--red)">${ovd}</div></div>`;
   const cnts={All:act.length};AREAS.forEach(a=>cnts[a]=act.filter(d=>d.area===a).length);
   document.getElementById('out-tabs').innerHTML=['All',...AREAS].map(a=>`<button class="tab ${cfmArea===a?'active':''}" data-area="${a.replace(/&/g,'&amp;')}" onclick="setCfmArea(this.dataset.area)">${a==='All'?'Semua Area':a}<span class="cnt">${cnts[a]||0}</span></button>`).join('');
-  const q=document.getElementById('out-q').value.toLowerCase(),sf=document.getElementById('out-sf').value,tf=document.getElementById('out-tf').value;
+  const q=document.getElementById('out-q').value.toLowerCase(),sf=document.getElementById('out-sf').value,tf=document.getElementById('out-tf').value,af2=document.getElementById('out-af')?.value||'';
   let rows=cfm.filter(d=>{
-    if(d.status==='Done')return false;
-    if(cfmArea!=='All'&&d.area!==cfmArea)return false;
+    if(!sf&&d.status==='Done')return false;
     if(sf&&d.status!==sf)return false;
+    if(af2&&d.area!==af2)return false;
+    else if(!af2&&cfmArea!=='All'&&d.area!==cfmArea)return false;
     if(tf&&!(d.docs?d.docs.some(x=>x.type===tf):d.type===tf))return false;
     if(q&&!`${d.equipment} ${d.masalah} ${d.pic} ${d.ket} ${(d.docs||[]).map(x=>x.docno).join(' ')} ${d.docno}`.toLowerCase().includes(q))return false;
     return true;
@@ -1445,6 +1476,13 @@ function renderOut(){
 }
 
 function setCfmArea(a){cfmArea=a;renderOut()}
+function resetOutFilter(){
+  const q=document.getElementById('out-q');if(q)q.value='';
+  const af=document.getElementById('out-af');if(af)af.value='';
+  const sf=document.getElementById('out-sf');if(sf)sf.value='';
+  const tf=document.getElementById('out-tf');if(tf)tf.value='';
+  cfmArea='All';renderOut();
+}
 
 // ---- SELESAI ----
 function renderSelesai(){
@@ -1705,6 +1743,19 @@ function saveCfm(){
     const old=cfm.find(x=>x.id===editCfmId);
     item.timeline=old.timeline?[...old.timeline]:[];
     if(old.status!==ns)item.timeline.push({id:nTlId(item.timeline),ts:today(),type:ns==='Done'?'done':'status',note:`Status berubah dari "${old.status}" ke "${ns}"`});
+    // Per-item change log
+    item._log=old._log?[...old._log]:[];
+    const _logAuthor=_authorName||'Anonim';
+    const _logTs=new Date().toISOString();
+    const _chkField=(f,a,b)=>{if((a||'')!==(b||''))item._log.unshift({ts:_logTs,author:_logAuthor,field:f,from:a||'',to:b||''});};
+    _chkField('equipment',old.equipment,item.equipment);
+    _chkField('area',old.area,item.area);
+    _chkField('masalah',old.masalah,item.masalah);
+    _chkField('status',old.status,item.status);
+    _chkField('pic',old.pic,item.pic);
+    const _oldType=(old.docs&&old.docs[0])?old.docs[0].type:old.type||'';
+    const _newType=(item.docs&&item.docs[0])?item.docs[0].type:item.type||'';
+    _chkField('type',_oldType,_newType);
     cfm[cfm.findIndex(x=>x.id===editCfmId)]=item;
     toast('Item berhasil diperbarui');
   }else{
@@ -1922,6 +1973,26 @@ function cfmDetail(d){
       </div>
     </div>
   </div>
+  ${(d._log&&d._log.length)?`<div class="dcard">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--text);list-style:none;display:flex;align-items:center;gap:7px;user-select:none">
+        <i class="ti ti-history" style="color:var(--blue)"></i> Riwayat Item <span style="background:var(--blue-lt);color:var(--blue);font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px">${d._log.length}</span>
+        <i class="ti ti-chevron-down" style="margin-left:auto;font-size:13px;color:var(--muted)"></i>
+      </summary>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        ${d._log.map(e=>{
+          const dt=new Date(e.ts);
+          const rel=daysAgo(e.ts)||dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+          return`<div style="font-size:12px;line-height:1.6;padding:8px 12px;background:var(--bg-sec);border-radius:8px;border-left:3px solid var(--blue)">
+            <span style="font-weight:700;color:var(--text)">${esc(e.author)}</span> mengubah <span style="font-weight:700;color:var(--blue)">${esc(e.field)}</span>
+            dari <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px">"${esc(String(e.from))}"</span>
+            → <span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px">"${esc(String(e.to))}"</span>
+            <span style="color:var(--muted);margin-left:6px">· ${rel}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </details>
+  </div>`:''}
   ${cmtSection(d.id,'cfm')}`;
 }
 
@@ -2472,6 +2543,8 @@ function openEmailSetup(){
   document.getElementById('ejs-svcid').value=c.serviceId||'';
   document.getElementById('ejs-tplid').value=c.templateId||'';
   document.getElementById('ejs-status').style.display='none';
+  const h7t=document.getElementById('h7-auto-toggle');if(h7t)h7t.checked=!!localStorage.getItem('cfm-h7-auto');
+  const wkt=document.getElementById('weekly-auto-toggle');if(wkt)wkt.checked=!!localStorage.getItem('cfm-weekly-auto');
   document.getElementById('email-setup-modal').style.display='flex';
 }
 function closeEmailSetup(){document.getElementById('email-setup-modal').style.display='none'}
@@ -2520,6 +2593,102 @@ async function testEmailSetup(){
 function showEjsStatus(msg,color){
   const el=document.getElementById('ejs-status');
   el.textContent=msg;el.style.color=color;el.style.display='block';
+}
+
+async function autoSendH7Email(){
+  if(!localStorage.getItem('cfm-h7-auto'))return;
+  if(!isEmailConfigured())return;
+  const todayStr=today();
+  if(localStorage.getItem('cfm-h7-last-sent')===todayStr)return;
+  const now=new Date();now.setHours(0,0,0,0);
+  const H3=3*86400000;
+  const items=[];
+  cfm.filter(d=>d.status!=='Done').forEach(d=>{
+    if(!d.targets||!d.targets.length)return;
+    const tgt=d.targets[d.targets.length-1];
+    if(!tgt||!tgt.date)return;
+    const td=new Date(tgt.date);td.setHours(0,0,0,0);
+    const diff=td-now;
+    if(diff>=0&&diff<=H3){items.push({equip:d.equipment,area:d.area,pic:d.pic,date:tgt.date,days:Math.round(diff/86400000)});}
+  });
+  if(!items.length)return;
+  const tglStr=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const rows=items.map((x,i)=>`<tr style="background:${i%2?'#fff':'#fffbeb'}">
+    <td style="padding:6px 10px;color:#6b7280">${i+1}</td>
+    <td style="padding:6px 10px;font-weight:600">${esc(x.equip)}</td>
+    <td style="padding:6px 10px">${x.area||'—'}</td>
+    <td style="padding:6px 10px;text-align:center">${x.pic||'—'}</td>
+    <td style="padding:6px 10px;text-align:center;font-weight:700;color:#d97706">${x.date}</td>
+    <td style="padding:6px 10px;text-align:center;font-weight:700;color:#dc2626">H-${x.days}</td>
+  </tr>`).join('');
+  const html=`<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;border:1px solid #fde68a;border-radius:10px;overflow:hidden">
+    <div style="background:#d97706;color:#fff;padding:18px 24px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#fde68a;margin-bottom:4px">CFM Utilities — Pertamina Bagian Utilities</div>
+      <h2 style="margin:0;font-size:17px">⏰ Notifikasi H-7 Target Penyelesaian</h2>
+      <div style="font-size:12px;color:#fde68a;margin-top:4px">${tglStr}</div>
+    </div>
+    <div style="padding:18px 24px;background:#fff">
+      <p style="font-size:13px;margin:0 0 14px">Terdapat <strong style="color:#d97706">${items.length} item</strong> yang mendekati batas target penyelesaian (dalam 3 hari ke depan). Mohon segera ditindaklanjuti:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #fde68a;border-radius:6px;overflow:hidden">
+        <thead><tr style="background:#d97706;color:#fff">
+          <th style="padding:8px">#</th><th style="padding:8px;text-align:left">Equipment</th><th style="padding:8px;text-align:left">Area</th>
+          <th style="padding:8px">PIC</th><th style="padding:8px">Target</th><th style="padding:8px">Sisa Hari</th>
+        </tr></thead><tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="background:#fffbeb;border-top:1px solid #fde68a;padding:10px 24px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#9ca3af">Email dikirim otomatis oleh <strong>Sistem CFM Utilities</strong> — Do Not Reply</p>
+    </div>
+  </div>`;
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,`[CFM Utilities] ⏰ Notifikasi H-7 — ${items.length} Item Mendekati Deadline`,html);
+    localStorage.setItem('cfm-h7-last-sent',todayStr);
+    console.log('H-7 auto email sent:',items.length,'items');
+  }catch(e){console.warn('H-7 auto email failed:',e);}
+}
+
+async function autoSendWeeklyEmail(){
+  if(!localStorage.getItem('cfm-weekly-auto'))return;
+  if(!isEmailConfigured())return;
+  const now=new Date();
+  if(now.getDay()!==1)return; // only Monday
+  // ISO week number
+  const getWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));const y=t.getUTCFullYear();const w=Math.ceil((((t-new Date(Date.UTC(y,0,1)))/86400000)+1)/7);return`${y}-W${String(w).padStart(2,'0')}`;};
+  const thisWeek=getWeek(now);
+  if(localStorage.getItem('cfm-weekly-last-sent')===thisWeek)return;
+  const sevenDaysAgo=new Date(now-7*86400000);
+  const act=cfm.filter(d=>d.status!=='Done');
+  const ovd=act.filter(isOvd);
+  // Items completed in last 7 days via _log
+  const recentDone=cfm.filter(d=>d.status==='Done'&&(d._log||[]).some(e=>e.field==='status'&&e.to==='Done'&&new Date(e.ts)>=sevenDaysAgo));
+  // New items in last 7 days
+  const newItems=cfm.filter(d=>d.tanggal&&new Date(d.tanggal)>=sevenDaysAgo);
+  // Top areas outstanding
+  const areaStats=AREAS.map(a=>({area:a,count:act.filter(d=>d.area===a).length})).filter(x=>x.count>0).sort((a,b)=>b.count-a.count).slice(0,4);
+  const tglStr=now.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const areaRows=areaStats.map(x=>`<li style="margin-bottom:4px"><strong>${x.area}</strong>: ${x.count} item outstanding</li>`).join('');
+  const html=`<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;border:1px solid #dbeafe;border-radius:10px;overflow:hidden">
+    <div style="background:#1e40af;color:#fff;padding:18px 24px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#bfdbfe;margin-bottom:4px">CFM Utilities — Ringkasan Mingguan</div>
+      <h2 style="margin:0;font-size:17px">📊 Ringkasan Mingguan ${thisWeek}</h2>
+      <div style="font-size:12px;color:#bfdbfe;margin-top:4px">${tglStr}</div>
+    </div>
+    <div style="padding:18px 24px;background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:#f0fdf4;border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:800;color:#16a34a">${recentDone.length}</div><div style="font-size:12px;color:#374151">Selesai minggu ini</div></div>
+      <div style="background:#eff6ff;border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1e40af">${newItems.length}</div><div style="font-size:12px;color:#374151">Item baru ditambahkan</div></div>
+      <div style="background:#fef2f2;border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:800;color:#dc2626">${ovd.length}</div><div style="font-size:12px;color:#374151">Item overdue</div></div>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:800;color:#374151">${act.length}</div><div style="font-size:12px;color:#374151">Total outstanding</div></div>
+    </div>
+    ${areaRows?`<div style="padding:0 24px 18px;background:#fff"><p style="font-size:13px;font-weight:700;margin:0 0 8px">Area dengan paling banyak outstanding:</p><ul style="margin:0;padding-left:18px;font-size:13px;color:#374151">${areaRows}</ul></div>`:''}
+    <div style="background:#eff6ff;border-top:1px solid #dbeafe;padding:10px 24px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#9ca3af">Email dikirim otomatis setiap Senin oleh <strong>Sistem CFM Utilities</strong> — Do Not Reply</p>
+    </div>
+  </div>`;
+  try{
+    await sendEmailViaEJS(REPORT_EMAIL,`[CFM Utilities] 📊 Ringkasan Mingguan ${thisWeek}`,html);
+    localStorage.setItem('cfm-weekly-last-sent',thisWeek);
+    console.log('Weekly summary email sent:',thisWeek);
+  }catch(e){console.warn('Weekly auto email failed:',e);}
 }
 
 
@@ -3135,10 +3304,14 @@ function cmtSection(itemId, type) {
         <button onclick="promptAuthor(()=>cmtUpdateAuthor('${type}',${itemId}))" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:3px 9px;border-radius:6px;font-family:inherit;display:inline-flex;align-items:center;gap:3px;transition:.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">${_authorName ? '<i class="ti ti-pencil" style="font-size:11px"></i> Ganti' : '<i class="ti ti-user-plus" style="font-size:11px"></i> Set Nama'}</button>
       </div>
       <!-- Textarea -->
+      <div style="position:relative">
       <textarea id="cmt-inp-${type}-${itemId}"
-        placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
+        placeholder="Tulis komentar, update progres, atau informasi terkait item ini... (ketik @ untuk mention)"
         style="width:100%;min-height:72px;padding:12px 14px;border:none;outline:none;font-family:inherit;font-size:13px;line-height:1.6;resize:none;background:var(--bg-card);color:var(--text);box-sizing:border-box;display:block"
-        onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
+        onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"
+        oninput="mentionInput(this)"></textarea>
+      <div id="mention-dd-cmt-inp-${type}-${itemId}" style="display:none;position:absolute;left:12px;right:12px;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:500;overflow:hidden"></div>
+      </div>
       <!-- File preview -->
       <div id="file-preview-${type}-${itemId}" style="padding:0 14px"></div>
       <!-- Footer -->
@@ -3177,6 +3350,48 @@ async function loadComments(itemId, type) {
   } catch (e) {
     if (el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Gagal memuat diskusi.</div>';
   }
+}
+
+function parseMentions(html){
+  // html is already esc()-encoded; replace @word with styled span
+  return html.replace(/@([\w.]+)/g,'<span style="color:#2563eb;font-weight:700;background:#eff6ff;border-radius:4px;padding:1px 4px">@$1</span>');
+}
+
+function getMentionNames(){
+  // Collect unique author names from all cached comments + author history
+  const names=new Set();
+  Object.values(_cmtCache||{}).forEach(arr=>arr.forEach(c=>{if(c.author)names.add(c.author);}));
+  (JSON.parse(localStorage.getItem('cfm-author-history')||'[]')).forEach(n=>names.add(n));
+  if(_authorName)names.delete(_authorName); // exclude self
+  return [...names].slice(0,8);
+}
+
+function mentionInput(ta){
+  const val=ta.value,cur=ta.selectionStart;
+  const before=val.slice(0,cur);
+  const m=before.match(/@([\w.]*)$/);
+  const dd=document.getElementById('mention-dd-'+ta.id);
+  if(!dd)return;
+  if(!m){dd.style.display='none';return;}
+  const q=m[1].toLowerCase();
+  const names=getMentionNames().filter(n=>n.toLowerCase().includes(q));
+  if(!names.length){dd.style.display='none';return;}
+  dd.style.display='block';
+  dd.innerHTML=names.map(n=>`<div onclick="insertMention('${ta.id}','${n}')" style="padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--blue-lt)'" onmouseout="this.style.background=''">${esc(n)}</div>`).join('');
+}
+
+function insertMention(taId,name){
+  const ta=document.getElementById(taId);
+  if(!ta)return;
+  const val=ta.value,cur=ta.selectionStart;
+  const before=val.slice(0,cur).replace(/@[\w.]*$/,'@'+name+' ');
+  ta.value=before+val.slice(cur);
+  ta.focus();ta.selectionStart=ta.selectionEnd=before.length;
+  const dd=document.getElementById('mention-dd-'+taId);
+  if(dd)dd.style.display='none';
+  // save to author history
+  let hist=JSON.parse(localStorage.getItem('cfm-author-history')||'[]');
+  if(!hist.includes(name)){hist.unshift(name);localStorage.setItem('cfm-author-history',JSON.stringify(hist.slice(0,20)));}
 }
 
 function renderComments(itemId, type) {
@@ -3225,7 +3440,7 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
         <span style="font-size:10px;color:var(--muted)">${timeStr}</span>
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:${isReply?'0 8px 8px 8px':'0 12px 12px 12px'};padding:9px 12px;${isReply?'background:var(--bg-sec)':''}">
-        ${c.content ? `<div style="font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)">${esc(c.content)}</div>` : ''}
+        ${c.content ? `<div style="font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)">${parseMentions(esc(c.content))}</div>` : ''}
         ${attachHtml}
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
@@ -3400,6 +3615,17 @@ async function addComment(itemId, type) {
 <!-- report-confirm-modal removed: use view-email page instead -->
 
 <!-- EMAIL SETUP MODAL -->
+<!-- EMAIL SEND PROGRESS MODAL -->
+<div id="email-send-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(3px);z-index:11000;align-items:center;justify-content:center">
+<div style="background:var(--bg-card);border-radius:16px;padding:32px 28px;width:360px;max-width:95vw;box-shadow:0 24px 80px rgba(0,0,0,.35);text-align:center">
+  <div id="esm-icon" style="width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:26px"></div>
+  <div id="esm-title" style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px"></div>
+  <div id="esm-progress" style="font-size:13px;color:var(--muted);margin-bottom:20px;min-height:20px"></div>
+  <div id="esm-detail" style="font-size:12px;color:var(--muted);margin-bottom:20px;display:none;line-height:1.7;text-align:left;background:var(--bg-sec);border-radius:8px;padding:10px 14px"></div>
+  <button id="esm-close-btn" style="display:none" class="btn btn-primary" onclick="document.getElementById('email-send-modal').style.display='none'"><i class="ti ti-check"></i> Tutup</button>
+</div>
+</div>
+
 <div id="email-setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center">
   <div style="background:var(--bg-card);border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -3424,6 +3650,17 @@ async function addComment(itemId, type) {
         <input id="ejs-svcid" placeholder="service_xxxxxxx" style="padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace"></div>
       <div class="fg"><label style="font-size:12px;font-weight:600">Template ID</label>
         <input id="ejs-tplid" placeholder="template_xxxxxxx" style="padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:12px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Notifikasi Otomatis</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="h7-auto-toggle" onchange="localStorage.setItem('cfm-h7-auto',this.checked?'1':'')" style="width:16px;height:16px;cursor:pointer">
+        Auto-kirim email H-7 setiap hari
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="weekly-auto-toggle" onchange="localStorage.setItem('cfm-weekly-auto',this.checked?'1':'')" style="width:16px;height:16px;cursor:pointer">
+        Auto-kirim ringkasan mingguan (Senin pagi)
+      </label>
     </div>
     <div id="ejs-status" style="font-size:12px;margin-bottom:12px;display:none"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
