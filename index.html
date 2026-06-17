@@ -756,6 +756,8 @@ const TL_ICO={created:'ti-plus',status:'ti-refresh',target:'ti-calendar',note:'t
 const _supa=supabase.createClient('https://fypzvrkusqeghofikxur.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5cHp2cmt1c3FlZ2hvZmlreHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2Mjg0ODEsImV4cCI6MjA5NzIwNDQ4MX0.MJWPNqhIZ2YlPQINF0S7bwsILs8UZGY1JGVacqGiK7E');
 let cfm=[];
 let ta=[];
+let _authorName=localStorage.getItem('cfm-author')||'';
+let _notifs=JSON.parse(localStorage.getItem('cfm-notifs')||'[]');
 
 function showDbStatus(msg,ok=true){
   const el=document.getElementById('db-status');if(!el)return;
@@ -3252,7 +3254,6 @@ function retryOnline() {
 // =====================================================================
 // AUTHOR NAME
 // =====================================================================
-let _authorName = localStorage.getItem('cfm-author') || '';
 let _authorCb = null;
 
 function promptAuthor(cb) {
@@ -3743,7 +3744,6 @@ async function deleteItemAttach(itemId, idx){
 }
 
 // ---- IN-APP NOTIFICATIONS ----
-let _notifs = JSON.parse(localStorage.getItem('cfm-notifs') || '[]');
 let _notifPanelOpen = false;
 
 function _saveNotifs(){ localStorage.setItem('cfm-notifs', JSON.stringify(_notifs.slice(0,50))); }
