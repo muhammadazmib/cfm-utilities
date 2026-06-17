@@ -29,7 +29,33 @@
   --teal:#0F6E56;--teal-lt:#E1F5EE;
   --r:8px;--rl:12px;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh}
+[data-theme="dark"]{
+  --bg:#0f172a;--bg-card:#1e293b;--bg-sec:#0f172a;
+  --text:#f1f5f9;--muted:#94a3b8;--border:#334155;--border-em:#475569;
+  --blue:#3b82f6;--blue-dk:#2563eb;--blue-lt:#1e3a5f;
+  --green:#4ade80;--green-lt:#14532d;
+  --red:#f87171;--red-lt:#450a0a;
+  --amber:#fbbf24;--amber-lt:#451a03;
+  --gray:#94a3b8;--gray-lt:#1e293b;
+  --purple:#a78bfa;--purple-lt:#2e1065;
+  --teal:#2dd4bf;--teal-lt:#042f2e;
+}
+[data-theme="dark"] th{background:#0f172a;border-bottom-color:#334155}
+[data-theme="dark"] tr:hover td{background:#334155}
+[data-theme="dark"] .nav{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .tw{background:#1e293b}
+[data-theme="dark"] .det-ov{background:#0f172a}
+[data-theme="dark"] .det-hd{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .area-tabs{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .modal{background:#1e293b}
+[data-theme="dark"] .modal-bg{background:rgba(0,0,0,.7)}
+[data-theme="dark"] .fg input,[data-theme="dark"] .fg select,[data-theme="dark"] .fg textarea{background:#0f172a;color:#f1f5f9;border-color:#475569}
+[data-theme="dark"] .si{background:#1e293b;color:#f1f5f9;border-color:#475569}
+[data-theme="dark"] .fsel{background:#1e293b;color:#f1f5f9;border-color:#475569}
+[data-theme="dark"] #notif-panel{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .confirm-box{background:#1e293b}
+[data-theme="dark"] .footer{background:#1e293b;border-color:#334155;color:#94a3b8}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
 
 /* NAV */
 .nav{background:var(--bg-card);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:50;overflow-x:auto}
@@ -302,6 +328,7 @@ tr:hover td{background:#fafbfc}
     </div>
     <div id="notif-list" style="padding:8px 0"></div>
   </div>
+  <button class="btn btn-sm btn-icon" id="dark-toggle" style="flex-shrink:0" onclick="toggleDark()" title="Toggle Dark/Light Mode"><i class="ti ti-moon"></i></button>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
   <a href="petunjuk.html" target="_blank" class="btn btn-sm" style="flex-shrink:0;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;text-decoration:none" title="Fitur & Petunjuk Penggunaan"><i class="ti ti-help-circle"></i> Panduan</a>
   <button class="btn btn-sm" style="flex-shrink:0;background:#16a34a;color:#fff;border:none" onclick="exportBackup()" title="Backup data untuk disimpan atau dipindah ke PC lain"><i class="ti ti-database-export"></i> Backup Data</button>
@@ -775,6 +802,50 @@ let ta=[];
 let _authorName=localStorage.getItem('cfm-author')||'';
 let _notifs=JSON.parse(localStorage.getItem('cfm-notifs')||'[]');
 let _follows=new Set(JSON.parse(localStorage.getItem('cfm-follows')||'[]'));
+
+// ===== DARK MODE =====
+function toggleDark(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const next=isDark?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('cfm-theme',next);
+  const btn=document.getElementById('dark-toggle');
+  if(btn)btn.innerHTML=next==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon"></i>';
+}
+(function(){
+  const t=localStorage.getItem('cfm-theme')||'light';
+  if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}
+  window.addEventListener('DOMContentLoaded',()=>{
+    const btn=document.getElementById('dark-toggle');
+    if(btn&&t==='dark')btn.innerHTML='<i class="ti ti-sun"></i>';
+  });
+})();
+
+// ===== QUICK STATUS UPDATE =====
+async function quickUpdateStatus(id,type,newStatus){
+  if(type==='cfm'){
+    const item=cfm.find(x=>x.id===id);if(!item)return;
+    const old=item.status;item.status=newStatus;item._updatedAt=new Date().toISOString();
+    if(!item._log)item._log=[];
+    item._log.unshift({ts:new Date().toISOString(),author:_authorName||'Anonim',field:'status',from:old,to:newStatus});
+    if(!item.timeline)item.timeline=[];
+    item.timeline.push({id:nTlId(item.timeline),ts:today(),type:newStatus==='Done'?'done':'status',note:`Status berubah: "${old}" → "${newStatus}"`});
+    await persistCfm();
+    addLog('CFM','Edit',item.equipment,`Status: ${old} → ${newStatus}`);
+    toast(`Status diubah → ${newStatus}`);
+    if(vw==='outstanding')renderOut();
+    if(vw==='selesai')renderSelesai();
+    if(vw==='dashboard')renderDash();
+  } else {
+    const item=ta.find(x=>x.id===id);if(!item)return;
+    const old=item.status;item.status=newStatus;
+    await persistTa();
+    addLog('TA','Edit',item.tagNumber||item.jobNo,`Status: ${old} → ${newStatus}`);
+    toast(`Status diubah → ${newStatus}`);
+    if(vw==='ta')renderTa();
+    if(vw==='dashboard')renderDash();
+  }
+}
 
 function showDbStatus(msg,ok=true){
   const el=document.getElementById('db-status');if(!el)return;
@@ -1567,7 +1638,9 @@ function renderOut(){
         ${d.targets&&d.targets.length>1?`<div class="doc-no" style="color:var(--blue)">${d.targets.length} target (revisi ${d.targets.length-1}x)</div>`:''}
         ${dueDateChip(d)}
       </td>
-      <td><span class="badge ${SCLS[d.status]||''}">${esc(d.status)}</span></td>
+      <td><select onchange="quickUpdateStatus(${d.id},'cfm',this.value)" style="padding:3px 6px;border-radius:20px;border:1px solid var(--border-em);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--bg-card);color:var(--text)">
+        ${['Open','In Progress','On Hold','Done'].map(s=>`<option value="${s}"${d.status===s?' selected':''}>${s}</option>`).join('')}
+      </select></td>
       <td>${renderDocs(d)}</td>
       <td class="ket-cell">${ketLast(d.ket)}</td>
       <td><div class="acts">
@@ -2862,6 +2935,33 @@ function setupRealtime(){
       _supa.from('ta_items').select('data').eq('id',1).maybeSingle().then(r=>{
         if(r.data?.data){ta=r.data.data;_rtRerender();_rtPulse();}
       });
+    }).on('postgres_changes',{event:'INSERT',schema:'public',table:'comments'},payload=>{
+      const row=payload.new;if(!row)return;
+      const iid=row.item_id,itype=row.item_type;
+      // Reload comments if detail panel is open for this item
+      if(detId===iid&&detType===itype){
+        loadComments(iid,itype);
+        // Flash indicator
+        const hd=document.getElementById('det-body');
+        if(hd){hd.style.transition='opacity .2s';hd.style.opacity='.6';setTimeout(()=>hd.style.opacity='1',300);}
+      }
+      // Browser notification if followed and not own comment
+      if(row.author!==_authorName&&_follows.has(`${itype}-${iid}`)){
+        const iName=itype==='cfm'?(cfm.find(x=>x.id===iid)?.equipment||'item'):(ta.find(x=>x.id===iid)?.tagNumber||'item');
+        const body=`${row.author||'Seseorang'}: ${(row.content||'').substring(0,60)}`;
+        _browserNotif('💬 Komentar Baru',body,iid,itype);
+        pushNotif('new_comment','Komentar Baru',`${row.author||'Seseorang'} berkomentar di "${iName}"`,iid,itype);
+      }
+      // @mention notification
+      if(row.author!==_authorName&&_authorName){
+        const mentions=(row.content||'').match(/@([\w]+(?:\s[\w]+)?)/g)||[];
+        const myFirst=_authorName.split(' ')[0].toLowerCase();
+        if(mentions.some(m=>m.slice(1).toLowerCase().startsWith(myFirst))){
+          const iName=itype==='cfm'?(cfm.find(x=>x.id===iid)?.equipment||'item'):(ta.find(x=>x.id===iid)?.tagNumber||'item');
+          pushNotif('mention','Anda di-mention',`${row.author} menyebut Anda di "${iName}"`,iid,itype);
+          _browserNotif('🔔 Anda Di-mention',`${row.author}: ${(row.content||'').substring(0,60)}`,iid,itype);
+        }
+      }
     }).subscribe(status=>{
       const dot=document.getElementById('rt-dot');
       const lbl=document.getElementById('rt-label');
@@ -3048,21 +3148,50 @@ function _printTable(items,mode){
     <td>${i+1}</td><td>${esc(x.tagNumber)}</td><td>${esc(x.area)}</td>
     <td>${esc(x.issue)}</td><td>${esc(x.disc)}</td>
     <td>${esc(x.priority)}</td><td><b>${esc(x.status)}</b></td></tr>`).join('');
+  const imgItems=items.filter(x=>(x._attachments||[]).some(a=>/\.(jpg|jpeg|png|gif|webp)$/i.test(a.name)));
+  const photoSection=imgItems.length?`<div style="page-break-before:always">
+    <div style="font-size:13px;font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:4px;margin-bottom:12px">Lampiran Foto</div>
+    ${imgItems.map(x=>`<div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;margin-bottom:4px">${esc(x.equipment)} — ${esc(x.area)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${(x._attachments||[]).filter(a=>/\.(jpg|jpeg|png|gif|webp)$/i.test(a.name)).map(a=>`<img src="${a.url}" style="width:180px;height:120px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0">`).join('')}</div>
+    </div>`).join('')}</div>`:'';
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Laporan CFM Utilities — ${tgl}</title>
   <style>
-    body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#111}
-    h1{font-size:14px;margin-bottom:2px}h2{font-size:12px;margin:16px 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px}
-    .meta{font-size:10px;color:#666;margin-bottom:12px}
+    body{font-family:Arial,sans-serif;font-size:10px;margin:0;color:#111}
+    .cover{page-break-after:always;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;padding:40px}
+    .cover-logo{width:80px;height:80px;background:#1e40af;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;color:#fff;font-weight:900}
+    .cover-corp{font-size:13px;font-weight:700;color:#1e40af;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+    .cover-sub{font-size:11px;color:#475569;margin-bottom:30px}
+    .cover-title{font-size:22px;font-weight:800;color:#0f172a;text-align:center;margin-bottom:8px}
+    .cover-subtitle{font-size:13px;color:#475569;text-align:center;margin-bottom:32px}
+    .cover-box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;width:420px}
+    .cover-stat{text-align:center}.cover-stat-val{font-size:28px;font-weight:800}.cover-stat-lbl{font-size:10px;color:#6b7280;text-transform:uppercase}
+    .cover-footer{margin-top:32px;font-size:10px;color:#94a3b8;text-align:center}
+    .content-wrap{margin:16px 20px}
+    h2{font-size:12px;margin:16px 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px}
     table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px}
     th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left;font-weight:600}
     td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top}
     tr:nth-child(even){background:#f8fafc}
     .stat{display:inline-block;padding:4px 10px;border-radius:6px;margin:2px;font-weight:700;font-size:10px}
-    @media print{body{margin:10mm}@page{size:A4 landscape;margin:10mm}}
+    @media print{@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
-  <h1>Laporan CFM Utilities — Bagian Pertamina Utilities</h1>
-  <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total CFM: ${items.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
+  <div class="cover">
+    <div class="cover-logo">U</div>
+    <div class="cover-corp">PT Pertamina (Persero)</div>
+    <div class="cover-sub">Refinery Unit II Dumai — Bagian Utilities</div>
+    <div class="cover-title">Laporan Cross Functional Meeting</div>
+    <div class="cover-subtitle">Outstanding Items &amp; Progress Monitoring</div>
+    <div class="cover-box">
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#dc2626">${items.filter(x=>x.status==='Open').length}</div><div class="cover-stat-lbl">Open</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#d97706">${items.filter(x=>x.status==='In Progress').length}</div><div class="cover-stat-lbl">In Progress</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#6b7280">${items.filter(x=>x.status==='On Hold').length}</div><div class="cover-stat-lbl">On Hold</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#dc2626">${ovdIds.size}</div><div class="cover-stat-lbl">Overdue</div></div>
+    </div>
+    <div class="cover-footer">Dicetak: ${tgl} &nbsp;·&nbsp; Total ${items.length} item CFM &nbsp;·&nbsp; ${taItems.length} Job TA</div>
+  </div>
+  <div class="content-wrap">
   <div>
     <span class="stat" style="background:#fee2e2;color:#dc2626">Open: ${items.filter(x=>x.status==='Open').length}</span>
     <span class="stat" style="background:#fef9c3;color:#b45309">In Progress: ${items.filter(x=>x.status==='In Progress').length}</span>
@@ -3076,6 +3205,7 @@ function _printTable(items,mode){
   <h2>Job TA</h2>
   <table><thead><tr><th>#</th><th>Tag Number</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Status</th></tr></thead>
   <tbody>${rowsTA||'<tr><td colspan="7" style="text-align:center;color:#999">Tidak ada data</td></tr>'}</tbody></table>
+  </div>${photoSection}
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`;
   const w=window.open('','_blank');
