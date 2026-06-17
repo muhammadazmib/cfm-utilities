@@ -288,9 +288,9 @@ tr:hover td{background:#fafbfc}
   <button class="nav-btn" id="nav-ta" onclick="goTo('ta')"><i class="ti ti-building-factory-2"></i> Job List TA</button>
   <button class="nav-btn" id="nav-log" onclick="goTo('log')"><i class="ti ti-history"></i> Log Perubahan</button>
   <button class="nav-btn" id="nav-export" onclick="openExportModal()"><i class="ti ti-download"></i> Export</button>
-  <div id="rt-indicator" title="Realtime sync" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:0 8px;flex-shrink:0"><span id="rt-dot" style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block"></span><span id="rt-label">Offline</span></div>
   <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
-  <div class="nav-sp"></div>
+  <div style="flex:1"></div>
+  <div id="rt-indicator" title="Realtime sync" style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);padding:0 10px;flex-shrink:0"><span id="rt-dot" style="width:6px;height:6px;border-radius:50%;background:#d1d5db;display:inline-block"></span><span id="rt-label">Offline</span></div>
   <div style="position:relative;flex-shrink:0">
     <button class="btn btn-sm btn-icon" onclick="toggleNotifPanel()" id="notif-btn" title="Notifikasi"><i class="ti ti-bell"></i></button>
     <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;line-height:1"></span>
@@ -651,8 +651,8 @@ tr:hover td{background:#fafbfc}
     <div class="fg ff"><label>PIC <span style="font-size:10px;color:var(--muted);font-weight:400">(bisa lebih dari 1)</span></label>
       <div id="pic-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:34px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card);cursor:text;align-items:center" onclick="document.getElementById('pic-inp').focus()">
         <input id="pic-inp" list="pic-list" placeholder="Tambah PIC..." autocomplete="off"
-          style="border:none;outline:none;font-size:13px;background:transparent;min-width:120px;flex:1;padding:1px 2px"
-          onkeydown="picKeydown(event)" oninput="this.style.width=(this.value.length*8+80)+'px'" onblur="if(this.value.trim())addPic(this.value)">
+          style="border:none;outline:none;font-size:13px;background:transparent;min-width:120px;flex:1;padding:1px 2px;text-transform:capitalize"
+          onkeydown="picKeydown(event)" oninput="this.style.width=(this.value.length*8+80)+'px';this.value=capitalizePic(this.value)" onblur="if(this.value.trim())addPic(this.value)">
       </div>
       <datalist id="pic-list"></datalist>
     </div>
@@ -1643,8 +1643,11 @@ function renderPicChips(){
     box.insertBefore(chip,inp);
   });
 }
+function capitalizePic(str){
+  return str.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+}
 function addPic(val){
-  const v=val.trim();
+  const v=capitalizePic(val.trim());
   if(!v||tmpPics.includes(v))return;
   tmpPics.push(v);
   renderPicChips();
