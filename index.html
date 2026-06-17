@@ -450,6 +450,13 @@ tr:hover td{background:#fafbfc}
     <select class="fsel" id="out-af" onchange="renderOut()"><option value="">Semua Area</option><option>WPS Rokan</option><option>WTP</option><option>Boiler Existing</option><option>Boiler HDC</option><option>PLTU</option><option>DTL</option></select>
     <select class="fsel" id="out-sf" onchange="renderOut()"><option value="">Semua Status</option><option>Open</option><option>In Progress</option><option>On Hold</option><option>Done</option></select>
     <select class="fsel" id="out-tf" onchange="renderOut()"><option value="">Semua Tipe</option><option>Notifikasi</option><option>WO</option><option>PR</option><option>PO</option></select>
+    <select class="fsel" id="out-pf" onchange="renderOut()" style="max-width:130px"><option value="">Semua PIC</option></select>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">Target:</span>
+      <input type="date" id="out-df" onchange="renderOut()" style="padding:6px 8px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);font-size:12px;color:var(--text)" title="Target dari tanggal">
+      <span style="font-size:11px;color:var(--muted)">–</span>
+      <input type="date" id="out-dt" onchange="renderOut()" style="padding:6px 8px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);font-size:12px;color:var(--text)" title="Target sampai tanggal">
+    </div>
     <button class="btn btn-sm" onclick="resetOutFilter()" title="Reset filter"><i class="ti ti-refresh"></i> Reset</button>
     <span id="out-cnt" style="font-size:12px;color:var(--muted)"></span>
   </div>
@@ -587,18 +594,27 @@ tr:hover td{background:#fafbfc}
 <div id="view-log" class="vc" style="display:none">
 <div class="content">
   <div class="sh">
-    <div class="sh-title"><i class="ti ti-history" style="color:var(--blue)"></i> Log Perubahan</div>
-    <button class="btn btn-sm" onclick="loadLog()"><i class="ti ti-refresh"></i> Refresh</button>
+    <div class="sh-title"><i class="ti ti-history" style="color:var(--blue)"></i> History & Activity Feed</div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-sm" onclick="loadLog()"><i class="ti ti-refresh"></i> Refresh</button>
+      <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca" onclick="clearLog()"><i class="ti ti-trash"></i> Hapus Log</button>
+    </div>
   </div>
-  <div class="toolbar">
-    <div class="sw"><i class="ti ti-search"></i><input class="si" id="log-q" placeholder="Cari item..." oninput="renderLog()"></div>
+  <div class="toolbar" style="flex-wrap:wrap">
+    <div class="sw"><i class="ti ti-search"></i><input class="si" id="log-q" placeholder="Cari item atau detail..." oninput="renderLog()"></div>
     <select class="fsel" id="log-type" onchange="renderLog()"><option value="">Semua Tipe</option><option value="CFM">CFM</option><option value="TA">TA</option></select>
-    <select class="fsel" id="log-action" onchange="renderLog()"><option value="">Semua Aksi</option><option value="Tambah">Tambah</option><option value="Edit">Edit</option><option value="Hapus">Hapus</option><option value="Timeline">Timeline</option></select>
-    <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca" onclick="clearLog()"><i class="ti ti-trash"></i> Hapus Log</button>
+    <select class="fsel" id="log-action" onchange="renderLog()"><option value="">Semua Aksi</option><option value="Tambah">Tambah</option><option value="Edit">Edit</option><option value="Hapus">Hapus</option><option value="Diskusi">Diskusi</option><option value="Timeline">Timeline</option></select>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">Tanggal:</span>
+      <input type="date" id="log-df" onchange="renderLog()" style="padding:6px 8px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);font-size:12px;color:var(--text)" title="Dari tanggal">
+      <span style="font-size:11px;color:var(--muted)">–</span>
+      <input type="date" id="log-dt" onchange="renderLog()" style="padding:6px 8px;border-radius:var(--r);border:1px solid var(--border-em);background:var(--bg-card);font-size:12px;color:var(--text)" title="Sampai tanggal">
+    </div>
+    <button class="btn btn-sm" onclick="resetLogFilter()"><i class="ti ti-refresh"></i> Reset</button>
   </div>
   <div id="log-cnt" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
   <div class="tw"><table style="width:100%">
-    <thead><tr><th style="width:150px">Waktu</th><th style="width:60px">Tipe</th><th style="width:90px">Aksi</th><th>Item</th><th>Detail</th></tr></thead>
+    <thead><tr><th style="width:150px">Waktu</th><th style="width:60px">Tipe</th><th style="width:90px">Aksi</th><th style="width:180px">Item</th><th>Detail</th></tr></thead>
     <tbody id="log-body"></tbody>
   </table></div>
 </div>
@@ -758,6 +774,7 @@ let cfm=[];
 let ta=[];
 let _authorName=localStorage.getItem('cfm-author')||'';
 let _notifs=JSON.parse(localStorage.getItem('cfm-notifs')||'[]');
+let _follows=new Set(JSON.parse(localStorage.getItem('cfm-follows')||'[]'));
 
 function showDbStatus(msg,ok=true){
   const el=document.getElementById('db-status');if(!el)return;
@@ -819,6 +836,10 @@ async function loadFromDB(){
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
   // Tampilkan modal nama jika belum diset
   setTimeout(()=>{if(!localStorage.getItem('cfm-author'))promptAuthor();},1200);
+  // Minta izin notifikasi browser
+  if('Notification' in window && Notification.permission==='default'){
+    setTimeout(()=>Notification.requestPermission(),3000);
+  }
   // Cek apakah ada data yang belum tersync
   setTimeout(_showSyncBadge,1500);
 }
@@ -941,6 +962,48 @@ function daysAgo(ds){
   return parts.join(' ')+(future?' lagi':' lalu');
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function dueDateChip(d){
+  if(d.status==='Done')return'';
+  const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+  if(!tgt)return'';
+  const dt=parseTargetDate(tgt);
+  if(!dt)return'';
+  const now=new Date();now.setHours(0,0,0,0);dt.setHours(0,0,0,0);
+  const diff=Math.round((dt-now)/86400000);
+  if(diff<0)return`<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:#fef2f2;color:#dc2626;margin-top:3px;border:1px solid #fecaca">OVD ${Math.abs(diff)}h</span>`;
+  if(diff===0)return`<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:#dc2626;color:#fff;margin-top:3px">HARI INI</span>`;
+  if(diff<=3)return`<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:#faeeda;color:#854f0b;margin-top:3px;border:1px solid #fcd49a">H-${diff}</span>`;
+  if(diff<=7)return`<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:#eff6ff;color:#1e40af;margin-top:3px;border:1px solid #bfdbfe">H-${diff}</span>`;
+  return'';
+}
+
+function toggleFollow(itemId,itemType){
+  const key=`${itemType}-${itemId}`;
+  if(_follows.has(key)){_follows.delete(key);}else{
+    _follows.add(key);
+    if(Notification.permission==='default')Notification.requestPermission();
+  }
+  localStorage.setItem('cfm-follows',JSON.stringify([..._follows]));
+  // re-render follow button
+  const btn=document.getElementById(`follow-btn-${itemType}-${itemId}`);
+  if(btn){
+    const on=_follows.has(key);
+    btn.innerHTML=`<i class="ti ti-bell${on?'':'-off'}"></i> ${on?'Berhenti Follow':'Follow Item'}`;
+    btn.style.background=on?'var(--blue-lt)':'var(--bg-sec)';
+    btn.style.color=on?'var(--blue)':'var(--muted)';
+    btn.style.border=on?'1px solid #bfdbfe':'1px solid var(--border)';
+  }
+}
+
+function _browserNotif(title,body,itemId,itemType){
+  if(Notification.permission!=='granted')return;
+  try{
+    const n=new Notification(title,{body,icon:'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css',tag:`cfm-${itemId}`});
+    n.onclick=()=>{window.focus();openDetail(itemId,itemType);n.close();};
+    setTimeout(()=>n.close(),8000);
+  }catch(e){console.warn('Notif:',e);}
+}
 function abadge(a){const i=AREAS.indexOf(a);return`<span class="badge ${i>=0?ACLS[i]:'b-a0'}">${esc(a)}</span>`}
 const MONTHS_ID={'Januari':0,'Februari':1,'Maret':2,'April':3,'Mei':4,'Juni':5,'Juli':6,'Agustus':7,'September':8,'Oktober':9,'November':10,'Desember':11};
 function parseTargetDate(t){
@@ -1035,14 +1098,24 @@ async function loadLog(){
   }
 }
 
+function resetLogFilter(){
+  ['log-q','log-df','log-dt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['log-type','log-action'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderLog();
+}
+
 function renderLog(){
   const q=(document.getElementById('log-q')?.value||'').toLowerCase();
   const tf=document.getElementById('log-type')?.value||'';
   const af=document.getElementById('log-action')?.value||'';
+  const df=document.getElementById('log-df')?.value||'';
+  const dt=document.getElementById('log-dt')?.value||'';
   const rows=_logCache.filter(r=>{
     if(tf&&r.type!==tf)return false;
     if(af&&r.action!==af)return false;
     if(q&&!(r.item_name||'').toLowerCase().includes(q)&&!(r.detail||'').toLowerCase().includes(q))return false;
+    if(df&&r.ts&&r.ts.slice(0,10)<df)return false;
+    if(dt&&r.ts&&r.ts.slice(0,10)>dt)return false;
     return true;
   });
   const cnt=document.getElementById('log-cnt');
@@ -1440,13 +1513,30 @@ function renderOut(){
     <div class="stat-card"><div class="stat-label" style="color:var(--red)">Overdue</div><div class="stat-value" style="color:var(--red)">${ovd}</div></div>`;
   const cnts={All:act.length};AREAS.forEach(a=>cnts[a]=act.filter(d=>d.area===a).length);
   document.getElementById('out-tabs').innerHTML=['All',...AREAS].map(a=>`<button class="tab ${cfmArea===a?'active':''}" data-area="${a.replace(/&/g,'&amp;')}" onclick="setCfmArea(this.dataset.area)">${a==='All'?'Semua Area':a}<span class="cnt">${cnts[a]||0}</span></button>`).join('');
+  // Populate PIC dropdown
+  const picSel=document.getElementById('out-pf');
+  if(picSel){
+    const curPic=picSel.value;
+    const allPics=[...new Set(cfm.filter(d=>d.status!=='Done'&&d.pic).flatMap(d=>d.pic.split(',').map(p=>p.trim()).filter(Boolean)))].sort();
+    picSel.innerHTML='<option value="">Semua PIC</option>'+allPics.map(p=>`<option value="${esc(p)}"${p===curPic?'selected':''}>${esc(p)}</option>`).join('');
+  }
   const q=document.getElementById('out-q').value.toLowerCase(),sf=document.getElementById('out-sf').value,tf=document.getElementById('out-tf').value,af2=document.getElementById('out-af')?.value||'';
+  const pf=document.getElementById('out-pf')?.value||'';
+  const df=document.getElementById('out-df')?.value||'';
+  const dt2=document.getElementById('out-dt')?.value||'';
   let rows=cfm.filter(d=>{
     if(!sf&&d.status==='Done')return false;
     if(sf&&d.status!==sf)return false;
     if(af2&&d.area!==af2)return false;
     else if(!af2&&cfmArea!=='All'&&d.area!==cfmArea)return false;
     if(tf&&!(d.docs?d.docs.some(x=>x.type===tf):d.type===tf))return false;
+    if(pf&&!(d.pic||'').split(',').map(p=>p.trim()).includes(pf))return false;
+    if(df||dt2){
+      const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
+      const tgtDt=tgt?parseTargetDate(tgt):null;
+      if(df&&(!tgtDt||tgtDt<new Date(df)))return false;
+      if(dt2&&(!tgtDt||tgtDt>new Date(dt2+'T23:59:59')))return false;
+    }
     if(q&&!`${d.equipment} ${d.masalah} ${d.pic} ${d.ket} ${(d.docs||[]).map(x=>x.docno).join(' ')} ${d.docno}`.toLowerCase().includes(q))return false;
     return true;
   });
@@ -1475,7 +1565,7 @@ function renderOut(){
       <td class="${ovd?'ovd-cell':''}">
         ${tgt?`<span style="font-weight:600;color:${ovd?'var(--red)':'var(--blue)'}">${fmtTarget(tgt)}</span><div class="doc-no">${esc(tgt.label||'')}</div>`:'<span style="color:var(--muted);font-size:12px">Belum ditentukan</span>'}
         ${d.targets&&d.targets.length>1?`<div class="doc-no" style="color:var(--blue)">${d.targets.length} target (revisi ${d.targets.length-1}x)</div>`:''}
-        ${ovd?' <i class="ti ti-alert-triangle" style="font-size:11px;color:var(--red)"></i>':''}
+        ${dueDateChip(d)}
       </td>
       <td><span class="badge ${SCLS[d.status]||''}">${esc(d.status)}</span></td>
       <td>${renderDocs(d)}</td>
@@ -1495,6 +1585,9 @@ function resetOutFilter(){
   const af=document.getElementById('out-af');if(af)af.value='';
   const sf=document.getElementById('out-sf');if(sf)sf.value='';
   const tf=document.getElementById('out-tf');if(tf)tf.value='';
+  const pf=document.getElementById('out-pf');if(pf)pf.value='';
+  const df=document.getElementById('out-df');if(df)df.value='';
+  const dt2=document.getElementById('out-dt');if(dt2)dt2.value='';
   cfmArea='All';renderOut();
 }
 
@@ -1957,7 +2050,14 @@ function closeDetail(){
 
 function cfmDetail(d){
   const docs=d.docs&&d.docs.length?d.docs:(d.type?[{type:d.type,docno:d.docno||''}]:[]);
+  const followKey=`cfm-${d.id}`;const isFollowing=_follows.has(followKey);
   return`
+  <div style="margin-bottom:10px">
+    <button id="follow-btn-cfm-${d.id}" onclick="toggleFollow(${d.id},'cfm')" class="btn btn-sm" style="background:${isFollowing?'var(--blue-lt)':'var(--bg-sec)'};color:${isFollowing?'var(--blue)':'var(--muted)'};border:1px solid ${isFollowing?'#bfdbfe':'var(--border)'}">
+      <i class="ti ti-bell${isFollowing?'':'-off'}"></i> ${isFollowing?'Berhenti Follow':'Follow Item'}
+    </button>
+    <span style="font-size:11px;color:var(--muted);margin-left:8px">${isFollowing?'Anda akan mendapat notifikasi browser saat ada komentar baru':'Follow untuk notifikasi komentar baru'}</span>
+  </div>
   <div class="dcard">
     <div class="dcard-title"><i class="ti ti-info-circle"></i> Informasi Item</div>
     <div class="igrid">
@@ -3689,7 +3789,12 @@ async function addComment(itemId, type) {
     const detail = `${_authorName}: ${(content || '').substring(0, 60)}${attachName ? ' [📎 ' + attachName + ']' : ''}`;
     addLog(type.toUpperCase(), 'Diskusi', itemName, detail);
     toast('Komentar terkirim');
-    pushNotif('new_comment', 'Komentar Baru', `${_authorName||'Seseorang'} berkomentar di "${type==='cfm'?(cfm.find(x=>x.id===itemId)?.equipment||'item'):(ta.find(x=>x.id===itemId)?.tagNumber||'item')}"`, itemId, type);
+    const _notifBody=`${_authorName||'Seseorang'} berkomentar di "${itemName}"`;
+    pushNotif('new_comment','Komentar Baru',_notifBody,itemId,type);
+    // Browser push notification jika item di-follow
+    if(_follows.has(`${type}-${itemId}`)){
+      _browserNotif('💬 Komentar Baru',_notifBody,itemId,type);
+    }
   } catch (e) {
     toast('Gagal: ' + (e.message || 'Cek koneksi'));
   } finally {
