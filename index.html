@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2979,69 +2981,117 @@ function closeExportModal(){document.getElementById('exportBg').style.display='n
 // ===================================================================
 // EXPORT EXCEL
 // ===================================================================
-function exportExcel(){
-  if(typeof XLSX==='undefined'){alert('Library Excel belum siap, coba lagi.');return;}
-  const wb=XLSX.utils.book_new();
+async function exportExcel(){
+  if(typeof ExcelJS==='undefined'){alert('Library Excel belum siap, coba lagi.');return;}
+  const wb=new ExcelJS.Workbook();
   const _tDate=s=>s?fd(s):'-';
   const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
   const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
 
+  // Helper styling
+  const headerStyle={font:{bold:true,color:{rgb:'FFFFFF'},size:12},fill:{type:'solid',fgColor:{rgb:'2563EB'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:{left:{style:'thin'},right:{style:'thin'},top:{style:'thin'},bottom:{style:'thin'}}};
+  const dataStyle={border:{left:{style:'thin',color:{rgb:'E2E8F0'}},right:{style:'thin',color:{rgb:'E2E8F0'}},top:{style:'thin',color:{rgb:'E2E8F0'}},bottom:{style:'thin',color:{rgb:'E2E8F0'}}},alignment:{vertical:'top',wrapText:true}};
+  const altRowStyle={...dataStyle,fill:{type:'solid',fgColor:{rgb:'F8FAFC'}}};
+  const statusColors={'Open':'DCF3E4','In Progress':'FEF3C7','On Hold':'DBEAFE','Done':'D1FAE5',terhambat:'FEE2E2'};
+
   // Sheet 1 — Outstanding CFM
   const cfmOut=cfm.filter(x=>x.status!=='Done');
-  const ws1=XLSX.utils.json_to_sheet(cfmOut.map((x,i)=>({
-    'No':i+1,'Equipment':x.equipment||'','Area':x.area||'','Masalah':x.masalah||'',
-    'Tanggal':_tDate(x.tanggal),'PIC':x.pic||'-','Target':_tTgts(x.targets),
-    'Status':x.status||'','Dokumen':_tDocs(x.docs),'Keterangan':x.ket||''
-  })));
-  _excelStyle(ws1,[18,15,12,30,12,12,14,10,20,35]);
-  XLSX.utils.book_append_sheet(wb,ws1,'Outstanding CFM');
+  const ws1=wb.addWorksheet('Outstanding CFM',{pageSetup:{paperSize:9,orientation:'landscape'}});
+  const headers1=['No','Equipment','Area','Masalah','Tanggal','PIC','Target Selesai','Status','Dokumen','Keterangan'];
+  ws1.addRow(headers1).eachCell(c=>{Object.assign(c,headerStyle);c.height=25;});
+  ws1.columns=[{width:6},{width:18},{width:15},{width:30},{width:12},{width:15},{width:14},{width:12},{width:20},{width:35}];
+  cfmOut.forEach((x,i)=>{
+    const row=ws1.addRow([i+1,x.equipment||'',x.area||'',x.masalah||'',_tDate(x.tanggal),x.pic||'-',_tTgts(x.targets),x.status||'',_tDocs(x.docs),x.ket||'']);
+    const isAlt=i%2===0;
+    row.eachCell((c,n)=>{
+      Object.assign(c,isAlt?altRowStyle:dataStyle);
+      if(n===8){c.fill={type:'solid',fgColor:{rgb:statusColors[x.status]||'FFFFFF'}};}
+      c.height=35;
+    });
+  });
+  ws1.freezePane={row:2,column:1};
 
   // Sheet 2 — Selesai CFM
   const cfmDone=cfm.filter(x=>x.status==='Done');
-  const ws2=XLSX.utils.json_to_sheet(cfmDone.map((x,i)=>({
-    'No':i+1,'Equipment':x.equipment||'','Area':x.area||'','Masalah':x.masalah||'',
-    'Tanggal':_tDate(x.tanggal),'PIC':x.pic||'-','Target':_tTgts(x.targets),
-    'Dokumen':_tDocs(x.docs),'Keterangan':x.ket||''
-  })));
-  _excelStyle(ws2,[18,15,12,30,12,12,14,20,35]);
-  XLSX.utils.book_append_sheet(wb,ws2,'Selesai CFM');
+  const ws2=wb.addWorksheet('Selesai CFM',{pageSetup:{paperSize:9,orientation:'landscape'}});
+  const headers2=['No','Equipment','Area','Masalah','Tanggal','PIC','Target Selesai','Dokumen','Keterangan'];
+  ws2.addRow(headers2).eachCell(c=>{Object.assign(c,headerStyle);c.height=25;});
+  ws2.columns=[{width:6},{width:18},{width:15},{width:30},{width:12},{width:15},{width:14},{width:20},{width:35}];
+  cfmDone.forEach((x,i)=>{
+    const row=ws2.addRow([i+1,x.equipment||'',x.area||'',x.masalah||'',_tDate(x.tanggal),x.pic||'-',_tTgts(x.targets),_tDocs(x.docs),x.ket||'']);
+    const isAlt=i%2===0;
+    row.eachCell((c)=>{Object.assign(c,isAlt?altRowStyle:dataStyle);c.height=35;});
+  });
+  ws2.freezePane={row:2,column:1};
 
   // Sheet 3 — Job List TA
-  const ws3=XLSX.utils.json_to_sheet(ta.map((x,i)=>({
-    'No':i+1,'Tag Number':x.tagNumber||'','Area':x.area||'','Issue':x.issue||'',
-    'Disiplin':x.disc||'','Prioritas':x.priority||'','Status':x.status||'',
-    'Tanggal':_tDate(x.tanggal),'Update By':x.updateBy||'-','Status Update':x.statusUpdate||''
-  })));
-  _excelStyle(ws3,[18,15,30,10,10,10,12,22,40]);
-  XLSX.utils.book_append_sheet(wb,ws3,'Job List TA');
+  const ws3=wb.addWorksheet('Job List TA',{pageSetup:{paperSize:9,orientation:'landscape'}});
+  const headers3=['No','Tag Number','Area','Issue','Disiplin','Prioritas','Status','Tanggal','Update By','Status Update'];
+  ws3.addRow(headers3).eachCell(c=>{Object.assign(c,headerStyle);c.height=25;});
+  ws3.columns=[{width:6},{width:15},{width:12},{width:30},{width:10},{width:10},{width:12},{width:12},{width:15},{width:25}];
+  ta.forEach((x,i)=>{
+    const row=ws3.addRow([i+1,x.tagNumber||'',x.area||'',x.issue||'',x.disc||'',x.priority||'',x.status||'',_tDate(x.tanggal),x.updateBy||'-',x.statusUpdate||'']);
+    const isAlt=i%2===0;
+    row.eachCell((c,n)=>{
+      Object.assign(c,isAlt?altRowStyle:dataStyle);
+      if(n===7){c.fill={type:'solid',fgColor:{rgb:statusColors[x.status]||'FFFFFF'}};}
+      c.height=30;
+    });
+  });
+  ws3.freezePane={row:2,column:1};
 
-  // Sheet 4 — Rekap
+  // Sheet 4 — Rekap Summary
   const act=cfm.filter(x=>x.status!=='Done');
   const ovdC=act.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).length;
-  const ws4=XLSX.utils.json_to_sheet([
-    {'Keterangan':'Tanggal Export','Nilai':new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})},
-    {'Keterangan':'Total CFM','Nilai':cfm.length},
-    {'Keterangan':'Outstanding','Nilai':act.length},
-    {'Keterangan':'Open','Nilai':act.filter(x=>x.status==='Open').length},
-    {'Keterangan':'In Progress','Nilai':act.filter(x=>x.status==='In Progress').length},
-    {'Keterangan':'On Hold','Nilai':act.filter(x=>x.status==='On Hold').length},
-    {'Keterangan':'Overdue','Nilai':ovdC},
-    {'Keterangan':'Selesai (Done)','Nilai':cfmDone.length},
-    {'Keterangan':'Total Job TA','Nilai':ta.length},
-    {'Keterangan':'TA Open','Nilai':ta.filter(x=>x.status==='Open').length},
-    {'Keterangan':'TA In Progress','Nilai':ta.filter(x=>x.status==='In Progress').length},
-    {'Keterangan':'TA Done','Nilai':ta.filter(x=>x.status==='Done').length},
-  ]);
-  _excelStyle(ws4,[35,20]);
-  XLSX.utils.book_append_sheet(wb,ws4,'Rekap');
+  const ws4=wb.addWorksheet('Rekap',{pageSetup:{paperSize:9,orientation:'portrait'}});
+  ws4.addRow(['RINGKASAN DATA CFM UTILITIES']).font={bold:true,size:14,color:{rgb:'FFFFFF'}};
+  ws4.lastRow.fill={type:'solid',fgColor:{rgb:'2563EB'}};
+  ws4.lastRow.height=25;
+  ws4.addRow([]);
+
+  const summaryData=[
+    ['Tanggal Export',new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})],
+    [],
+    ['📊 STATISTIK CFM',''],
+    ['Total CFM',cfm.length],
+    ['Outstanding',act.length],
+    ['  - Open',act.filter(x=>x.status==='Open').length],
+    ['  - In Progress',act.filter(x=>x.status==='In Progress').length],
+    ['  - On Hold',act.filter(x=>x.status==='On Hold').length],
+    ['  - Overdue (Terlambat)',ovdC],
+    ['Selesai (Done)',cfmDone.length],
+    [],
+    ['📋 STATISTIK TA',''],
+    ['Total Job TA',ta.length],
+    ['  - Open',ta.filter(x=>x.status==='Open').length],
+    ['  - In Progress',ta.filter(x=>x.status==='In Progress').length],
+    ['  - Done',ta.filter(x=>x.status==='Done').length],
+  ];
+
+  summaryData.forEach((d,i)=>{
+    const row=ws4.addRow(d);
+    if(d[0]==='📊 STATISTIK CFM'||d[0]==='📋 STATISTIK TA'){
+      row.font={bold:true,size:12,color:{rgb:'FFFFFF'}};
+      row.fill={type:'solid',fgColor:{rgb:'4F46E5'}};
+      row.height=22;
+    }else if(d[0]?.startsWith('  ')){
+      row.font={size:11};
+      row.getCell(1).indent=2;
+    }else if(d[0]){
+      row.font={bold:true,size:11};
+      row.fill={type:'solid',fgColor:{rgb:'F1F5F9'}};
+    }
+    row.getCell(1).border={left:{style:'thin'},right:{style:'thin'},top:{style:'thin'},bottom:{style:'thin'}};
+    row.getCell(2).border={left:{style:'thin'},right:{style:'thin'},top:{style:'thin'},bottom:{style:'thin'}};
+    if(d[0]&&!d[0].startsWith('  ')&&d[1]!==''){row.getCell(2).numFmt='0';}
+  });
+  ws4.columns=[{width:35},{width:20}];
 
   const fname='CFM_Utilities_'+todayStr().replace(/-/g,'')+'.xlsx';
-  XLSX.writeFile(wb,fname);
+  const buf=await wb.xlsx.writeBuffer();
+  saveAs(new Blob([buf]),fname);
   closeExportModal();
-  toast('File '+fname+' berhasil diunduh');
-}
-function _excelStyle(ws,widths){
-  ws['!cols']=(widths||[]).map(w=>({wch:w}));
+  toast('✓ File '+fname+' berhasil diunduh dengan styling');
 }
 
 // ===================================================================
