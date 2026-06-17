@@ -1772,6 +1772,9 @@ function saveCfm(){
     _chkField('masalah',old.masalah,item.masalah);
     _chkField('status',old.status,item.status);
     _chkField('pic',old.pic,item.pic);
+    const _oldTgts=(old.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
+    const _newTgts=(item.targets||[]).filter(t=>t.date).map(t=>fd(t.date)).join(', ')||'-';
+    _chkField('target',_oldTgts,_newTgts);
     const _oldType=(old.docs&&old.docs[0])?old.docs[0].type:old.type||'';
     const _newType=(item.docs&&item.docs[0])?item.docs[0].type:item.type||'';
     _chkField('type',_oldType,_newType);
