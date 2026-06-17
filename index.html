@@ -706,7 +706,7 @@ tr:hover td{background:#fafbfc}
 
 
 <!-- H-7 EMAIL NOTIF BANNER -->
-<div id="h7-banner" style="display:none;position:fixed;bottom:24px;left:20px;z-index:8000;background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:10px 16px;border-radius:12px;font-size:12px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:400px">
+<div id="h7-banner" style="display:none!important;position:fixed;bottom:24px;left:20px;z-index:8000;background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:10px 16px;border-radius:12px;font-size:12px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:400px">
   <i class="ti ti-clock-hour-4" style="font-size:18px;flex-shrink:0"></i>
   <span id="h7-msg" style="flex:1;font-weight:600"></span>
 </div>
@@ -2496,8 +2496,9 @@ function openMailtoFallback(){
   closeReportConfirm();
 }
 
-// Auto-send OVERDUE email once per day (silently)
+// Auto-send OVERDUE email once per day (silently) — only if toggle enabled
 async function autoSendOverdueEmail(){
+  if(!localStorage.getItem('cfm-ovd-auto'))return;
   if(!isEmailConfigured())return;
   const todayStr=today();
   const lastSent=localStorage.getItem('overdue-auto-sent');
@@ -2542,7 +2543,15 @@ function openEmailSetup(){
   document.getElementById('ejs-pubkey').value=c.publicKey||'';
   document.getElementById('ejs-svcid').value=c.serviceId||'';
   document.getElementById('ejs-tplid').value=c.templateId||'';
-  document.getElementById('ejs-status').style.display='none';
+  const st=document.getElementById('ejs-status');
+  if(isEmailConfigured()){
+    st.textContent='✓ Pengaturan EmailJS sudah tersimpan dan aktif.';
+    st.style.color='#166534';st.style.background='#dcfce7';st.style.padding='8px 12px';st.style.borderRadius='6px';
+    st.style.display='block';
+  } else {
+    st.style.display='none';
+  }
+  const ovdt=document.getElementById('ovd-auto-toggle');if(ovdt)ovdt.checked=!!localStorage.getItem('cfm-ovd-auto');
   const h7t=document.getElementById('h7-auto-toggle');if(h7t)h7t.checked=!!localStorage.getItem('cfm-h7-auto');
   const wkt=document.getElementById('weekly-auto-toggle');if(wkt)wkt.checked=!!localStorage.getItem('cfm-weekly-auto');
   document.getElementById('email-setup-modal').style.display='flex';
@@ -2807,23 +2816,68 @@ function _excelStyle(ws,widths){
 // EXPORT PDF
 // ===================================================================
 function exportPDF(){
+  document.getElementById('pdf-opt-modal').style.display='flex';
+}
+function closePdfOpt(){document.getElementById('pdf-opt-modal').style.display='none';}
+function exportPDFWithOpt(mode){
+  closePdfOpt();
+  _doPrint(mode);
+}
+function _doPrint(mode){
   const act=cfm.filter(x=>x.status!=='Done');
+  const all=mode==='all-include-done';
+  const items=all?cfm:act;
+  if(mode==='per-area'){
+    _printPerArea(act);return;
+  }
+  _printTable(all?cfm:act,mode);
+}
+function _printPerArea(act){
   const ovdIds=new Set(act.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).map(x=>x.id));
   const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
   const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
   const tgl=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-
-  const rowsCFM=act.map((x,i)=>`<tr style="${ovdIds.has(x.id)?'background:#fef2f2':''}">
+  const sections=AREAS.map(area=>{
+    const rows=act.filter(x=>x.area===area).map((x,i)=>`<tr style="${ovdIds.has(x.id)?'background:#fef2f2':''}">
+      <td>${i+1}</td><td>${esc(x.equipment)}</td><td>${esc(x.masalah)}</td>
+      <td>${esc(x.pic||'-')}</td><td>${_tTgts(x.targets)}</td>
+      <td><b>${esc(x.status)}</b></td><td>${esc(_tDocs(x.docs))}</td></tr>`).join('');
+    if(!rows)return'';
+    return`<div style="page-break-before:always">
+      <h2 style="font-size:13px;margin:0 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px">Area: ${area}</h2>
+      <table><thead><tr style="background:#1e40af;color:#fff">
+        <th>#</th><th>Equipment</th><th>Masalah/Pekerjaan</th><th>PIC</th><th>Target</th><th>Status</th><th>Dokumen</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Laporan CFM per Area — ${tgl}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#111}
+  h1{font-size:14px;margin-bottom:2px}.meta{font-size:10px;color:#666;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px}
+  th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left}
+  td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top}
+  tr:nth-child(even){background:#f8fafc}
+  @media print{body{margin:10mm}@page{size:A4 landscape;margin:10mm}}</style></head>
+  <body><h1>Laporan CFM Utilities — Per Area</h1>
+  <div class="meta">Dicetak: ${tgl} | Total outstanding: ${act.length} item</div>
+  ${sections}</body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),600);
+}
+function _printTable(items,mode){
+  const ovdIds=new Set(items.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).map(x=>x.id));
+  const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
+  const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
+  const tgl=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const includeDone=mode==='all-include-done';
+  const taItems=includeDone?ta:ta.filter(x=>x.status!=='Done');
+  const rowsCFM=items.map((x,i)=>`<tr style="${ovdIds.has(x.id)?'background:#fef2f2':''}">
     <td>${i+1}</td><td>${esc(x.equipment)}</td><td>${esc(x.area)}</td>
     <td>${esc(x.masalah)}</td><td>${esc(x.pic||'-')}</td>
     <td>${_tTgts(x.targets)}</td><td><b>${esc(x.status)}</b></td>
     <td>${esc(_tDocs(x.docs))}</td></tr>`).join('');
-
-  const rowsTA=ta.filter(x=>x.status!=='Done').map((x,i)=>`<tr>
+  const rowsTA=taItems.map((x,i)=>`<tr>
     <td>${i+1}</td><td>${esc(x.tagNumber)}</td><td>${esc(x.area)}</td>
     <td>${esc(x.issue)}</td><td>${esc(x.disc)}</td>
     <td>${esc(x.priority)}</td><td><b>${esc(x.status)}</b></td></tr>`).join('');
-
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Laporan CFM Utilities — ${tgl}</title>
   <style>
@@ -2835,70 +2889,25 @@ function exportPDF(){
     td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top}
     tr:nth-child(even){background:#f8fafc}
     .stat{display:inline-block;padding:4px 10px;border-radius:6px;margin:2px;font-weight:700;font-size:10px}
-    @media print{body{margin:10px}@page{size:A4 landscape;margin:10mm}}
-  
-/* ---- OFFLINE BANNER ---- */
-#offline-banner{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:10px 16px;font-size:13px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);border-radius:12px;min-width:320px;max-width:90vw}
-#offline-banner.show{display:flex}
-/* ---- COMMENT THREAD ---- */
-/* ---- COMMENT / DISKUSI ---- */
-.cmt-list{display:flex;flex-direction:column;gap:4px;padding:4px 0}
-.cmt-item{display:flex;gap:10px;padding:6px 0;animation:cmt-in .18s ease}
-@keyframes cmt-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.cmt-avatar{width:34px;height:34px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px}
-.cmt-avatar.sm{width:26px;height:26px;font-size:10px}
-.cmt-bubble{flex:1;min-width:0}
-.cmt-meta{display:flex;align-items:baseline;gap:7px;margin-bottom:3px}
-.cmt-author{font-size:12px;font-weight:700;color:var(--text)}
-.cmt-time{font-size:10px;color:var(--muted)}
-.cmt-body{background:var(--bg-card);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:10px 13px;position:relative}
-.cmt-body.is-reply{background:var(--bg-sec);border-radius:0 10px 10px 10px}
-.cmt-text{font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)}
-.cmt-attach-img{max-width:220px;max-height:160px;border-radius:8px;margin-top:8px;cursor:pointer;display:block;transition:.2s;border:1px solid var(--border)}
-.cmt-attach-img:hover{box-shadow:0 4px 14px rgba(0,0,0,.14);transform:scale(1.01)}
-.cmt-attach-file{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:7px 12px;background:var(--blue-lt);border:1px solid #bfdbfe;border-radius:8px;font-size:12px;text-decoration:none;color:var(--blue);font-weight:600;transition:.15s}
-.cmt-attach-file:hover{background:#dbeafe}
-.cmt-actions{display:flex;align-items:center;gap:4px;margin-top:6px}
-.cmt-reply-btn{background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;transition:.15s;font-family:inherit}
-.cmt-reply-btn:hover{background:var(--blue-lt);color:var(--blue)}
-.cmt-del-btn{background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 7px;border-radius:6px;display:inline-flex;align-items:center;transition:.15s;font-family:inherit}
-.cmt-del-btn:hover{background:#fee2e2;color:var(--red)}
-.cmt-replies{margin-top:6px;margin-left:4px;display:flex;flex-direction:column;gap:4px;padding-left:14px;border-left:2px solid var(--border)}
-.cmt-reply-form{margin-top:8px;padding:10px 12px;background:var(--bg-sec);border:1px solid var(--border);border-radius:10px}
-.cmt-compose{margin-top:16px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border);overflow:hidden}
-.cmt-compose-top{display:flex;gap:10px;align-items:flex-start;padding:12px 14px 8px}
-.cmt-compose textarea{width:100%;padding:0;border:none;outline:none;font-size:13px;font-family:inherit;resize:none;min-height:56px;background:transparent;line-height:1.6;color:var(--text)}
-.cmt-compose textarea::placeholder{color:var(--muted)}
-.cmt-compose-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;border-top:1px solid var(--border);gap:8px}
-.cmt-compose-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.cmt-file-preview{padding:0 14px 8px}
-.cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
-.cmt-file-chip img{width:32px;height:32px;object-fit:cover;border-radius:4px}
-/* ---- AUTHOR MODAL ---- */
-#author-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.65);z-index:10000;align-items:center;justify-content:center;display:none}
-#author-modal.open{display:flex !important}
-#author-modal .am-box{background:var(--bg-card);border-radius:16px;padding:28px 28px 22px;width:390px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.3);animation:slideup .22s cubic-bezier(.34,1.3,.64,1)}
-@keyframes slideup{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
-@keyframes pulse-badge{0%,100%{box-shadow:0 4px 16px rgba(245,158,11,.45)}50%{box-shadow:0 4px 24px rgba(245,158,11,.75),0 0 0 6px rgba(245,158,11,.12)}}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-</style></head><body>
+    @media print{body{margin:10mm}@page{size:A4 landscape;margin:10mm}}
+  </style></head><body>
   <h1>Laporan CFM Utilities — Bagian Pertamina Utilities</h1>
-  <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total Outstanding: ${act.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
+  <div class="meta">Tanggal cetak: ${tgl} &nbsp;|&nbsp; Total CFM: ${items.length} &nbsp;|&nbsp; Overdue: ${ovdIds.size}</div>
   <div>
-    <span class="stat" style="background:#fee2e2;color:#dc2626">Open: ${act.filter(x=>x.status==='Open').length}</span>
-    <span class="stat" style="background:#fef9c3;color:#b45309">In Progress: ${act.filter(x=>x.status==='In Progress').length}</span>
-    <span class="stat" style="background:#f3f4f6;color:#374151">On Hold: ${act.filter(x=>x.status==='On Hold').length}</span>
+    <span class="stat" style="background:#fee2e2;color:#dc2626">Open: ${items.filter(x=>x.status==='Open').length}</span>
+    <span class="stat" style="background:#fef9c3;color:#b45309">In Progress: ${items.filter(x=>x.status==='In Progress').length}</span>
+    <span class="stat" style="background:#f3f4f6;color:#374151">On Hold: ${items.filter(x=>x.status==='On Hold').length}</span>
+    <span class="stat" style="background:#dcfce7;color:#166534">Done: ${items.filter(x=>x.status==='Done').length}</span>
     <span class="stat" style="background:#fee2e2;color:#dc2626">⚠ Overdue: ${ovdIds.size}</span>
   </div>
-  <h2>Outstanding CFM</h2>
+  <h2>Data CFM</h2>
   <table><thead><tr><th>#</th><th>Equipment</th><th>Area</th><th>Masalah</th><th>PIC</th><th>Target</th><th>Status</th><th>Dokumen</th></tr></thead>
-  <tbody>${rowsCFM||'<tr><td colspan="8" style="text-align:center;color:#999">Tidak ada outstanding</td></tr>'}</tbody></table>
-  <h2>Outstanding Job TA</h2>
+  <tbody>${rowsCFM||'<tr><td colspan="8" style="text-align:center;color:#999">Tidak ada data</td></tr>'}</tbody></table>
+  <h2>Job TA</h2>
   <table><thead><tr><th>#</th><th>Tag Number</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Status</th></tr></thead>
-  <tbody>${rowsTA||'<tr><td colspan="7" style="text-align:center;color:#999">Tidak ada outstanding</td></tr>'}</tbody></table>
+  <tbody>${rowsTA||'<tr><td colspan="7" style="text-align:center;color:#999">Tidak ada data</td></tr>'}</tbody></table>
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`;
-
   const w=window.open('','_blank');
   if(w){w.document.write(html);w.document.close();}
   else{alert('Popup diblokir browser. Izinkan popup untuk export PDF.');}
@@ -3626,6 +3635,31 @@ async function addComment(itemId, type) {
 </div>
 </div>
 
+<!-- PDF OPTIONS MODAL -->
+<div id="pdf-opt-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9500;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:16px;padding:28px;width:380px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i> Pilihan Export PDF</div>
+      <button onclick="closePdfOpt()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="exportPDFWithOpt('outstanding')" style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:var(--bg-sec);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;transition:.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.background='var(--blue-lt)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-sec)'">
+        <i class="ti ti-list-check" style="font-size:22px;color:var(--blue);flex-shrink:0;margin-top:2px"></i>
+        <div><div style="font-weight:700;font-size:13px;color:var(--text)">Outstanding Saja</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Hanya item CFM & TA yang belum selesai (Open, In Progress, On Hold)</div></div>
+      </button>
+      <button onclick="exportPDFWithOpt('all-include-done')" style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:var(--bg-sec);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;transition:.15s" onmouseover="this.style.borderColor='var(--green)';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-sec)'">
+        <i class="ti ti-table" style="font-size:22px;color:var(--green);flex-shrink:0;margin-top:2px"></i>
+        <div><div style="font-weight:700;font-size:13px;color:var(--text)">Semua Item (termasuk Selesai)</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Semua data CFM & TA termasuk yang sudah berstatus Done</div></div>
+      </button>
+      <button onclick="exportPDFWithOpt('per-area')" style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:var(--bg-sec);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;transition:.15s" onmouseover="this.style.borderColor='var(--purple)';this.style.background='#faf5ff'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-sec)'">
+        <i class="ti ti-layout-grid" style="font-size:22px;color:var(--purple);flex-shrink:0;margin-top:2px"></i>
+        <div><div style="font-weight:700;font-size:13px;color:var(--text)">Per Area (Halaman Terpisah)</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Setiap area di halaman baru — cocok untuk dibagikan per tim area</div></div>
+      </button>
+    </div>
+    <button onclick="closePdfOpt()" style="width:100%;margin-top:14px;padding:9px;background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit">Batal</button>
+  </div>
+</div>
+
 <div id="email-setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center">
   <div style="background:var(--bg-card);border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -3653,6 +3687,10 @@ async function addComment(itemId, type) {
     </div>
     <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:12px;display:flex;flex-direction:column;gap:10px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Notifikasi Otomatis</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="ovd-auto-toggle" onchange="localStorage.setItem('cfm-ovd-auto',this.checked?'1':'')" style="width:16px;height:16px;cursor:pointer">
+        Auto-kirim email Overdue setiap hari
+      </label>
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
         <input type="checkbox" id="h7-auto-toggle" onchange="localStorage.setItem('cfm-h7-auto',this.checked?'1':'')" style="width:16px;height:16px;cursor:pointer">
         Auto-kirim email H-7 setiap hari
