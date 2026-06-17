@@ -2510,13 +2510,14 @@ function buildReportHTML(){
   const ovd=act.filter(isOvd);
   const done=cfm.filter(d=>d.status==='Done');
   const tglStr=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
+  const _trunc=(s,n=70)=>s&&s.length>n?s.substring(0,n)+'…':s||'';
+  // CSS block (shared, not inline) → massive size reduction
+  const CSS=`<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1f2937;margin:0}.hdr{background:#1e40af;color:#fff;padding:20px 24px}.hdr h1{margin:0 0 4px;font-size:18px}.hdr .sub{font-size:11px;color:#bfdbfe}.summ{background:#f0f5ff;padding:12px 24px;border-bottom:1px solid #dde4f0}.sv{display:inline-block;text-align:center;padding:8px 16px}.sv-n{font-size:26px;font-weight:800;line-height:1}.sv-l{font-size:10px;color:#6b7280;font-weight:600}.body{padding:16px 24px}.sec-hd{font-size:12px;font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px;margin:0 0 8px;text-transform:uppercase}.area-hd{background:#e8eeff;border-left:4px solid #1e40af;padding:5px 10px;font-size:12px;font-weight:700;color:#1e40af}.area-hd.ov{background:#fef2f2;border-color:#dc2626;color:#dc2626}table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px}th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left;font-weight:600}td{padding:4px 6px;border-bottom:1px solid #e5e7eb;vertical-align:top}tr:nth-child(even) td{background:#f8faff}tr.ov td{background:#fff5f5}.b{padding:2px 6px;border-radius:10px;font-size:10px;font-weight:600}.bd{background:#dcfce7;color:#166534}.bh{background:#fef3c7;color:#92400e}.bi{background:#dbeafe;color:#1e40af}.bo{background:#fee2e2;color:#dc2626}.ovt{background:#fef2f2;color:#dc2626;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700}.ftr{background:#f8faff;border-top:1px solid #e5e7eb;padding:10px 24px;text-align:center;font-size:10px;color:#9ca3af}</style>`;
   // Helper: status badge
-  const badge=(st)=>{
-    const bg=st==='Done'?'#dcfce7':st==='On Hold'?'#fef3c7':'#dbeafe';
-    const cl=st==='Done'?'#166534':st==='On Hold'?'#92400e':'#1e40af';
-    return`<span style="background:${bg};color:${cl};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${st||''}</span>`;
-  };
+  const badge=(st)=>{const c=st==='Done'?'bd':st==='On Hold'?'bh':st==='In Progress'?'bi':'bo';return`<span class="b ${c}">${st||''}</span>`;};
+
+  // --- CFM grouped by area ---
+  const AREA_ORDER=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
 
   // --- CFM grouped by area ---
   const AREA_ORDER=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
@@ -2535,125 +2536,57 @@ function buildReportHTML(){
     const areaOvd=items.filter(isOvd).length;
     const areaRows=items.map((d,i)=>{
       const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
-      const tgtStr=tgt?(tgt.date?fd(tgt.date):(tgt.label||'—')):'—';
+      const tgtStr=tgt?(tgt.date?fd(tgt.date):_trunc(tgt.label||'—',30)):'—';
       const ovdItem=isOvd(d);
-      const bg=ovdItem?'#fff5f5':(i%2===0?'#f8faff':'#ffffff');
-      const tgtCell=ovdItem?`<span style="color:#dc2626;font-weight:700">${tgtStr} &#9888;</span>`:tgtStr;
-      return`<tr style="background:${bg}">
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">${i+1}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;font-size:12px">${esc(d.equipment||'')}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px">${esc(d.masalah||'')}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px">${d.pic||'—'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px">${tgtCell}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">${badge(d.status)}</td>
+      return`<tr class="${ovdItem?'ov':''}">
+        <td>${i+1}</td>
+        <td><b>${esc(_trunc(d.equipment||'',50))}</b></td>
+        <td>${esc(_trunc(d.masalah||'',60))}</td>
+        <td>${esc(d.pic||'—')}</td>
+        <td>${ovdItem?`<b style="color:#dc2626">${tgtStr} ⚠</b>`:tgtStr}</td>
+        <td>${badge(d.status)}</td>
       </tr>`;
     }).join('');
 
-    const areaColor=areaOvd>0?'#dc2626':'#1e40af';
-    const areaTag=areaOvd>0?` <span style="background:#fef2f2;color:#dc2626;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:700;vertical-align:middle">&#9888; ${areaOvd} overdue</span>`:'';
-    cfmSections+=`
-    <div style="margin-bottom:20px">
-      <div style="background:${areaOvd>0?'#fef2f2':'#f0f5ff'};border-left:4px solid ${areaColor};padding:7px 12px;margin-bottom:0;border-radius:4px 4px 0 0;display:flex;align-items:center;gap:8px">
-        <span style="font-size:13px;font-weight:700;color:${areaColor}">${area}</span>
-        <span style="font-size:11px;color:#6b7280;margin-left:4px">— ${items.length} item</span>${areaTag}
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid ${areaOvd>0?'#fecaca':'#e5e7eb'};border-top:none;border-radius:0 0 4px 4px;overflow:hidden">
-        <thead><tr style="background:${areaOvd>0?'#fee2e2':'#e8eeff'}">
-          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor};width:32px">#</th>
-          <th style="padding:6px 8px;text-align:left;font-weight:600;color:${areaColor}">Equipment</th>
-          <th style="padding:6px 8px;text-align:left;font-weight:600;color:${areaColor}">Masalah / Pekerjaan</th>
-          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">PIC</th>
-          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">Target</th>
-          <th style="padding:6px 8px;text-align:center;font-weight:600;color:${areaColor}">Status</th>
-        </tr></thead>
-        <tbody>${areaRows}</tbody>
-      </table>
-    </div>`;
+    const isOvdArea=areaOvd>0;
+    cfmSections+=`<div style="margin-bottom:14px">
+      <div class="area-hd${isOvdArea?' ov':''}">${area} <span style="font-size:10px;font-weight:400;color:#6b7280">— ${items.length} item</span>${isOvdArea?` <span class="ovt">⚠ ${areaOvd} OVD</span>`:''}</div>
+      <table><thead><tr><th style="width:28px">#</th><th>Equipment</th><th>Masalah</th><th>PIC</th><th>Target</th><th>Status</th></tr></thead>
+      <tbody>${areaRows}</tbody></table></div>`;
   });
 
-  if(!cfmSections) cfmSections='<p style="color:#9ca3af;font-style:italic;text-align:center;padding:16px">Tidak ada item outstanding</p>';
+  if(!cfmSections) cfmSections='<p style="color:#9ca3af;font-style:italic;text-align:center;padding:12px">Tidak ada item outstanding</p>';
 
-  // --- TA rows: semua kolom ---
-  let taRowsHtml='';
-  ta.forEach((d,i)=>{
-    const bg=i%2===0?'#f8faff':'#ffffff';
-    const prioColor=d.priority==='Critical'||d.priority==='High'?'#dc2626':d.priority==='Medium'?'#d97706':'#6b7280';
-    const prioBg=d.priority==='Critical'||d.priority==='High'?'#fef2f2':d.priority==='Medium'?'#fffbeb':'#f9fafb';
-    taRowsHtml+=`<tr style="background:${bg}">
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">${i+1}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-weight:700;font-size:12px;white-space:nowrap">${esc(d.tagNumber||'—')}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#4b5563">${d.area||'—'}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:12px">${esc(d.issue||'—')}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:12px;white-space:nowrap">${d.disc||'—'}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">
-        <span style="background:${prioBg};color:${prioColor};padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700">${d.priority||'—'}</span>
-      </td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">${badge(d.status)}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#6b7280">${esc(d.statusUpdate||'')}</td>
-    </tr>`;
-  });
+  // --- TA rows ---
+  const taRows=ta.map((d,i)=>{
+    const pc=d.priority==='Critical'||d.priority==='High'?'bo':d.priority==='Medium'?'bh':'';
+    return`<tr><td>${i+1}</td><td><b>${esc(d.tagNumber||'—')}</b></td><td>${d.area||'—'}</td>
+      <td>${esc(_trunc(d.issue||'—',55))}</td><td>${d.disc||'—'}</td>
+      <td><span class="b ${pc}">${d.priority||'—'}</span></td>
+      <td>${badge(d.status)}</td>
+      <td>${esc(_trunc(d.statusUpdate||'',60))}</td></tr>`;
+  }).join('');
 
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:960px;margin:0 auto;color:#1f2937;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
-  <!-- HEADER -->
-  <div style="background-color:#1e40af;color:#ffffff;padding:24px 28px">
-    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#93c5fd;margin-bottom:4px">Pertamina Bagian Utilities</div>
-    <h1 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#ffffff">&#128203; Laporan CFM Harian</h1>
-    <div style="font-size:13px;color:#bfdbfe">${tglStr}</div>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">${CSS}</head><body>
+  <div class="hdr"><div class="sub">Pertamina Bagian Utilities</div>
+    <h1>&#128203; Laporan CFM Harian</h1><div class="sub">${tglStr}</div></div>
+  <div class="summ">
+    <span class="sv"><div class="sv-n" style="color:#1e40af">${act.length}</div><div class="sv-l">OUTSTANDING</div></span>
+    <span class="sv"><div class="sv-n" style="color:#dc2626">${ovd.length}</div><div class="sv-l">OVERDUE</div></span>
+    <span class="sv"><div class="sv-n" style="color:#16a34a">${done.length}</div><div class="sv-l">SELESAI</div></span>
+    <span class="sv"><div class="sv-n" style="color:#d97706">${ta.length}</div><div class="sv-l">JOB TA</div></span>
   </div>
-  <!-- DASHBOARD SUMMARY -->
-  <div style="background:#f0f5ff;padding:16px 28px;border-bottom:1px solid #dde4f0">
-    <table style="width:100%;border-collapse:collapse">
-      <tr>
-        <td style="text-align:center;padding:10px 4px">
-          <div style="font-size:32px;font-weight:800;color:#1e40af;line-height:1">${act.length}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">OUTSTANDING</div>
-        </td>
-        <td style="width:1px;background:#dde4f0"></td>
-        <td style="text-align:center;padding:10px 4px">
-          <div style="font-size:32px;font-weight:800;color:#dc2626;line-height:1">${ovd.length}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">OVERDUE</div>
-        </td>
-        <td style="width:1px;background:#dde4f0"></td>
-        <td style="text-align:center;padding:10px 4px">
-          <div style="font-size:32px;font-weight:800;color:#16a34a;line-height:1">${done.length}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">SELESAI</div>
-        </td>
-        <td style="width:1px;background:#dde4f0"></td>
-        <td style="text-align:center;padding:10px 4px">
-          <div style="font-size:32px;font-weight:800;color:#d97706;line-height:1">${ta.length}</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-weight:600;letter-spacing:.5px">JOB TA</div>
-        </td>
-      </tr>
-    </table>
+  <div class="body">
+  <div class="sec-hd">Outstanding CFM — Per Area</div>
+  ${cfmSections}
+  <div class="sec-hd" style="margin-top:16px">Job List Turnaround (TA)</div>
+  <table><thead><tr><th>#</th><th>Tag</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Status</th><th>Update</th></tr></thead>
+  <tbody>${taRows||'<tr><td colspan="8" style="text-align:center;color:#9ca3af">Tidak ada data</td></tr>'}</tbody></table>
   </div>
-  <!-- OUTSTANDING CFM PER AREA -->
-  <div style="padding:20px 28px">
-    <h2 style="font-size:14px;font-weight:700;color:#1e40af;margin:0 0 14px;padding-bottom:6px;border-bottom:2px solid #1e40af;text-transform:uppercase;letter-spacing:.5px">Outstanding CFM — Per Area</h2>
-    ${cfmSections}
-    <!-- JOB LIST TA -->
-    <h2 style="font-size:14px;font-weight:700;color:#1e40af;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #1e40af;text-transform:uppercase;letter-spacing:.5px">Job List Turnaround (TA)</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden">
-      <thead>
-        <tr style="background:#1e40af;color:#fff">
-          <th style="padding:7px 8px;text-align:center;font-weight:600">#</th>
-          <th style="padding:7px 8px;text-align:left;font-weight:600">Tag Number</th>
-          <th style="padding:7px 8px;text-align:left;font-weight:600">Area</th>
-          <th style="padding:7px 8px;text-align:left;font-weight:600">Issue / Pekerjaan</th>
-          <th style="padding:7px 8px;text-align:center;font-weight:600">Disiplin</th>
-          <th style="padding:7px 8px;text-align:center;font-weight:600">Prioritas</th>
-          <th style="padding:7px 8px;text-align:center;font-weight:600">Status</th>
-          <th style="padding:7px 8px;text-align:left;font-weight:600">Update Status</th>
-        </tr>
-      </thead>
-      <tbody>${taRowsHtml||'<tr><td colspan="8" style="text-align:center;padding:16px;color:#9ca3af;font-style:italic">Tidak ada data TA</td></tr>'}</tbody>
-    </table>
-  </div>
-  <!-- FOOTER -->
-  <div style="background:#f8faff;border-top:1px solid #e5e7eb;padding:12px 28px;text-align:center">
-    <p style="margin:0;font-size:11px;color:#9ca3af">Email ini dikirim otomatis oleh <strong>Sistem CFM Utilities</strong> &mdash; Pertamina Bagian Utilities &mdash; Do Not Reply</p>
-  </div>
-</div>`;
+  <div class="ftr">Email dikirim otomatis oleh Sistem CFM Utilities &mdash; Pertamina Bagian Utilities &mdash; Do Not Reply</div>
+  </body></html>`;
 }
+
 
 function confirmSendReport(){goTo('email');}
 function closeReportConfirm(){}

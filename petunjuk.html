@@ -143,7 +143,7 @@
     <h1>Utilities Work Tracker<br>Cross Functional Meeting</h1>
     <p>Panduan lengkap penggunaan aplikasi pelacak pekerjaan dan rapat lintas fungsi untuk Bagian Utilities Pertamina. Dibaca sebelum menggunakan aplikasi untuk pengalaman terbaik.</p>
     <div class="hero-meta">
-      <span><i class="ti ti-calendar"></i> Versi 2.2 — Juni 2026</span>
+      <span><i class="ti ti-calendar"></i> Versi 3.0 — Juni 2026</span>
       <span><i class="ti ti-building-factory-2"></i> Bagian Utilities Pertamina</span>
       <span><i class="ti ti-users"></i> Semua Pengguna</span>
     </div>
@@ -163,8 +163,9 @@
       <a href="#offline" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-wifi-off"></i> 8. Mode Offline</a>
       <a href="#pwa" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-device-mobile"></i> 9. Install di HP / PC</a>
       <a href="#status" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-tag"></i> 10. Arti Status & Warna</a>
-      <a href="#faq" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-help-circle"></i> 11. Pertanyaan Umum (FAQ)</a>
-      <a href="#tips" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-bulb"></i> 12. Tips & Shortcut</a>
+      <a href="#baru" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-sparkles"></i> 11. Fitur Baru v3.0</a>
+      <a href="#faq" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-help-circle"></i> 12. Pertanyaan Umum (FAQ)</a>
+      <a href="#tips" style="color:var(--blue);text-decoration:none;font-size:13px;padding:4px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-bulb"></i> 13. Tips & Shortcut</a>
     </div>
   </div>
 
@@ -218,6 +219,22 @@
     <div class="feat-card">
       <div class="feat-icon amber"><i class="ti ti-users"></i></div>
       <div><div class="feat-title">Multi-User</div><div class="feat-desc">Bisa digunakan banyak orang sekaligus. Setiap pengguna punya nama yang ditampilkan di komentar dan log.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon blue"><i class="ti ti-moon"></i></div>
+      <div><div class="feat-title">Dark Mode</div><div class="feat-desc">Tampilan gelap yang nyaman untuk mata. Aktifkan lewat tombol bulan/matahari di navbar. Preferensi tersimpan otomatis.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon amber"><i class="ti ti-clock-exclamation"></i></div>
+      <div><div class="feat-title">Countdown Due Date</div><div class="feat-desc">Badge warna merah/kuning/hijau menampilkan sisa hari menuju target selesai. Peringatan otomatis H-3, H-1, dan Overdue.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon purple"><i class="ti ti-bell"></i></div>
+      <div><div class="feat-title">Notifikasi Browser</div><div class="feat-desc">Aktifkan notifikasi untuk item yang Anda ikuti. Dapat notif saat ada komentar baru atau saat di-mention oleh rekan.</div></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon green"><i class="ti ti-adjustments-horizontal"></i></div>
+      <div><div class="feat-title">Filter PIC & Tanggal</div><div class="feat-desc">Filter Outstanding berdasarkan PIC tertentu dan rentang tanggal target selesai sekaligus untuk analisis lebih tajam.</div></div>
     </div>
   </div>
 
@@ -648,8 +665,101 @@
     </table>
   </div>
 
-  <!-- 11. FAQ -->
-  <div id="faq" class="section-title page-break"><i class="ti ti-help-circle"></i> 11. Pertanyaan Umum (FAQ)</div>
+  <!-- 11. FITUR BARU v3.0 -->
+  <div id="baru" class="section-title page-break"><i class="ti ti-sparkles"></i> 11. Fitur Baru v3.0</div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-moon" style="color:var(--blue)"></i> Dark Mode (Tampilan Gelap)</div>
+    <div class="step-desc" style="margin-bottom:10px">Klik tombol <strong><i class="ti ti-moon"></i> / <i class="ti ti-sun"></i></strong> di pojok kanan navbar untuk beralih antara tampilan terang dan gelap. Preferensi disimpan otomatis dan langsung aktif saat membuka aplikasi lagi.</div>
+    <div class="tip-box info">
+      <i class="ti ti-info-circle"></i>
+      <div class="tip-box-body"><strong>Berguna saat rapat malam atau ruang kurang cahaya</strong>Dark mode mengurangi kelelahan mata dan hemat baterai pada layar OLED.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-clock-exclamation" style="color:var(--amber)"></i> Countdown Due Date (Badge Sisa Hari)</div>
+    <div class="step-desc" style="margin-bottom:10px">Setiap item di Outstanding menampilkan badge sisa hari menuju target secara otomatis:</div>
+    <table style="margin-bottom:10px">
+      <tr><th>Badge</th><th>Warna</th><th>Arti</th></tr>
+      <tr><td><span class="badge red">OVD</span></td><td>Merah</td><td>Sudah melewati target (Overdue) — tampilkan jumlah jam/hari keterlambatan</td></tr>
+      <tr><td><span class="badge red">HARI INI</span></td><td>Merah</td><td>Target selesai hari ini</td></tr>
+      <tr><td><span class="badge red">H-1</span></td><td>Merah</td><td>Sisa 1 hari sebelum target</td></tr>
+      <tr><td><span class="badge amber">H-3</span></td><td>Kuning</td><td>Sisa 3 hari — peringatan dini</td></tr>
+      <tr><td><span class="badge blue">H-7</span></td><td>Biru</td><td>Sisa 7 hari</td></tr>
+    </table>
+    <div class="tip-box warn">
+      <i class="ti ti-alert-triangle"></i>
+      <div class="tip-box-body"><strong>Prioritaskan item merah</strong>Fokuskan perhatian pada item dengan badge merah di rapat CFM agar tidak semakin terlambat.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-edit" style="color:var(--green)"></i> Quick Status Update (Ubah Status Langsung di Tabel)</div>
+    <div class="step-desc" style="margin-bottom:10px">Di kolom Status pada tabel Outstanding, terdapat dropdown langsung yang bisa diklik tanpa harus masuk ke halaman detail. Klik dropdown, pilih status baru — perubahan tersimpan seketika dan log otomatis tercatat.</div>
+    <div class="tip-box success">
+      <i class="ti ti-check"></i>
+      <div class="tip-box-body"><strong>Hemat waktu saat rapat</strong>Update status banyak item langsung dari tampilan tabel tanpa bolak-balik buka detail satu per satu.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-adjustments-horizontal" style="color:var(--purple)"></i> Filter PIC & Rentang Tanggal</div>
+    <div class="step-desc" style="margin-bottom:10px">Di halaman Outstanding CFM, tersedia dua filter tambahan di toolbar:</div>
+    <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2;margin-bottom:10px">
+      <li><strong>Filter PIC</strong> — dropdown pilih nama PIC untuk tampilkan hanya item milik satu orang</li>
+      <li><strong>Filter Rentang Tanggal</strong> — dua input tanggal (dari–sampai) untuk filter berdasarkan target selesai</li>
+    </ul>
+    <div class="step-desc">Filter bisa dikombinasikan: misalnya tampilkan semua item PIC "Budi" yang target selesainya minggu ini.</div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-bell" style="color:var(--purple)"></i> Notifikasi Browser & Follow Item</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="step-title">Izinkan Notifikasi</div><div class="step-desc">Klik tombol <strong>"Aktifkan Notifikasi"</strong> yang muncul di aplikasi, atau izinkan notifikasi saat browser meminta izin. Hanya perlu sekali per perangkat.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="step-title">Ikuti (Follow) Item</div><div class="step-desc">Buka detail item CFM atau TA, klik tombol <strong><i class="ti ti-bookmark"></i> Ikuti</strong> di bagian atas detail. Tombol berubah menjadi <strong>Berhenti Ikuti</strong> saat sudah mengikuti.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="step-title">Terima Notifikasi</div><div class="step-desc">Saat ada komentar baru pada item yang diikuti (dari pengguna lain), notifikasi browser muncul otomatis meski aplikasi ada di tab lain atau di background.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-at" style="color:var(--cyan)"></i> @Mention — Tag Rekan di Komentar</div>
+    <div class="step-desc" style="margin-bottom:10px">Ketik <strong>@</strong> diikuti nama rekan dalam komentar (contoh: <code>@Budi cek kondisi pompa ini</code>). Rekan yang di-mention akan mendapat:</div>
+    <ul style="font-size:12px;color:var(--muted);padding-left:20px;line-height:2">
+      <li>Notifikasi browser bertuliskan <em>"Anda di-mention oleh [nama]"</em></li>
+      <li>Toast notifikasi di dalam aplikasi</li>
+    </ul>
+    <div class="tip-box info" style="margin-top:10px">
+      <i class="ti ti-info-circle"></i>
+      <div class="tip-box-body"><strong>Cara kerjanya:</strong> sistem mencocokkan nama depan pengguna aktif dengan teks setelah @. Tidak perlu nama lengkap — cukup nama depan sudah terdeteksi.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-messages" style="color:var(--green)"></i> Komentar Realtime</div>
+    <div class="step-desc">Komentar baru dari pengguna lain muncul otomatis di panel diskusi yang sedang terbuka — tanpa perlu refresh. Panel berkedip sebentar saat ada komentar masuk sebagai sinyal visual.</div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-mail" style="color:var(--red)"></i> Laporan Email — Format Kompak</div>
+    <div class="step-desc" style="margin-bottom:10px">Laporan email yang dikirim via menu <strong>Kirim Email</strong> kini menggunakan format HTML kompak dengan CSS class — ukuran jauh lebih kecil dari sebelumnya sehingga tidak lagi muncul error <em>"Variables size limit exceeded"</em>.</div>
+    <div class="tip-box success">
+      <i class="ti ti-check"></i>
+      <div class="tip-box-body"><strong>Masalah "Gagal mengirim" sudah diperbaiki</strong>Jika sebelumnya muncul pesan error saat kirim laporan, versi ini sudah mengatasi masalah tersebut. Laporan tetap lengkap dengan ringkasan outstanding, overdue, dan job TA.</div>
+    </div>
+  </div>
+
+  <!-- 12. FAQ -->
+  <div id="faq" class="section-title page-break"><i class="ti ti-help-circle"></i> 12. Pertanyaan Umum (FAQ)</div>
 
   <div class="faq-item">
     <div class="faq-q"><i class="ti ti-question-mark"></i> Bagaimana jika saya salah memasukkan nama?</div>
@@ -697,7 +807,7 @@
   </div>
 
   <!-- 12. TIPS -->
-  <div id="tips" class="section-title page-break"><i class="ti ti-bulb"></i> 12. Tips & Shortcut Keyboard</div>
+  <div id="tips" class="section-title page-break"><i class="ti ti-bulb"></i> 13. Tips & Shortcut Keyboard</div>
   <div class="card" style="margin-bottom:14px">
     <div style="font-weight:700;font-size:13px;margin-bottom:12px">Shortcut Keyboard Berguna</div>
     <table>
@@ -756,7 +866,7 @@
   <div class="footer">
     <div style="font-size:20px;margin-bottom:8px">⚙️</div>
     <div style="font-weight:700;font-size:14px;margin-bottom:4px">Utilities Work Tracker — CFM & TA</div>
-    <div style="margin-bottom:8px">Bagian Utilities · Pertamina · Versi 2.2 · 2026</div>
+    <div style="margin-bottom:8px">Bagian Utilities · Pertamina · Versi 3.0 · 2026</div>
     <div>Untuk bantuan teknis, hubungi administrator sistem.</div>
     <div style="margin-top:16px;font-size:11px;opacity:.6">Dokumen ini dapat dicetak sebagai PDF menggunakan tombol <strong>"Simpan sebagai PDF"</strong> di atas halaman ini.</div>
   </div>
