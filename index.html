@@ -3192,18 +3192,20 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
   const repliesHtml = replies && replies.length
     ? `<div class="cmt-replies">${replies.map(r => renderOneCmt(r, [], itemId, type, true)).join('')}</div>` : '';
 
-  return `<div class="cmt-item" id="cmt-${c.id}">
-    <div class="cmt-avatar${isReply?' sm':''}" style="background:${avatarBg}">${initials}</div>
-    <div class="cmt-bubble">
-      <div class="cmt-meta">
-        <span class="cmt-author">${esc(c.author)}</span>
-        <span class="cmt-time">${timeStr}</span>
+  const sz = isReply ? '26px' : '34px';
+  const fs = isReply ? '10px' : '12px';
+  return `<div class="cmt-item" id="cmt-${c.id}" style="display:flex;gap:10px;padding:6px 0;align-items:flex-start">
+    <div style="width:${sz};height:${sz};border-radius:50%;background:${avatarBg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs};font-weight:800;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px">${initials}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:700;color:var(--text)">${esc(c.author)}</span>
+        <span style="font-size:10px;color:var(--muted)">${timeStr}</span>
       </div>
-      <div class="cmt-body${isReply?' is-reply':''}">
-        ${c.content ? `<div class="cmt-text">${esc(c.content)}</div>` : ''}
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:${isReply?'0 8px 8px 8px':'0 12px 12px 12px'};padding:9px 12px;${isReply?'background:var(--bg-sec)':''}">
+        ${c.content ? `<div style="font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)">${esc(c.content)}</div>` : ''}
         ${attachHtml}
       </div>
-      <div class="cmt-actions">
+      <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
         ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-corner-down-right"></i> Balas</button>` : ''}
         ${isOwn ? `<button class="cmt-del-btn" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus komentar"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
       </div>
