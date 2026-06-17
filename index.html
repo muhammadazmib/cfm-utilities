@@ -1862,9 +1862,14 @@ function openDetail(id,type){
   document.getElementById('det-acts').innerHTML=`<button class="btn btn-sm" onclick="${type==='cfm'?`openCfmModal(${id})`:`openTaModal(${id})`}"><i class="ti ti-edit"></i> Edit</button><button class="btn btn-sm btn-danger" onclick="openDel(${id},'${type}')"><i class="ti ti-trash"></i> Hapus</button>`;
   document.getElementById('det-body').innerHTML=type==='cfm'?cfmDetail(d):taDetail(d);
   document.getElementById('detOv').classList.add('open');
+  document.body.style.overflow='hidden'; // fix double scrollbar
   loadComments(id, type);
 }
-function closeDetail(){document.getElementById('detOv').classList.remove('open');detId=null;detType=null}
+function closeDetail(){
+  document.getElementById('detOv').classList.remove('open');
+  document.body.style.overflow='';
+  detId=null;detType=null;
+}
 
 function cfmDetail(d){
   const docs=d.docs&&d.docs.length?d.docs:(d.type?[{type:d.type,docno:d.docno||''}]:[]);
@@ -3063,12 +3068,31 @@ function saveAuthorName() {
   localStorage.setItem('cfm-author-history', JSON.stringify(history));
   closeAuthorModal();
   toast('Nama tersimpan: '+name);
+  // update semua compose box yang sedang terbuka
+  document.querySelectorAll('[id^="compose-"]').forEach(el=>{
+    const parts = el.id.replace('compose-','').split('-');
+    const type = parts[0];
+    const itemId = parseInt(parts[parts.length-1]);
+    if(type&&itemId) cmtUpdateAuthor(type, itemId);
+  });
   if(_authorCb){ const cb=_authorCb; _authorCb=null; cb(); }
 }
 function closeAuthorModal() {
   const m = document.getElementById('author-modal');
   m.classList.remove('open');
   _authorCb = null;
+}
+
+function cmtUpdateAuthor(type, itemId) {
+  const initials = _authorName ? _authorName.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() : '?';
+  const colors = ['#2563eb','#16a34a','#9333ea','#dc2626','#d97706','#0891b2'];
+  const bg = colors[(_authorName||'').charCodeAt(0) % colors.length];
+  const av = document.getElementById(`cmt-av-${type}-${itemId}`);
+  const nm = document.getElementById(`cmt-name-${type}-${itemId}`);
+  const btn = document.querySelector(`#compose-${type}-${itemId} button`);
+  if(av){ av.textContent = initials; av.style.background = bg; }
+  if(nm) nm.innerHTML = _authorName ? esc(_authorName) : '<span style="color:var(--muted);font-weight:400">Nama belum diset</span>';
+  if(btn) btn.innerHTML = _authorName ? '<i class="ti ti-pencil" style="font-size:11px"></i> Ganti' : '<i class="ti ti-user-plus" style="font-size:11px"></i> Set Nama';
 }
 
 // =====================================================================
@@ -3098,38 +3122,36 @@ function cmtSection(itemId, type) {
       </div>`;
   return `<div class="dcard">
     <div class="dcard-title"><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</div>
-    <div id="cmt-${type}-${itemId}" class="cmt-list" style="min-height:32px;margin-bottom:14px"><div style="color:var(--muted);font-size:12px;font-style:italic;padding:4px 0">Memuat diskusi...</div></div>
+    <div id="cmt-${type}-${itemId}" style="min-height:32px;margin-bottom:14px"><div style="color:var(--muted);font-size:12px;font-style:italic;padding:4px 0">Memuat diskusi...</div></div>
     <!-- Compose Box -->
-    <div class="cmt-compose" onfocusin="this.style.borderColor='var(--blue)'" onfocusout="this.style.borderColor='var(--border)'">
-      <div class="cmt-compose-top">
-        <div class="cmt-avatar" style="background:${avatarBg};width:32px;height:32px;font-size:12px;flex-shrink:0">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            ${_authorName
-              ? `<span style="font-size:12px;font-weight:700;color:var(--text)">${esc(_authorName)}</span>
-                 <button onclick="promptAuthor()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;transition:.15s" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-pencil" style="font-size:11px"></i> Ganti</button>`
-              : `<span style="font-size:12px;color:var(--muted)">Nama belum diset</span>
-                 <button onclick="promptAuthor()" style="background:var(--blue);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user-plus" style="font-size:11px"></i> Set Nama</button>`
-            }
-          </div>
-          <div id="file-preview-${type}-${itemId}" class="cmt-file-preview" style="padding:0"></div>
-          <textarea id="cmt-inp-${type}-${itemId}"
-            placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
-            onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
+    <div id="compose-${type}-${itemId}" style="border:1.5px solid var(--border);border-radius:12px;background:var(--bg-card);overflow:hidden;transition:border-color .2s" onfocusin="this.style.borderColor='#185FA5'" onfocusout="this.style.borderColor='var(--border)'">
+      <!-- Author bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid var(--border);background:var(--bg-sec)">
+        <div id="cmt-author-display-${type}-${itemId}" style="display:flex;align-items:center;gap:8px">
+          <div id="cmt-av-${type}-${itemId}" style="width:28px;height:28px;border-radius:50%;background:${avatarBg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${initials}</div>
+          <span id="cmt-name-${type}-${itemId}" style="font-size:12px;font-weight:700;color:var(--text)">${_authorName ? esc(_authorName) : '<span style="color:var(--muted);font-weight:400">Nama belum diset</span>'}</span>
         </div>
+        <button onclick="promptAuthor(()=>cmtUpdateAuthor('${type}',${itemId}))" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:3px 9px;border-radius:6px;font-family:inherit;display:inline-flex;align-items:center;gap:3px;transition:.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">${_authorName ? '<i class="ti ti-pencil" style="font-size:11px"></i> Ganti' : '<i class="ti ti-user-plus" style="font-size:11px"></i> Set Nama'}</button>
       </div>
-      <div class="cmt-compose-footer">
-        <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted);padding:5px 10px;border-radius:8px;transition:.15s" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background='transparent'" title="Lampirkan foto / file (maks 10MB)">
-          <i class="ti ti-paperclip" style="font-size:14px"></i> Lampiran
+      <!-- Textarea -->
+      <textarea id="cmt-inp-${type}-${itemId}"
+        placeholder="Tulis komentar, update progres, atau informasi terkait item ini..."
+        style="width:100%;min-height:72px;padding:12px 14px;border:none;outline:none;font-family:inherit;font-size:13px;line-height:1.6;resize:none;background:var(--bg-card);color:var(--text);box-sizing:border-box;display:block"
+        onkeydown="if(event.ctrlKey&&event.key==='Enter')addComment(${itemId},'${type}')"></textarea>
+      <!-- File preview -->
+      <div id="file-preview-${type}-${itemId}" style="padding:0 14px"></div>
+      <!-- Footer -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg-sec)">
+        <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted);padding:4px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg-card);transition:.15s" onmouseover="this.style.background='#eff6ff';this.style.borderColor='#bfdbfe'" onmouseout="this.style.background='var(--bg-card)';this.style.borderColor='var(--border)'" title="Lampirkan foto / file">
+          <i class="ti ti-paperclip" style="font-size:13px"></i> Lampiran
           <input type="file" id="file-inp-${type}-${itemId}" style="display:none"
             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
             onchange="handleFileSelect(this,'${type}',${itemId})">
         </label>
-        <span style="font-size:10px;color:var(--muted)">Maks 10MB</span>
         <div style="flex:1"></div>
-        <span style="font-size:10px;color:var(--muted);margin-right:4px"><kbd style="background:var(--bg-sec);border:1px solid var(--border-em);border-radius:3px;padding:1px 5px;font-size:10px">Ctrl+Enter</kbd></span>
-        <button id="cmt-send-${type}-${itemId}" class="btn btn-primary btn-sm" style="font-weight:700"
-          onclick="addComment(${itemId},'${type}')"><i class="ti ti-send"></i> Kirim</button>
+        <span style="font-size:10px;color:var(--muted)"><kbd style="background:var(--bg-card);border:1px solid var(--border-em);border-radius:3px;padding:1px 5px;font-size:10px">Ctrl+Enter</kbd></span>
+        <button id="cmt-send-${type}-${itemId}" style="background:#185FA5;border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:.15s" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'"
+          onclick="addComment(${itemId},'${type}')"><i class="ti ti-send" style="font-size:13px"></i> Kirim</button>
       </div>
     </div>
   </div>`;
@@ -3206,8 +3228,8 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
         ${attachHtml}
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
-        ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-corner-down-right"></i> Balas</button>` : ''}
-        ${isOwn ? `<button class="cmt-del-btn" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus komentar"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
+        <button onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')" style="background:none;border:none;color:#6b7280;font-size:11px;font-weight:600;cursor:pointer;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='#eff6ff';this.style.color='#2563eb'" onmouseout="this.style.background='none';this.style.color='#6b7280'"><i class="ti ti-corner-down-right" style="font-size:12px"></i> Balas</button>
+        ${isOwn ? `<button onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:3px 7px;border-radius:6px;display:inline-flex;align-items:center;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626'" onmouseout="this.style.background='none';this.style.color='#9ca3af'"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
       </div>
       ${repliesHtml}
       <div id="reply-form-${c.id}"></div>
