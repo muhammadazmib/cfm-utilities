@@ -292,19 +292,24 @@ tr:hover td{background:#fafbfc}
   <button class="nav-btn" id="nav-email" onclick="goTo('email')"><i class="ti ti-mail-forward"></i> Kirim Email</button>
   <div class="nav-sp"></div>
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
-  <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
   <a href="petunjuk.html" target="_blank" class="btn btn-sm" style="flex-shrink:0;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;text-decoration:none" title="Fitur & Petunjuk Penggunaan"><i class="ti ti-help-circle"></i> Panduan</a>
   <button class="btn btn-sm" style="flex-shrink:0;background:#16a34a;color:#fff;border:none" onclick="exportBackup()" title="Backup data untuk disimpan atau dipindah ke PC lain"><i class="ti ti-database-export"></i> Backup Data</button>
 </nav>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner">
-  <i class="ti ti-wifi-off" style="font-size:20px;flex-shrink:0"></i>
-  <div style="flex:1;line-height:1.5">
-    <strong style="font-size:14px;display:block">⚠️ Mode Offline — Siap Digunakan</strong>
-    <div style="font-size:12px;opacity:.95;margin-top:2px">Edit, tambah, hapus tetap bisa. Perubahan akan sync otomatis saat internet kembali.</div>
+  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+    <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-wifi-off" style="font-size:17px"></i>
+    </div>
+    <div style="min-width:0">
+      <div style="font-size:13px;font-weight:700;letter-spacing:.01em">Mode Offline</div>
+      <div style="font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Edit & tambah tetap bisa — akan sync otomatis saat online</div>
+    </div>
   </div>
-  <button onclick="retryOnline()" style="background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.5)'" onmouseout="this.style.background='rgba(255,255,255,.35)'">→ Sinkronkan Sekarang</button>
+  <button onclick="retryOnline()" style="display:flex;align-items:center;gap:6px;background:#fff;border:none;color:#92400e;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <i class="ti ti-refresh" style="font-size:13px"></i> Sinkronkan
+  </button>
 </div>
 <!-- SYNC BADGE -->
 <div id="sync-badge" onclick="_flushDirty()" title="Klik untuk sync sekarang"
@@ -508,6 +513,47 @@ tr:hover td{background:#fafbfc}
       </button>
     </div>
 
+  </div>
+</div>
+</div>
+
+<!-- EMAIL RECIPIENTS MODAL -->
+<div id="email-to-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);backdrop-filter:blur(3px);z-index:5000;align-items:center;justify-content:center">
+<div style="background:var(--bg-card);border-radius:16px;padding:28px;width:460px;max-width:95vw;box-shadow:0 24px 80px rgba(0,0,0,.3);animation:am-slidein .22s cubic-bezier(.34,1.3,.64,1)">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <div style="width:42px;height:42px;border-radius:10px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-mail-forward" style="font-size:20px;color:var(--blue)"></i>
+    </div>
+    <div>
+      <div id="etm-title" style="font-size:15px;font-weight:800;color:var(--text)">Kirim Email</div>
+      <div style="font-size:12px;color:var(--muted)">Tentukan penerima sebelum mengirim</div>
+    </div>
+  </div>
+
+  <!-- Tag input area -->
+  <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Tujuan Email</div>
+  <div id="etm-tag-wrap" onclick="document.getElementById('etm-inp').focus()"
+    style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border:2px solid var(--border);border-radius:var(--r);min-height:44px;cursor:text;transition:border-color .2s;background:var(--bg-card)">
+    <!-- tags rendered here by JS -->
+    <input id="etm-inp" type="email" placeholder="Ketik email lalu tekan Enter atau koma..."
+      style="border:none;outline:none;font-size:13px;font-family:inherit;min-width:180px;flex:1;background:transparent;padding:2px 0"
+      onkeydown="etmKeydown(event)" oninput="etmInput(this)">
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:5px">Tekan <kbd style="background:var(--bg-sec);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">Enter</kbd> atau <kbd style="background:var(--bg-sec);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">,</kbd> untuk menambah. Klik × untuk hapus.</div>
+
+  <!-- Saved recipients quick-pick -->
+  <div id="etm-saved-wrap" style="margin-top:14px;display:none">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Tersimpan / Sering Digunakan</div>
+    <div id="etm-saved-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+  </div>
+
+  <div id="etm-err" style="display:none;font-size:12px;color:#dc2626;margin-top:10px"></div>
+
+  <div style="display:flex;gap:8px;margin-top:20px">
+    <button id="etm-send-btn" class="btn btn-primary" style="flex:1;justify-content:center" onclick="etmConfirm()">
+      <i class="ti ti-send"></i> Kirim Sekarang
+    </button>
+    <button class="btn" onclick="etmClose()"><i class="ti ti-x"></i> Batal</button>
   </div>
 </div>
 </div>
@@ -1024,21 +1070,24 @@ async function doSendReport(){
     if(confirm('Email belum dikonfigurasi. Buka pengaturan?'))openEmailSetup();
     return;
   }
-  const btn=event.target.closest('button');
+  etmOpen('report','Kirim Laporan CFM');
+}
+async function _execSendReport(recipients){
   const statusEl=document.getElementById('email-report-status');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';
+  const btn=document.querySelector('#view-email button.btn-primary');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';}
   statusEl.style.display='none';
   const d=new Date();
   const tglSubj=d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
   const subject=`[CFM Utilities] Laporan Harian — ${tglSubj}`;
   const html=buildReportHTML();
   try{
-    await sendEmailViaEJS(REPORT_EMAIL,subject,html);
+    for(const r of recipients) await sendEmailViaEJS(r,subject,html);
     statusEl.style.display='block';
     statusEl.style.background='#dcfce7';
     statusEl.style.color='#166534';
-    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Laporan berhasil dikirim ke '+REPORT_EMAIL;
-    toast('Laporan berhasil dikirim');
+    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Laporan berhasil dikirim ke '+recipients.join(', ');
+    toast('Laporan berhasil dikirim ke '+recipients.length+' penerima');
   }catch(e){
     console.error(e);
     statusEl.style.display='block';
@@ -1047,7 +1096,7 @@ async function doSendReport(){
     const errMsg=e.text||e.message||JSON.stringify(e)||'Error';
     statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+errMsg;
   }finally{
-    btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Kirim Laporan CFM';
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Kirim Laporan CFM';}
   }
 }
 
@@ -1058,9 +1107,11 @@ async function doSendOverdue(){
   }
   const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
   if(!ovd.length){toast('Tidak ada item overdue');return;}
-  const btn=event.target.closest('button');
+  etmOpen('overdue','Kirim Notifikasi Overdue');
+}
+async function _execSendOverdue(recipients){
   const statusEl=document.getElementById('email-ovd-status');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Mengirim...';
+  const ovd=cfm.filter(d=>d.status!=='Done'&&isOvd(d));
   statusEl.style.display='none';
   const rows=ovd.map((d,i)=>{
     const tgt=d.targets&&d.targets.length?d.targets[d.targets.length-1]:null;
@@ -1103,21 +1154,136 @@ async function doSendOverdue(){
   </div>`;
   const tglSubj=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
   try{
-    await sendEmailViaEJS(REPORT_EMAIL,`[CFM Utilities] ⚠ ${ovd.length} Item Overdue — ${tglSubj}`,html);
+    for(const r of recipients) await sendEmailViaEJS(r,`[CFM Utilities] ⚠ ${ovd.length} Item Overdue — ${tglSubj}`,html);
     statusEl.style.display='block';
     statusEl.style.background='#dcfce7';
     statusEl.style.color='#166534';
-    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Notifikasi berhasil dikirim ke '+REPORT_EMAIL;
-    toast('Notifikasi overdue berhasil dikirim');
+    statusEl.innerHTML='<i class="ti ti-circle-check"></i> Notifikasi berhasil dikirim ke '+recipients.join(', ');
+    toast('Notifikasi overdue berhasil dikirim ke '+recipients.length+' penerima');
   }catch(e){
     console.error(e);
     statusEl.style.display='block';
     statusEl.style.background='#fef2f2';
     statusEl.style.color='#dc2626';
     statusEl.innerHTML='<i class="ti ti-alert-circle"></i> Gagal: '+(e.text||e.message||'Error');
-  }finally{
-    btn.disabled=false;btn.innerHTML='<i class="ti ti-alert-triangle"></i> Kirim Notifikasi Overdue';
   }
+}
+
+// ---- EMAIL TO MODAL ----
+let _etmType = null;
+let _etmTags = [];
+
+function etmOpen(type, title) {
+  _etmType = type;
+  _etmTags = [REPORT_EMAIL]; // default recipient
+  document.getElementById('etm-title').textContent = title;
+  document.getElementById('etm-err').style.display = 'none';
+  etmRenderTags();
+  // load saved recipients
+  const saved = JSON.parse(localStorage.getItem('cfm-email-recipients') || '[]');
+  const savedWrap = document.getElementById('etm-saved-wrap');
+  const savedList = document.getElementById('etm-saved-list');
+  const extras = saved.filter(e => !_etmTags.includes(e));
+  if (extras.length) {
+    savedWrap.style.display = 'block';
+    savedList.innerHTML = extras.map(e =>
+      `<button onclick="etmAddTag(${JSON.stringify(e)})" style="background:var(--bg-sec);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);transition:.15s" onmouseover="this.style.background='var(--blue-lt)'" onmouseout="this.style.background='var(--bg-sec)'">${esc(e)}</button>`
+    ).join('');
+  } else {
+    savedWrap.style.display = 'none';
+  }
+  document.getElementById('etm-inp').value = '';
+  const modal = document.getElementById('email-to-modal');
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('etm-inp').focus(), 100);
+}
+
+function etmClose() {
+  document.getElementById('email-to-modal').style.display = 'none';
+  _etmType = null;
+  _etmTags = [];
+}
+
+function etmRenderTags() {
+  const wrap = document.getElementById('etm-tag-wrap');
+  const inp = document.getElementById('etm-inp');
+  // remove old tags (keep input)
+  wrap.querySelectorAll('.etm-tag').forEach(t => t.remove());
+  _etmTags.forEach((tag, i) => {
+    const el = document.createElement('span');
+    el.className = 'etm-tag';
+    el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:var(--blue-lt);color:var(--blue);border:1px solid #bfdbfe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap';
+    el.innerHTML = `${esc(tag)}<span onclick="etmRemoveTag(${i})" style="cursor:pointer;font-size:14px;line-height:1;opacity:.7;margin-left:1px" title="Hapus">×</span>`;
+    wrap.insertBefore(el, inp);
+  });
+}
+
+function etmAddTag(email) {
+  email = email.trim().toLowerCase();
+  if (!email) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const err = document.getElementById('etm-err');
+    err.textContent = `"${email}" bukan format email yang valid.`;
+    err.style.display = 'block';
+    return;
+  }
+  document.getElementById('etm-err').style.display = 'none';
+  if (_etmTags.includes(email)) { document.getElementById('etm-inp').value = ''; return; }
+  _etmTags.push(email);
+  etmRenderTags();
+  document.getElementById('etm-inp').value = '';
+  // refresh saved quick-picks (remove newly added from list)
+  const savedList = document.getElementById('etm-saved-list');
+  if (savedList) {
+    savedList.querySelectorAll('button').forEach(btn => {
+      if (btn.textContent === email) btn.remove();
+    });
+  }
+}
+
+function etmRemoveTag(i) {
+  _etmTags.splice(i, 1);
+  etmRenderTags();
+}
+
+function etmKeydown(e) {
+  const inp = e.target;
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = inp.value.replace(/,/g, '').trim();
+    if (val) etmAddTag(val);
+  } else if (e.key === 'Backspace' && !inp.value && _etmTags.length > 0) {
+    etmRemoveTag(_etmTags.length - 1);
+  }
+}
+
+function etmInput(inp) {
+  // auto-add when paste contains comma or space
+  if (inp.value.includes(',') || inp.value.includes(' ')) {
+    inp.value.split(/[,\s]+/).forEach(v => { if (v.trim()) etmAddTag(v.trim()); });
+    inp.value = '';
+  }
+}
+
+async function etmConfirm() {
+  // add whatever is still in the input field
+  const inp = document.getElementById('etm-inp');
+  if (inp.value.trim()) etmAddTag(inp.value.trim());
+  if (!_etmTags.length) {
+    const err = document.getElementById('etm-err');
+    err.textContent = 'Masukkan minimal 1 alamat email tujuan.';
+    err.style.display = 'block';
+    return;
+  }
+  // save to history (max 10)
+  let saved = JSON.parse(localStorage.getItem('cfm-email-recipients') || '[]');
+  _etmTags.forEach(e => { if (!saved.includes(e)) saved.unshift(e); });
+  localStorage.setItem('cfm-email-recipients', JSON.stringify(saved.slice(0, 10)));
+
+  const recipients = [..._etmTags];
+  etmClose();
+  if (_etmType === 'report') await _execSendReport(recipients);
+  else if (_etmType === 'overdue') await _execSendOverdue(recipients);
 }
 
 // ---- DASHBOARD ----
@@ -2494,7 +2660,8 @@ function exportPDF(){
     @media print{body{margin:10px}@page{size:A4 landscape;margin:10mm}}
   
 /* ---- OFFLINE BANNER ---- */
-#offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:9px 20px;font-size:12px;font-weight:700;align-items:center;gap:10px;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#offline-banner{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:10px 16px;font-size:13px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);border-radius:12px;min-width:320px;max-width:90vw}
+#offline-banner.show{display:flex}
 /* ---- COMMENT THREAD ---- */
 .cmt-item{display:flex;gap:12px;margin-bottom:16px}
 .cmt-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;text-transform:uppercase;box-shadow:0 2px 8px rgba(37,99,235,.25)}
@@ -2800,7 +2967,7 @@ window.addEventListener('offline', () => {
     if (!navigator.onLine) {
       _isOffline = true;
       const b = document.getElementById('offline-banner');
-      if (b) b.style.display = 'flex';
+      if (b) b.classList.add('show');
       showDbStatus('Offline — edit tetap bisa dilakukan', false);
     }
   }, 4000);
@@ -2809,13 +2976,13 @@ window.addEventListener('online', () => {
   clearTimeout(_offlineTimer);
   _isOffline = false;
   const b = document.getElementById('offline-banner');
-  if (b) b.style.display = 'none';
+  if (b) b.classList.remove('show');
   // Auto-sync perubahan yang tertunda
   if(_hasDirty()) _flushDirty();
 });
 function retryOnline() {
   if (navigator.onLine) {
-    document.getElementById('offline-banner').style.display = 'none';
+    document.getElementById('offline-banner').classList.remove('show');
     if(_hasDirty()) _flushDirty();
     else { loadFromDB(); toast('Menyinkronkan ulang data...'); }
   } else {
