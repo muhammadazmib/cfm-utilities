@@ -2518,9 +2518,6 @@ function buildReportHTML(){
 
   // --- CFM grouped by area ---
   const AREA_ORDER=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
-
-  // --- CFM grouped by area ---
-  const AREA_ORDER=['WPS Rokan','WTP','Boiler Existing','Boiler HDC','PLTU','DTL'];
   const byArea={};
   act.forEach(d=>{
     const a=d.area||'Lainnya';
@@ -2567,9 +2564,21 @@ function buildReportHTML(){
       <td>${esc(_trunc(d.statusUpdate||'',60))}</td></tr>`;
   }).join('');
 
+  const LOGO_SVG=`<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="44" height="44" rx="8" fill="#1e40af"/><text x="22" y="30" text-anchor="middle" font-family="Arial" font-size="20" font-weight="900" fill="#fff">P</text><rect x="4" y="36" width="36" height="3" rx="1.5" fill="#fbbf24"/></svg>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">${CSS}</head><body>
-  <div class="hdr"><div class="sub">Pertamina Bagian Utilities</div>
-    <h1>&#128203; Laporan CFM Harian</h1><div class="sub">${tglStr}</div></div>
+  <div class="hdr">
+    <table style="width:100%;border-collapse:collapse"><tr>
+      <td style="width:52px;vertical-align:middle">${LOGO_SVG}</td>
+      <td style="vertical-align:middle;padding-left:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#bfdbfe;text-transform:uppercase">PT. Pertamina Patra Niaga</div>
+        <div style="font-size:10px;color:#93c5fd;margin-bottom:2px">Refinery Unit II Dumai &mdash; Utilities Production</div>
+        <h1 style="margin:0;font-size:17px;font-weight:800;color:#fff">Laporan CFM Harian</h1>
+      </td>
+      <td style="text-align:right;vertical-align:middle">
+        <div style="font-size:10px;color:#bfdbfe">${tglStr}</div>
+      </td>
+    </tr></table>
+  </div>
   <div class="summ">
     <span class="sv"><div class="sv-n" style="color:#1e40af">${act.length}</div><div class="sv-l">OUTSTANDING</div></span>
     <span class="sv"><div class="sv-n" style="color:#dc2626">${ovd.length}</div><div class="sv-l">OVERDUE</div></span>
@@ -2583,7 +2592,7 @@ function buildReportHTML(){
   <table><thead><tr><th>#</th><th>Tag</th><th>Area</th><th>Issue</th><th>Disiplin</th><th>Prioritas</th><th>Status</th><th>Update</th></tr></thead>
   <tbody>${taRows||'<tr><td colspan="8" style="text-align:center;color:#9ca3af">Tidak ada data</td></tr>'}</tbody></table>
   </div>
-  <div class="ftr">Email dikirim otomatis oleh Sistem CFM Utilities &mdash; Pertamina Bagian Utilities &mdash; Do Not Reply</div>
+  <div class="ftr">Email dikirim otomatis oleh Sistem CFM Utilities &mdash; PT. Pertamina Patra Niaga &mdash; RU II Dumai Utilities Production &mdash; Do Not Reply</div>
   </body></html>`;
 }
 
@@ -3060,8 +3069,22 @@ function _printPerArea(act){
     @media print{body{margin:8mm 10mm}@page{size:A4 landscape;margin:10mm}.area-block{page-break-inside:avoid}}
   </style></head>
   <body>
-  <h1>Laporan CFM Utilities — Per Area</h1>
-  <div class="meta">Dicetak: ${tgl} &nbsp;·&nbsp; Total outstanding: <strong>${act.length} item</strong></div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
+    <tr>
+      <td style="width:44px;vertical-align:middle">
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="38" height="38" rx="7" fill="#1e40af"/><text x="19" y="27" text-anchor="middle" font-family="Arial" font-size="17" font-weight="900" fill="#fff">P</text><rect x="4" y="31" width="30" height="3" rx="1.5" fill="#fbbf24"/></svg>
+      </td>
+      <td style="padding-left:10px;vertical-align:middle">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:#1e40af;text-transform:uppercase">PT. Pertamina Patra Niaga</div>
+        <div style="font-size:8px;color:#64748b">Refinery Unit II Dumai &mdash; Utilities Production</div>
+        <h1 style="margin:0;font-size:14px;font-weight:800;color:#0f172a">Laporan CFM Utilities &mdash; Per Area</h1>
+      </td>
+      <td style="text-align:right;vertical-align:middle;font-size:9px;color:#64748b">
+        Dicetak: ${tgl}<br><strong style="color:#dc2626">Outstanding: ${act.length} item</strong>
+      </td>
+    </tr>
+  </table>
+  <div class="meta" style="border-top:2px solid #1e40af;margin-top:4px"></div>
   ${sections}</body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),600);
 }
@@ -3092,15 +3115,17 @@ function _printTable(items,mode){
   <title>Laporan CFM Utilities — ${tgl}</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:10px;margin:0;color:#111}
-    .cover{page-break-after:always;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;padding:40px}
-    .cover-logo{width:80px;height:80px;background:#1e40af;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;color:#fff;font-weight:900}
-    .cover-corp{font-size:13px;font-weight:700;color:#1e40af;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
-    .cover-sub{font-size:11px;color:#475569;margin-bottom:30px}
-    .cover-title{font-size:22px;font-weight:800;color:#0f172a;text-align:center;margin-bottom:8px}
-    .cover-subtitle{font-size:13px;color:#475569;text-align:center;margin-bottom:32px}
-    .cover-box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;width:420px}
-    .cover-stat{text-align:center}.cover-stat-val{font-size:28px;font-weight:800}.cover-stat-lbl{font-size:10px;color:#6b7280;text-transform:uppercase}
-    .cover-footer{margin-top:32px;font-size:10px;color:#94a3b8;text-align:center}
+    .cover{page-break-after:always;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 60%,#1e40af 100%);padding:40px;color:#fff}
+    .cover-emblem{width:90px;height:90px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center}
+    .cover-corp{font-size:14px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#fbbf24;margin-bottom:4px;text-align:center}
+    .cover-unit{font-size:11px;color:#93c5fd;margin-bottom:6px;text-align:center;letter-spacing:.5px}
+    .cover-div{font-size:11px;color:#bfdbfe;margin-bottom:28px;text-align:center;letter-spacing:.5px}
+    .cover-line{width:60px;height:3px;background:#fbbf24;margin:0 auto 28px;border-radius:2px}
+    .cover-title{font-size:24px;font-weight:800;color:#fff;text-align:center;margin-bottom:6px;letter-spacing:.5px}
+    .cover-subtitle{font-size:12px;color:#bfdbfe;text-align:center;margin-bottom:32px;letter-spacing:.5px}
+    .cover-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;width:420px;backdrop-filter:blur(4px)}
+    .cover-stat{text-align:center}.cover-stat-val{font-size:30px;font-weight:900;line-height:1}.cover-stat-lbl{font-size:9px;color:#bfdbfe;text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+    .cover-footer{margin-top:28px;font-size:9px;color:#93c5fd;text-align:center;letter-spacing:.3px}
     .content-wrap{margin:16px 20px}
     h2{font-size:12px;margin:16px 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px}
     table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px}
@@ -3111,18 +3136,20 @@ function _printTable(items,mode){
     @media print{@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
   <div class="cover">
-    <div class="cover-logo">U</div>
-    <div class="cover-corp">PT Pertamina (Persero)</div>
-    <div class="cover-sub">Refinery Unit II Dumai — Bagian Utilities</div>
+    <div class="cover-emblem"><svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="45" cy="45" r="45" fill="rgba(255,255,255,0.12)"/><circle cx="45" cy="45" r="36" fill="rgba(255,255,255,0.08)" stroke="rgba(251,191,36,0.6)" stroke-width="1.5"/><text x="45" y="58" text-anchor="middle" font-family="Arial" font-size="32" font-weight="900" fill="#fbbf24">P</text><rect x="20" y="68" width="50" height="4" rx="2" fill="#fbbf24" opacity=".7"/></svg></div>
+    <div class="cover-corp">PT. Pertamina Patra Niaga</div>
+    <div class="cover-unit">Refinery Unit II Dumai</div>
+    <div class="cover-div">Utilities Production</div>
+    <div class="cover-line"></div>
     <div class="cover-title">Laporan Cross Functional Meeting</div>
     <div class="cover-subtitle">Outstanding Items &amp; Progress Monitoring</div>
     <div class="cover-box">
-      <div class="cover-stat"><div class="cover-stat-val" style="color:#dc2626">${items.filter(x=>x.status==='Open').length}</div><div class="cover-stat-lbl">Open</div></div>
-      <div class="cover-stat"><div class="cover-stat-val" style="color:#d97706">${items.filter(x=>x.status==='In Progress').length}</div><div class="cover-stat-lbl">In Progress</div></div>
-      <div class="cover-stat"><div class="cover-stat-val" style="color:#6b7280">${items.filter(x=>x.status==='On Hold').length}</div><div class="cover-stat-lbl">On Hold</div></div>
-      <div class="cover-stat"><div class="cover-stat-val" style="color:#dc2626">${ovdIds.size}</div><div class="cover-stat-lbl">Overdue</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#fca5a5">${items.filter(x=>x.status==='Open').length}</div><div class="cover-stat-lbl">Open</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#fcd34d">${items.filter(x=>x.status==='In Progress').length}</div><div class="cover-stat-lbl">In Progress</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#cbd5e1">${items.filter(x=>x.status==='On Hold').length}</div><div class="cover-stat-lbl">On Hold</div></div>
+      <div class="cover-stat"><div class="cover-stat-val" style="color:#f87171">${ovdIds.size}</div><div class="cover-stat-lbl">Overdue</div></div>
     </div>
-    <div class="cover-footer">Dicetak: ${tgl} &nbsp;·&nbsp; Total ${items.length} item CFM &nbsp;·&nbsp; ${taItems.length} Job TA</div>
+    <div class="cover-footer">Dicetak: ${tgl} &nbsp;&#183;&nbsp; Total ${items.length} item CFM &nbsp;&#183;&nbsp; ${taItems.length} Job TA</div>
   </div>
   <div class="content-wrap">
   <div>
