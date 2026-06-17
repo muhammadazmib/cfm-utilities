@@ -1,5 +1,5 @@
-// CFM Utilities Service Worker v1
-const CACHE = 'cfm-v1';
+// CFM Utilities Service Worker v3
+const CACHE = 'cfm-v3';
 const PRECACHE = [
   './',
   './index.html',
