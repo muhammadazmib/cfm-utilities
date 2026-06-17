@@ -2977,12 +2977,13 @@ function _showSyncModal(status, title, subtitle, logs){
 // ── Offline/Online detection ──────────────────────────────────────
 let _isOffline = false;
 let _offlineTimer = null;
+// Offline banner disembunyikan sementara — aktifkan kembali jika perlu
 window.addEventListener('offline', () => {
   _offlineTimer = setTimeout(() => {
     if (!navigator.onLine) {
       _isOffline = true;
-      const b = document.getElementById('offline-banner');
-      if (b) b.classList.add('show');
+      // const b = document.getElementById('offline-banner');
+      // if (b) b.classList.add('show');
       showDbStatus('Offline — edit tetap bisa dilakukan', false);
     }
   }, 4000);
@@ -2990,9 +2991,8 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', () => {
   clearTimeout(_offlineTimer);
   _isOffline = false;
-  const b = document.getElementById('offline-banner');
-  if (b) b.classList.remove('show');
-  // Auto-sync perubahan yang tertunda
+  // const b = document.getElementById('offline-banner');
+  // if (b) b.classList.remove('show');
   if(_hasDirty()) _flushDirty();
 });
 function retryOnline() {
