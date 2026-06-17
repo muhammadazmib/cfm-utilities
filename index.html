@@ -1190,7 +1190,7 @@ function etmOpen(type, title) {
   if (extras.length) {
     savedWrap.style.display = 'block';
     savedList.innerHTML = extras.map(e =>
-      `<button onclick="etmAddTag(${JSON.stringify(e)})" style="background:var(--bg-sec);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);transition:.15s" onmouseover="this.style.background='var(--blue-lt)'" onmouseout="this.style.background='var(--bg-sec)'">${esc(e)}</button>`
+      `<button onclick="etmAddTag('${e}')" style="background:var(--bg-sec);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);transition:.15s" onmouseover="this.style.background='var(--blue-lt)'" onmouseout="this.style.background='var(--bg-sec)'">${esc(e)}</button>`
     ).join('');
   } else {
     savedWrap.style.display = 'none';
@@ -1284,9 +1284,10 @@ async function etmConfirm() {
   localStorage.setItem('cfm-email-recipients', JSON.stringify(saved.slice(0, 10)));
 
   const recipients = [..._etmTags];
+  const type = _etmType;
   etmClose();
-  if (_etmType === 'report') await _execSendReport(recipients);
-  else if (_etmType === 'overdue') await _execSendOverdue(recipients);
+  if (type === 'report') await _execSendReport(recipients);
+  else if (type === 'overdue') await _execSendOverdue(recipients);
 }
 
 // ---- DASHBOARD ----
