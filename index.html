@@ -426,6 +426,12 @@ tr:hover td{background:#fafbfc}
     </div>
   </div>
 
+  <!-- HEATMAP -->
+  <div class="dcard" style="margin-bottom:16px">
+    <div class="dcard-title"><i class="ti ti-map-2" style="color:var(--red)"></i> Heatmap Outstanding — Intensitas per Area <span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:6px">Klik area untuk filter</span></div>
+    <div id="dash-heatmap" style="margin-top:8px"></div>
+  </div>
+
   <!-- CHARTS ROW 2 -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px" class="d2col">
     <div>
@@ -1549,6 +1555,41 @@ function renderDash(){
   act2.forEach(d=>{const p=d.pic||'—';if(!picMap[p])picMap[p]={total:0,open:0,prog:0,hold:0,ovd:0};picMap[p].total++;if(d.status==='Open')picMap[p].open++;if(d.status==='In Progress')picMap[p].prog++;if(d.status==='On Hold')picMap[p].hold++;if(isOvd(d))picMap[p].ovd++;});
   const picEntries=Object.entries(picMap).sort((a,b)=>b[1].total-a[1].total);
   document.getElementById('dash-pic').innerHTML=picEntries.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${picEntries.map(([pic,v])=>`<div class="pic-card" style="cursor:pointer" onclick="showPicItems(this.getAttribute('data-pic'))" data-pic="${esc(pic)}"><div class="pic-name"><i class="ti ti-user-circle"></i> ${esc(pic)}</div><div class="pic-nums"><span title="Total">${v.total} item</span>${v.open?`<span class="pn-open">${v.open} Open</span>`:''} ${v.prog?`<span class="pn-prog" style="color:var(--green);font-weight:600">${v.prog} Progress</span>`:''} ${v.hold?`<span class="pn-hold">${v.hold} Hold</span>`:''} ${v.ovd?`<span class="pn-ovd">⚠${v.ovd} OVD</span>`:''}</div><div class="prog-bar" style="height:4px;margin-top:8px"><div class="prog-fill" style="width:${Math.round(v.prog/v.total*100)}%;background:var(--amber)"></div></div></div>`).join('')}</div>`:'<div style="color:var(--muted);font-size:13px">Tidak ada outstanding</div>';
+
+  // --- HEATMAP ---
+  const hmEl=document.getElementById('dash-heatmap');
+  if(hmEl){
+    const hmData=AREAS.map(a=>{
+      const items=cfm.filter(d=>d.area===a);
+      const out=items.filter(d=>d.status!=='Done');
+      return{area:a,total:out.length,ovd:out.filter(isOvd).length,done:items.filter(d=>d.status==='Done').length,pct:items.length?Math.round(items.filter(d=>d.status==='Done').length/items.length*100):0};
+    });
+    const maxOut=Math.max(1,...hmData.map(d=>d.total));
+    hmEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">`+
+    hmData.map(d=>{
+      const t=d.total/maxOut; // 0..1
+      // Interpolate: 0→#fef2f2, 0.5→#fca5a5, 1→#7f1d1d
+      const r=t<.5?Math.round(254+(252-254)*t*2):Math.round(252+(127-252)*(t-.5)*2);
+      const g=t<.5?Math.round(242+(165-242)*t*2):Math.round(165+(29-165)*(t-.5)*2);
+      const b=t<.5?Math.round(242+(165-242)*t*2):Math.round(165+(29-165)*(t-.5)*2);
+      const bg=`rgb(${r},${g},${b})`;
+      const light=t<.45;
+      const tc=light?'#7f1d1d':'#fff';
+      const tc2=light?'rgba(127,29,29,.65)':'rgba(255,255,255,.7)';
+      return`<div onclick="setCfmArea(${JSON.stringify(d.area)});goTo('outstanding')" style="background:${bg};border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="font-size:11px;font-weight:700;color:${tc};margin-bottom:6px;letter-spacing:.3px">${esc(d.area)}</div>
+        <div style="font-size:30px;font-weight:900;color:${tc};line-height:1">${d.total}</div>
+        <div style="font-size:10px;color:${tc2};margin-top:3px">outstanding${d.ovd?` · <b style="color:${light?'#b91c1c':'#fca5a5'}">⚠ ${d.ovd} OVD</b>`:''}</div>
+        <div style="margin-top:8px;height:3px;background:${light?'rgba(127,29,29,.15)':'rgba(255,255,255,.2)'};border-radius:2px"><div style="height:3px;width:${d.pct}%;background:${light?'rgba(127,29,29,.5)':'rgba(255,255,255,.6)'};border-radius:2px"></div></div>
+        <div style="font-size:9px;color:${tc2};margin-top:3px">${d.pct}% selesai</div>
+      </div>`;
+    }).join('')+`</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)">
+      <span>Sedikit</span>
+      <div style="width:120px;height:8px;border-radius:4px;background:linear-gradient(to right,#fef2f2,#fca5a5,#7f1d1d)"></div>
+      <span>Banyak outstanding</span>
+    </div>`;
+  }
 
   // TA stats
   const tAll=ta.length,tPl=ta.filter(d=>d.status==='Open').length,tRd=ta.filter(d=>d.status==='In Progress').length,tPr=ta.filter(d=>d.status==='On Hold').length,tDn=ta.filter(d=>d.status==='Done').length;
@@ -3662,6 +3703,49 @@ function insertMention(taId,name){
   if(!hist.includes(name)){hist.unshift(name);localStorage.setItem('cfm-author-history',JSON.stringify(hist.slice(0,20)));}
 }
 
+// =====================================================================
+// EMOJI REACTIONS (localStorage per device)
+// =====================================================================
+const REACT_EMOJIS=['👍','✅','👀','🔥','❓'];
+const REACT_LABELS={'👍':'Like','✅':'Noted','👀':'Perlu Cek','🔥':'Penting','❓':'Tanya'};
+function _getReactions(){try{return JSON.parse(localStorage.getItem('cfm-reactions')||'{}');}catch{return{};}}
+function _saveReactions(r){localStorage.setItem('cfm-reactions',JSON.stringify(r));}
+function toggleReaction(cmtId,emoji){
+  if(!_authorName){toast('Set nama dulu sebelum memberi reaksi');return;}
+  const all=_getReactions();
+  if(!all[cmtId])all[cmtId]={};
+  if(!all[cmtId][emoji])all[cmtId][emoji]=[];
+  const idx=all[cmtId][emoji].indexOf(_authorName);
+  if(idx>=0)all[cmtId][emoji].splice(idx,1);
+  else all[cmtId][emoji].push(_authorName);
+  if(!all[cmtId][emoji].length)delete all[cmtId][emoji];
+  _saveReactions(all);
+  // Re-render reaction bar in-place
+  const el=document.getElementById(`react-bar-${cmtId}`);
+  if(el)el.outerHTML=_buildReactBar(cmtId);
+}
+function toggleReactPicker(cmtId){
+  // Close all other pickers first
+  document.querySelectorAll('[id^="react-picker-"]').forEach(p=>{if(p.id!==`react-picker-${cmtId}`)p.style.display='none';});
+  const p=document.getElementById(`react-picker-${cmtId}`);
+  if(p)p.style.display=p.style.display==='flex'?'none':'flex';
+}
+function _buildReactBar(cmtId){
+  const cmtReacts=(_getReactions()[cmtId])||{};
+  const pills=REACT_EMOJIS.filter(e=>(cmtReacts[e]||[]).length).map(e=>{
+    const users=cmtReacts[e];
+    const mine=users.includes(_authorName||'');
+    return`<button onclick="toggleReaction(${cmtId},'${e}')" title="${users.join(', ')}" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;border:1.5px solid ${mine?'var(--blue)':'var(--border)'};background:${mine?'var(--blue-lt)':'var(--bg-card)'};cursor:pointer;font-size:12px;font-family:inherit;color:${mine?'var(--blue)':'var(--text)'};font-weight:600;line-height:1.4">${e}<span style="font-size:11px">${users.length}</span></button>`;
+  }).join('');
+  const picker=`<div style="position:relative;display:inline-block">
+    <button onclick="toggleReactPicker(${cmtId})" style="background:none;border:1px dashed var(--border);border-radius:20px;padding:2px 9px;cursor:pointer;font-size:11px;color:var(--muted);font-family:inherit;line-height:1.6" title="Tambah reaksi">+ 😊</button>
+    <div id="react-picker-${cmtId}" style="display:none;position:absolute;bottom:130%;left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:6px 8px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:300;flex-direction:row;gap:2px;white-space:nowrap">
+      ${REACT_EMOJIS.map(e=>`<button onclick="toggleReaction(${cmtId},'${e}');toggleReactPicker(${cmtId})" title="${REACT_LABELS[e]}" style="background:none;border:none;font-size:20px;cursor:pointer;padding:3px 6px;border-radius:8px;transition:background .1s" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background='none'">${e}</button>`).join('')}
+    </div>
+  </div>`;
+  return`<div id="react-bar-${cmtId}" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px">${pills}${picker}</div>`;
+}
+
 function renderComments(itemId, type) {
   const key = `${type}-${itemId}`;
   const comments = _cmtCache[key] || [];
@@ -3711,7 +3795,8 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
         ${c.content ? `<div style="font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text)">${parseMentions(esc(c.content))}</div>` : ''}
         ${attachHtml}
       </div>
-      <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
+      ${_buildReactBar(c.id)}
+      <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
         <button onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')" style="background:none;border:none;color:#6b7280;font-size:11px;font-weight:600;cursor:pointer;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='#eff6ff';this.style.color='#2563eb'" onmouseout="this.style.background='none';this.style.color='#6b7280'"><i class="ti ti-corner-down-right" style="font-size:12px"></i> Balas</button>
         ${isOwn ? `<button onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:3px 7px;border-radius:6px;display:inline-flex;align-items:center;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626'" onmouseout="this.style.background='none';this.style.color='#9ca3af'"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
       </div>
