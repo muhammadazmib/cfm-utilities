@@ -1644,7 +1644,7 @@ function renderPicChips(){
   });
 }
 function capitalizePic(str){
-  return str.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+  return str.toUpperCase();
 }
 function addPic(val){
   const v=capitalizePic(val.trim());
