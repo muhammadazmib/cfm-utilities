@@ -704,7 +704,10 @@ tr:hover td{background:#fafbfc}
 
 
 <!-- H-7 EMAIL NOTIF BANNER -->
-<div id="h7-banner" style="display:none"></div>
+<div id="h7-banner" style="display:none;position:fixed;bottom:24px;left:20px;z-index:8000;background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:10px 16px;border-radius:12px;font-size:12px;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:400px">
+  <i class="ti ti-clock-hour-4" style="font-size:18px;flex-shrink:0"></i>
+  <span id="h7-msg" style="flex:1;font-weight:600"></span>
+</div>
 <div id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg"></span></div>
 
 <!-- SYNC DETAIL MODAL -->
