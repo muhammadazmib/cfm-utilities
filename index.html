@@ -288,12 +288,17 @@ tr:hover td{background:#fafbfc}
   <button class="btn btn-sm btn-icon" style="flex-shrink:0" onclick="openEmailSetup()" title="Pengaturan Email"><i class="ti ti-settings"></i></button>
   <button class="btn btn-sm" style="flex-shrink:0" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
   <a href="petunjuk.html" target="_blank" class="btn btn-sm" style="flex-shrink:0;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;text-decoration:none" title="Fitur & Petunjuk Penggunaan"><i class="ti ti-help-circle"></i> Panduan</a>
+  <button class="btn btn-sm" style="flex-shrink:0;background:#16a34a;color:#fff;border:none" onclick="exportBackup()" title="Backup data untuk disimpan atau dipindah ke PC lain"><i class="ti ti-database-export"></i> Backup Data</button>
 </nav>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner">
-  <i class="ti ti-wifi-off"></i> Mode Offline — edit, tambah, hapus tetap bisa. Data akan sync saat online kembali.
-  <button onclick="retryOnline()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer">Sync Sekarang</button>
+  <i class="ti ti-wifi-off" style="font-size:20px;flex-shrink:0"></i>
+  <div style="flex:1;line-height:1.5">
+    <strong style="font-size:14px;display:block">⚠️ Mode Offline — Siap Digunakan</strong>
+    <div style="font-size:12px;opacity:.95;margin-top:2px">Edit, tambah, hapus tetap bisa. Perubahan akan sync otomatis saat internet kembali.</div>
+  </div>
+  <button onclick="retryOnline()" style="background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.5)'" onmouseout="this.style.background='rgba(255,255,255,.35)'">→ Sinkronkan Sekarang</button>
 </div>
 <!-- SYNC BADGE -->
 <div id="sync-badge" onclick="_flushDirty()" title="Klik untuk sync sekarang"
@@ -1911,6 +1916,71 @@ function exportCSV(){
   toast('Export CSV berhasil');
 }
 
+// =====================================================================
+// BACKUP & RESTORE — simpan semua data ke JSON untuk transfer PC lain
+// =====================================================================
+async function exportBackup(){
+  const backup={
+    version:'2.1',
+    exported:new Date().toISOString(),
+    device:navigator.userAgent.split('(')[1]?.split(';')[0]||'Unknown Device',
+    data:{
+      cfm,ta,
+      authorName:_authorName,
+      authorHistory:JSON.parse(localStorage.getItem('cfm-author-history')||'[]')
+    }
+  };
+  // Ambil juga comments dari server jika perlu
+  try{
+    const {data:comments}=await _supa.from('comments').select('*');
+    backup.data.comments=comments||[];
+  }catch(e){console.warn('Gagal backup comments:',e);}
+  try{
+    const {data:logs}=await _supa.from('activity_log').select('*');
+    backup.data.logs=logs||[];
+  }catch(e){console.warn('Gagal backup logs:',e);}
+
+  const json=JSON.stringify(backup,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`CFM_Utilities_Backup_${today().replace(/\//g,'-')}.json`;
+  a.click();
+  toast('✓ Backup data berhasil diunduh. Simpan file ini untuk keamanan.');
+}
+
+async function restoreBackup(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=async(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async(evt)=>{
+      try{
+        const backup=JSON.parse(evt.target.result);
+        if(!backup.data){throw new Error('Format backup tidak valid');}
+        // Restore lokal
+        cfm=backup.data.cfm||[];
+        ta=backup.data.ta||[];
+        _authorName=backup.data.authorName||'';
+        localStorage.setItem('cfm-v6',JSON.stringify(cfm));
+        localStorage.setItem('ta-v2',JSON.stringify(ta));
+        localStorage.setItem('cfm-author',_authorName);
+        if(backup.data.authorHistory)localStorage.setItem('cfm-author-history',JSON.stringify(backup.data.authorHistory));
+        // Upload ke server
+        await persistCfm();
+        await persistTa();
+        _reRender();
+        toast('✓ Data restore berhasil. Semua item kembali.');
+      }catch(e){toast('❌ Gagal restore: '+e.message);}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 // ---- EVENTS ----
 ['cfmModal','taModal','confirmBg'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{
@@ -2420,20 +2490,24 @@ function exportPDF(){
 /* ---- OFFLINE BANNER ---- */
 #offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;padding:9px 20px;font-size:12px;font-weight:700;align-items:center;gap:10px;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 /* ---- COMMENT THREAD ---- */
-.cmt-item{display:flex;gap:10px;margin-bottom:14px}
-.cmt-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;text-transform:uppercase}
-.cmt-bubble{flex:1;min-width:0}
-.cmt-header{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.cmt-author{font-size:12px;font-weight:700}
-.cmt-time{font-size:10px;color:var(--muted)}
-.cmt-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.cmt-attach-img{max-width:220px;max-height:160px;border-radius:8px;margin-top:8px;cursor:pointer;border:1px solid var(--border);display:block}
-.cmt-attach-file{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;background:var(--bg-sec);border:1px solid var(--border);border-radius:8px;font-size:11px;text-decoration:none;color:var(--text)}
-.cmt-actions{display:flex;align-items:center;gap:4px;margin-top:6px}
-.cmt-reply-btn{background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:2px 6px;border-radius:4px;font-weight:600}
-.cmt-reply-btn:hover{background:var(--blue-lt)}
-.cmt-replies{margin-top:10px;padding-left:20px;border-left:2px solid var(--border)}
-.cmt-reply-form{margin-top:8px;padding:10px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
+.cmt-item{display:flex;gap:12px;margin-bottom:16px}
+.cmt-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;text-transform:uppercase;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.cmt-bubble{flex:1;min-width:0;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.cmt-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.cmt-author{font-size:13px;font-weight:700;color:var(--text)}
+.cmt-time{font-size:11px;color:var(--muted)}
+.cmt-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--text);margin-bottom:8px}
+.cmt-attach-img{max-width:240px;max-height:180px;border-radius:10px;margin-top:8px;cursor:pointer;border:1px solid var(--border);display:block;transition:.2s}
+.cmt-attach-img:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.cmt-attach-file{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid #bfdbfe;border-radius:8px;font-size:12px;text-decoration:none;color:var(--blue);font-weight:600;transition:.15s}
+.cmt-attach-file:hover{background:linear-gradient(135deg,#bfdbfe,#dbeafe);box-shadow:0 2px 8px rgba(37,99,235,.15)}
+.cmt-attach-file i{font-size:14px}
+.cmt-actions{display:flex;align-items:center;gap:6px;margin-top:8px}
+.cmt-reply-btn{background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid #bfdbfe;color:#2563eb;font-size:12px;cursor:pointer;padding:5px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:5px;transition:.15s;font-family:inherit}
+.cmt-reply-btn:hover{background:linear-gradient(135deg,#bfdbfe,#dbeafe);box-shadow:0 2px 8px rgba(37,99,235,.15)}
+.cmt-reply-btn i{font-size:13px}
+.cmt-replies{margin-top:12px;padding-left:18px;border-left:2.5px solid var(--blue);margin-left:9px}
+.cmt-reply-form{margin-top:10px;padding:12px 14px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid #d1fae5;border-radius:10px}
 .cmt-compose{margin-top:16px;padding:14px;background:var(--bg-sec);border-radius:var(--r);border:1px solid var(--border)}
 .cmt-compose-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .cmt-compose textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical;min-height:72px;box-sizing:border-box;background:var(--bg-card);transition:border-color .15s,box-shadow .15s;line-height:1.5}
@@ -2443,8 +2517,8 @@ function exportPDF(){
 .cmt-file-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;font-size:11px}
 .cmt-file-chip img{width:36px;height:36px;object-fit:cover;border-radius:4px}
 /* ---- AUTHOR MODAL ---- */
-#author-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.65);z-index:10000;align-items:center;justify-content:center}
-#author-modal.open{display:flex}
+#author-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.65);z-index:10000;align-items:center;justify-content:center;display:none}
+#author-modal.open{display:flex !important}
 #author-modal .am-box{background:var(--bg-card);border-radius:16px;padding:28px 28px 22px;width:390px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.3);animation:slideup .22s cubic-bezier(.34,1.3,.64,1)}
 @keyframes slideup{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes pulse-badge{0%,100%{box-shadow:0 4px 16px rgba(245,158,11,.45)}50%{box-shadow:0 4px 24px rgba(245,158,11,.75),0 0 0 6px rgba(245,158,11,.12)}}
@@ -2823,19 +2897,23 @@ function cmtSection(itemId, type) {
   const initials = _authorName ? _authorName.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2) : '?';
   const avatarBg = _authorName ? 'var(--blue)' : '#94a3b8';
   const authorRow = _authorName
-    ? `<div style="display:flex;align-items:center;gap:8px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${esc(initials)}</div>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${esc(_authorName)}</div>
-          <button onclick="promptAuthor()" style="background:none;border:none;padding:0;font-size:11px;color:var(--blue);cursor:pointer;font-family:inherit"><i class="ti ti-pencil" style="font-size:10px"></i> Gunakan nama lain</button>
+    ? `<div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,.3)">${esc(initials)}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(_authorName)}</div>
+          </div>
         </div>
+        <button onclick="promptAuthor()" style="background:#f1f5f9;color:#2563eb;border:none;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:3px;transition:.15s;white-space:nowrap" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#f1f5f9'"><i class="ti ti-pencil" style="font-size:11px"></i> Ganti</button>
       </div>`
-    : `<div style="display:flex;align-items:center;gap:8px">
-        <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"><i class="ti ti-user"></i></div>
-        <div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">Nama Anda belum diset</div>
-          <button onclick="promptAuthor()" style="background:var(--blue);color:#fff;border:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user-plus"></i> Set Nama Anda</button>
+    : `<div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-user"></i></div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);font-weight:600">Nama belum diset</div>
+          </div>
         </div>
+        <button onclick="promptAuthor()" style="background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;transition:.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(37,99,235,.3)" onmouseover="this.style.boxShadow='0 4px 12px rgba(37,99,235,.4)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(37,99,235,.3)'"><i class="ti ti-user-plus" style="font-size:12px"></i> Set Nama</button>
       </div>`;
   return `<div class="dcard">
     <div class="dcard-title"><i class="ti ti-messages" style="color:var(--purple)"></i> Diskusi</div>
@@ -2916,9 +2994,10 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
   let attachHtml = '';
   if (c.attachment_url) {
     if (c.attachment_type === 'image') {
-      attachHtml = `<a href="${c.attachment_url}" target="_blank"><img src="${c.attachment_url}" class="cmt-attach-img" loading="lazy"></a>`;
+      attachHtml = `<a href="${c.attachment_url}" target="_blank" style="display:inline-block"><img src="${c.attachment_url}" class="cmt-attach-img" loading="lazy"></a>`;
     } else {
-      attachHtml = `<a href="${c.attachment_url}" target="_blank" class="cmt-attach-file"><i class="ti ti-file-download" style="color:var(--blue)"></i> ${esc(c.attachment_name || 'Unduh File')}</a>`;
+      const fileExt = (c.attachment_name || 'File').split('.').pop().toUpperCase();
+      attachHtml = `<a href="${c.attachment_url}" target="_blank" class="cmt-attach-file"><i class="ti ti-file-download"></i> <span>${esc(c.attachment_name || 'Unduh File')}</span></a>`;
     }
   }
 
@@ -2932,8 +3011,10 @@ function renderOneCmt(c, replies, itemId, type, isReply) {
         <span class="cmt-author">${esc(c.author)}</span>
         <span class="cmt-time">${timeStr}</span>
         <div style="flex:1"></div>
-        ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-corner-down-right"></i> Balas</button>` : ''}
-        ${isOwn ? `<button class="btn btn-sm btn-icon btn-del" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus"><i class="ti ti-trash"></i></button>` : ''}
+        <div style="display:flex;align-items:center;gap:6px">
+          ${!isReply ? `<button class="cmt-reply-btn" onclick="showReplyForm(${c.id},${itemId},'${type}','${esc(c.author)}')"><i class="ti ti-message-circle"></i> Balas</button>` : ''}
+          ${isOwn ? `<button class="btn btn-sm btn-icon" onclick="deleteCmt(${c.id},${itemId},'${type}')" title="Hapus" style="color:var(--red);background:#fee2e2"><i class="ti ti-trash"></i></button>` : ''}
+        </div>
       </div>
       ${c.content ? `<div class="cmt-text">${esc(c.content)}</div>` : ''}
       ${attachHtml}
