@@ -305,7 +305,13 @@ tr:hover td{background:#fafbfc}
 
 <nav class="nav">
   <div class="nav-brand">
-    <div class="nav-logo"><i class="ti ti-tool"></i></div>
+    <div class="nav-logo" style="background:#fff;padding:3px">
+      <svg viewBox="0 0 115 105" width="26" height="24" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="0,82 28,46 80,64 52,100" fill="#003087"/>
+        <polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/>
+        <polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/>
+      </svg>
+    </div>
     <div><div class="nav-name">Utilities Work Tracker</div><div class="nav-sub">Cross Functional Meeting</div></div>
   </div>
   <button class="nav-btn" style="flex-shrink:0" id="nav-dashboard" onclick="goTo('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
@@ -2605,7 +2611,7 @@ function buildReportHTML(){
       <td>${esc(_trunc(d.statusUpdate||'',60))}</td></tr>`;
   }).join('');
 
-  const LOGO_SVG=`<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="44" height="44" rx="8" fill="#1e40af"/><text x="22" y="30" text-anchor="middle" font-family="Arial" font-size="20" font-weight="900" fill="#fff">P</text><rect x="4" y="36" width="36" height="3" rx="1.5" fill="#fbbf24"/></svg>`;
+  const LOGO_SVG=`<div style="display:inline-flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:6px 12px 6px 8px"><svg viewBox="0 0 115 105" width="38" height="35" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div><div style="font-size:12px;font-weight:900;color:#1a1a1a;letter-spacing:1.2px;line-height:1.1">PERTAMINA</div><div style="font-size:9px;font-weight:700;color:#e31837;letter-spacing:1.5px">PATRA NIAGA</div></div></div>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">${CSS}</head><body>
   <div class="hdr">
     <table style="width:100%;border-collapse:collapse"><tr>
@@ -3112,8 +3118,8 @@ function _printPerArea(act){
   <body>
   <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
     <tr>
-      <td style="width:44px;vertical-align:middle">
-        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="38" height="38" rx="7" fill="#1e40af"/><text x="19" y="27" text-anchor="middle" font-family="Arial" font-size="17" font-weight="900" fill="#fff">P</text><rect x="4" y="31" width="30" height="3" rx="1.5" fill="#fbbf24"/></svg>
+      <td style="width:120px;vertical-align:middle">
+        <div style="display:flex;align-items:center;gap:7px"><svg viewBox="0 0 115 105" width="34" height="31" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div><div style="font-size:10px;font-weight:900;color:#1a1a1a;letter-spacing:1px;line-height:1.1">PERTAMINA</div><div style="font-size:7.5px;font-weight:700;color:#e31837;letter-spacing:1px">PATRA NIAGA</div></div></div>
       </td>
       <td style="padding-left:10px;vertical-align:middle">
         <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:#1e40af;text-transform:uppercase">PT. Pertamina Patra Niaga</div>
@@ -3177,7 +3183,7 @@ function _printTable(items,mode){
     @media print{@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
   <div class="cover">
-    <div class="cover-emblem"><svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="45" cy="45" r="45" fill="rgba(255,255,255,0.12)"/><circle cx="45" cy="45" r="36" fill="rgba(255,255,255,0.08)" stroke="rgba(251,191,36,0.6)" stroke-width="1.5"/><text x="45" y="58" text-anchor="middle" font-family="Arial" font-size="32" font-weight="900" fill="#fbbf24">P</text><rect x="20" y="68" width="50" height="4" rx="2" fill="#fbbf24" opacity=".7"/></svg></div>
+    <div class="cover-emblem"><div style="background:rgba(255,255,255,.95);border-radius:14px;padding:14px 20px 12px;display:inline-flex;align-items:center;gap:14px"><svg viewBox="0 0 115 105" width="62" height="57" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div style="text-align:left"><div style="font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:1.5px;line-height:1">PERTAMINA</div><div style="font-size:15px;font-weight:700;color:#e31837;letter-spacing:2px;margin-top:2px">PATRA NIAGA</div></div></div></div>
     <div class="cover-corp">PT. Pertamina Patra Niaga</div>
     <div class="cover-unit">Refinery Unit II Dumai</div>
     <div class="cover-div">Utilities Production</div>
