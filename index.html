@@ -1748,6 +1748,7 @@ function addCfmTgt(){tmpTgts.push({id:tmpTgts.length?Math.max(...tmpTgts.map(t=>
 function rmTgt(i){tmpTgts.splice(i,1);renderTmpTgts()}
 
 function saveCfm(){
+  try{
   const eq=document.getElementById('cf-eq').value.trim(),ar=document.getElementById('cf-area').value,ma=document.getElementById('cf-masalah').value.trim();
   if(!eq||!ar||!ma){alert('Equipment, Area, dan Masalah wajib diisi.');return}
   const ns=document.getElementById('cf-status').value;
@@ -1786,7 +1787,7 @@ function saveCfm(){
     item.timeline=[{id:1,ts:today(),type:'created',note:`Item dibuat${item.pic?' oleh '+item.pic:''}`}];
     cfm.push(item);
     toast('Item berhasil ditambahkan');
-    pushNotif('new_item', 'Item Baru Ditambahkan', `${item.equipment} — ${item.area}`, item.id, 'cfm');
+    try{pushNotif('new_item', 'Item Baru Ditambahkan', `${item.equipment} — ${item.area}`, item.id, 'cfm');}catch(e){console.error('pushNotif error:',e);}
   }
   const _cA=editCfmId?'Edit':'Tambah',_cN=item.equipment;
   // helpers untuk log
@@ -1835,6 +1836,7 @@ function saveCfm(){
   if(vw==='selesai')renderSelesai();
   if(vw==='dashboard')renderDash();
   if(detId===item.id&&detType==='cfm')openDetail(item.id,'cfm');
+  }catch(e){console.error('saveCfm error:',e);alert('Gagal menyimpan: '+e.message);}
 }
 
 // ---- TA MODAL ----
