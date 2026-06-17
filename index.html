@@ -305,12 +305,8 @@ tr:hover td{background:#fafbfc}
 
 <nav class="nav">
   <div class="nav-brand">
-    <div class="nav-logo" style="background:#fff;padding:3px">
-      <svg viewBox="0 0 115 105" width="26" height="24" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="0,82 28,46 80,64 52,100" fill="#003087"/>
-        <polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/>
-        <polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/>
-      </svg>
+    <div class="nav-logo" style="background:#fff;padding:2px 4px">
+      <img src="logo-ppn.png" height="28" style="display:block;width:auto">
     </div>
     <div><div class="nav-name">Utilities Work Tracker</div><div class="nav-sub">Cross Functional Meeting</div></div>
   </div>
@@ -2611,7 +2607,7 @@ function buildReportHTML(){
       <td>${esc(_trunc(d.statusUpdate||'',60))}</td></tr>`;
   }).join('');
 
-  const LOGO_SVG=`<div style="display:inline-flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:6px 12px 6px 8px"><svg viewBox="0 0 115 105" width="38" height="35" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div><div style="font-size:12px;font-weight:900;color:#1a1a1a;letter-spacing:1.2px;line-height:1.1">PERTAMINA</div><div style="font-size:9px;font-weight:700;color:#e31837;letter-spacing:1.5px">PATRA NIAGA</div></div></div>`;
+  const LOGO_SVG=`<img src="https://muhammadazmib.github.io/cfm-utilities/logo-ppn.png" height="48" style="display:block;width:auto">`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">${CSS}</head><body>
   <div class="hdr">
     <table style="width:100%;border-collapse:collapse"><tr>
@@ -3118,8 +3114,8 @@ function _printPerArea(act){
   <body>
   <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
     <tr>
-      <td style="width:120px;vertical-align:middle">
-        <div style="display:flex;align-items:center;gap:7px"><svg viewBox="0 0 115 105" width="34" height="31" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div><div style="font-size:10px;font-weight:900;color:#1a1a1a;letter-spacing:1px;line-height:1.1">PERTAMINA</div><div style="font-size:7.5px;font-weight:700;color:#e31837;letter-spacing:1px">PATRA NIAGA</div></div></div>
+      <td style="width:130px;vertical-align:middle">
+        <img src="https://muhammadazmib.github.io/cfm-utilities/logo-ppn.png" height="38" style="display:block;width:auto">
       </td>
       <td style="padding-left:10px;vertical-align:middle">
         <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:#1e40af;text-transform:uppercase">PT. Pertamina Patra Niaga</div>
@@ -3183,7 +3179,7 @@ function _printTable(items,mode){
     @media print{@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
   <div class="cover">
-    <div class="cover-emblem"><div style="background:rgba(255,255,255,.95);border-radius:14px;padding:14px 20px 12px;display:inline-flex;align-items:center;gap:14px"><svg viewBox="0 0 115 105" width="62" height="57" xmlns="http://www.w3.org/2000/svg"><polygon points="0,82 28,46 80,64 52,100" fill="#003087"/><polygon points="17,53 45,17 91,37 63,73" fill="#8dc21f"/><polygon points="37,5 97,5 108,32 48,32" fill="#e31837"/></svg><div style="text-align:left"><div style="font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:1.5px;line-height:1">PERTAMINA</div><div style="font-size:15px;font-weight:700;color:#e31837;letter-spacing:2px;margin-top:2px">PATRA NIAGA</div></div></div></div>
+    <div class="cover-emblem"><div style="background:rgba(255,255,255,.95);border-radius:14px;padding:16px 24px"><img src="https://muhammadazmib.github.io/cfm-utilities/logo-ppn.png" height="70" style="display:block;width:auto"></div></div>
     <div class="cover-corp">PT. Pertamina Patra Niaga</div>
     <div class="cover-unit">Refinery Unit II Dumai</div>
     <div class="cover-div">Utilities Production</div>
