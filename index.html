@@ -984,7 +984,8 @@ function checkH7(){
   const body=encodeURIComponent(
     `Yth. Tim CFM Bagian Utilities,\n\nBerikut item yang mendekati batas target penyelesaian (H-7):\n\n${lines}\n\nMohon segera ditindaklanjuti.\n\nSalam,\nSistem CFM Utilities`
   );
-  banner.style.display='flex';
+  // banner hidden — use auto-email notification instead
+  // banner.style.display='flex';
 }
 function toast(m){document.getElementById('toast-msg').textContent=m;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
 
@@ -2825,40 +2826,65 @@ function exportPDFWithOpt(mode){
 }
 function _doPrint(mode){
   const act=cfm.filter(x=>x.status!=='Done');
-  const all=mode==='all-include-done';
-  const items=all?cfm:act;
-  if(mode==='per-area'){
-    _printPerArea(act);return;
+  if(mode==='per-area'){_printPerArea(act);return;}
+  if(mode==='all-include-done'){
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);cutoff.setHours(0,0,0,0);
+    // include outstanding + Done items completed within last 7 days
+    const recentDone=cfm.filter(x=>{
+      if(x.status!=='Done')return false;
+      // try _log for done timestamp, fallback to tanggal field
+      const doneLog=(x._log||[]).slice().reverse().find(l=>l.to==='Done'||l.field==='status'&&l.to==='Done');
+      const doneTs=doneLog?new Date(doneLog.ts):(x.tanggal?new Date(x.tanggal):null);
+      return doneTs&&doneTs>=cutoff;
+    });
+    _printTable([...act,...recentDone],mode);return;
   }
-  _printTable(all?cfm:act,mode);
+  _printTable(act,mode);
 }
 function _printPerArea(act){
   const ovdIds=new Set(act.filter(x=>(x.targets||[]).some(t=>t.date&&new Date(t.date)<new Date())).map(x=>x.id));
   const _tTgts=t=>(t||[]).filter(x=>x.date).map(x=>fd(x.date)).join(', ')||'-';
   const _tDocs=d=>(d||[]).filter(x=>x.type&&x.docno).map(x=>x.type+' '+x.docno).join(', ')||'-';
   const tgl=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-  const sections=AREAS.map(area=>{
-    const rows=act.filter(x=>x.area===area).map((x,i)=>`<tr style="${ovdIds.has(x.id)?'background:#fef2f2':''}">
-      <td>${i+1}</td><td>${esc(x.equipment)}</td><td>${esc(x.masalah)}</td>
-      <td>${esc(x.pic||'-')}</td><td>${_tTgts(x.targets)}</td>
-      <td><b>${esc(x.status)}</b></td><td>${esc(_tDocs(x.docs))}</td></tr>`).join('');
-    if(!rows)return'';
-    return`<div style="page-break-before:always">
-      <h2 style="font-size:13px;margin:0 0 6px;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:3px">Area: ${area}</h2>
-      <table><thead><tr style="background:#1e40af;color:#fff">
-        <th>#</th><th>Equipment</th><th>Masalah/Pekerjaan</th><th>PIC</th><th>Target</th><th>Status</th><th>Dokumen</th>
-      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  const sections=AREAS.map((area,ai)=>{
+    const aItems=act.filter(x=>x.area===area);
+    if(!aItems.length)return'';
+    const rows=aItems.map((x,i)=>`<tr class="${ovdIds.has(x.id)?'ovd':''}">
+      <td style="text-align:center;color:#666">${i+1}</td>
+      <td style="font-weight:600">${esc(x.equipment)}</td>
+      <td>${esc(x.masalah)}</td>
+      <td style="text-align:center">${esc(x.pic||'-')}</td>
+      <td style="text-align:center;color:${ovdIds.has(x.id)?'#dc2626':'inherit'};font-weight:${ovdIds.has(x.id)?'700':'400'}">${_tTgts(x.targets)}</td>
+      <td style="font-weight:600;color:${x.status==='Open'?'#dc2626':x.status==='In Progress'?'#d97706':x.status==='On Hold'?'#6b7280':'#166534'}">${esc(x.status)}</td>
+      <td style="color:#4b5563;font-size:8px">${esc(_tDocs(x.docs))}</td>
+    </tr>`).join('');
+    const pb=ai>0?'page-break-before:always;':'';
+    return`<div class="area-block" style="${pb}">
+      <div class="area-title">Area: ${area} <span style="font-weight:400;font-size:10px;color:#6b7280">(${aItems.length} item)</span></div>
+      <table><colgroup><col class="c-no"><col class="c-eq"><col class="c-ms"><col class="c-pic"><col class="c-tgt"><col class="c-st"><col class="c-doc"></colgroup>
+      <thead><tr><th>#</th><th>Equipment</th><th>Masalah / Pekerjaan</th><th>PIC</th><th>Target</th><th>Status</th><th>Dokumen</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
   }).join('');
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Laporan CFM per Area — ${tgl}</title>
-  <style>body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#111}
-  h1{font-size:14px;margin-bottom:2px}.meta{font-size:10px;color:#666;margin-bottom:12px}
-  table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px}
-  th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left}
-  td{padding:4px 6px;border:1px solid #e2e8f0;vertical-align:top}
-  tr:nth-child(even){background:#f8fafc}
-  @media print{body{margin:10mm}@page{size:A4 landscape;margin:10mm}}</style></head>
-  <body><h1>Laporan CFM Utilities — Per Area</h1>
-  <div class="meta">Dicetak: ${tgl} | Total outstanding: ${act.length} item</div>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;margin:16px 20px;color:#111}
+    h1{font-size:15px;font-weight:700;margin:0 0 3px}
+    .meta{font-size:10px;color:#555;margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:8px}
+    .area-block{margin-bottom:24px}
+    .area-title{font-size:12px;font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:4px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+    table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
+    col.c-no{width:4%}col.c-eq{width:18%}col.c-ms{width:28%}col.c-pic{width:10%}col.c-tgt{width:14%}col.c-st{width:10%}col.c-doc{width:16%}
+    th{background:#1e40af;color:#fff;padding:5px 6px;text-align:left;font-weight:600;font-size:8.5px;white-space:nowrap;overflow:hidden}
+    td{padding:4px 6px;border-bottom:1px solid #e2e8f0;vertical-align:top;word-break:break-word}
+    tr:nth-child(odd){background:#f8fafc}tr:nth-child(even){background:#fff}
+    tr.ovd{background:#fff5f5!important}
+    .empty{text-align:center;color:#999;font-style:italic;padding:10px}
+    @media print{body{margin:8mm 10mm}@page{size:A4 landscape;margin:10mm}.area-block{page-break-inside:avoid}}
+  </style></head>
+  <body>
+  <h1>Laporan CFM Utilities — Per Area</h1>
+  <div class="meta">Dicetak: ${tgl} &nbsp;·&nbsp; Total outstanding: <strong>${act.length} item</strong></div>
   ${sections}</body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),600);
 }
@@ -3469,14 +3495,19 @@ function showReplyForm(parentId, itemId, type, parentAuthor) {
   document.querySelectorAll('[id^="reply-form-"]').forEach(el => { el.innerHTML = ''; });
   const el = document.getElementById(`reply-form-${parentId}`);
   if (!el) return;
+  const mentionPrefix = parentAuthor ? `@${parentAuthor} ` : '';
   el.innerHTML = `<div class="cmt-reply-form">
     <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px">
       <i class="ti ti-corner-down-right"></i> Balas ke <strong>${esc(parentAuthor)}</strong>
     </div>
-    <textarea id="reply-txt-${parentId}" rows="2" placeholder="Tulis balasan..."
-      style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;resize:none;box-sizing:border-box;background:var(--bg-card);outline:none;line-height:1.5;transition:border-color .15s"
-      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
-      onkeydown="if(event.ctrlKey&&event.key==='Enter')submitReply(${parentId},${itemId},'${type}')"></textarea>
+    <div style="position:relative">
+      <textarea id="reply-txt-${parentId}" rows="2" placeholder="Tulis balasan..."
+        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;resize:none;box-sizing:border-box;background:var(--bg-card);outline:none;line-height:1.5;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.ctrlKey&&event.key==='Enter')submitReply(${parentId},${itemId},'${type}')"
+        oninput="mentionInput(this)">${mentionPrefix}</textarea>
+      <div id="mention-dd-reply-txt-${parentId}" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:500;overflow:hidden"></div>
+    </div>
     <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end">
       <button class="btn btn-sm btn-ghost" onclick="cancelReply(${parentId})">Batal</button>
       <button class="btn btn-sm btn-primary" onclick="submitReply(${parentId},${itemId},'${type}')">
@@ -3484,7 +3515,10 @@ function showReplyForm(parentId, itemId, type, parentAuthor) {
       </button>
     </div>
   </div>`;
-  setTimeout(() => document.getElementById(`reply-txt-${parentId}`)?.focus(), 50);
+  setTimeout(() => {
+    const ta = document.getElementById(`reply-txt-${parentId}`);
+    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }, 50);
 }
 
 function cancelReply(parentId) {
